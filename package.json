@@ -19,7 +19,12 @@
   },
   "author": "Harel Mazor",
   "type": "commonjs",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rollup --configPlugin @rollup/plugin-typescript -c",
     "build:watch": "rollup --configPlugin @rollup/plugin-typescript -c -w",
