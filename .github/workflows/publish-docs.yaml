@@ -21,7 +21,7 @@ jobs:
       - name: Install build dependencies
         run: |
           npm ci
-          npm run build
+          npm run build-dist
           npm run docs
       - name: Publish the docs
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0

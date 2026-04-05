@@ -40,7 +40,7 @@ jobs:
       - name: Install build dependencies
         run: |
           npm ci
-          npm run build
+          npm run build-dist
    
       - name: Build docs
         run: |
