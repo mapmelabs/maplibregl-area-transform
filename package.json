@@ -7,7 +7,7 @@
     "image",
     "scale",
     "rotate",
-    "transfrom"
+    "transform"
   ],
   "homepage": "https://github.com/mapmelabs/maplibregl-area-transform#readme",
   "bugs": {
