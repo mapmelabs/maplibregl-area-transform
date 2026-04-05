@@ -5,7 +5,7 @@ import { distance } from "@turf/distance";
 import { bearing } from "@turf/bearing";
 import { destination } from "@turf/destination";
 
-import type { Map, IControl, ImageSource, GeoJSONSource } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 
 export type MaplibreAreaTransformOptions = {
     showAddImageButton?: boolean;
@@ -68,6 +68,10 @@ export class MaplibreAreaTransform implements IControl {
     /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
+        this._map?.off('mousemove', this.onMouseMoveForCursor);
+        this._map?.off('mousedown', this.onMouseDown);
+        this._map?.off('mousemove', this.onMouseMove);
+        this._map?.off('mouseup', this.onMouseUp);
         this._map = null;
     }
 
@@ -184,107 +188,10 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private initMapListener() {
-
-        this._map?.on('mousemove', e => {
-            if (this._startPoint != null) return;
-            const features = this._map?.queryRenderedFeatures(e.point);
-            const rotate = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-') && feature.properties["type"] === 'rotate-handle');
-            const scale = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-'));
-            const drag = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-area-'));
-            if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
-            else if (scale) this._map!.getCanvas().style.cursor = 'nwse-resize';
-            else if (drag) this._map!.getCanvas().style.cursor = 'move';
-            else this._map!.getCanvas().style.cursor = '';
-        });
-
-        this._map?.on('mousedown', (e) => {
-            let features = this._map?.queryRenderedFeatures(e.point);
-            features = features?.filter((feature) => feature.source.startsWith('geojson-georeferenced-image-')) ?? [];
-            if (features.length <= 0) {
-                return;
-            }
-            e.preventDefault();
-            this._selectedImageId = features[0]!.properties["id"];
-            this._startPointCoordinates = this._map?.getSource<ImageSource>(this._selectedImageId!)?.coordinates;
-            const currentPoint = [e.lngLat.lng, e.lngLat.lat] as [number, number];
-            if (!features.some(f => f.layer.id.startsWith('layer-polygon-circle-'))) {
-                this._startPoint = currentPoint;
-                return;
-            }
-            if (features.some(f => f.properties["type"] === "rotate-handle")) {
-                this._isRotating = true;
-                this._startPoint = currentPoint;
-                return;
-            }
-            this._isScaling = true;
-            this._startPoint = this._startPointCoordinates![0];
-            for (let coordinate of this._startPointCoordinates!) {
-                if (distance(coordinate, currentPoint) < distance(this._startPoint, currentPoint)) {
-                    this._startPoint = coordinate;
-                }
-            }
-        });
-        this._map?.on('mousemove', (e) => {
-            if (!this._selectedImageId) {
-                return;
-            }
-            const diff = [e.lngLat.lng - this._startPoint![0], e.lngLat.lat - this._startPoint![1]];
-            let newCoordinates: Corners;
-            if (this._isRotating) {
-                const center = this.getCenter(this._startPointCoordinates!);
-                const angle1 = bearing(this._startPoint!, center);
-                const angle2 = bearing([e.lngLat.lng, e.lngLat.lat], center);
-                let transformedFature = transformRotate({
-                    type: "Feature",
-                    geometry: {
-                        type: "Polygon",
-                        coordinates: [this._startPointCoordinates!]
-                    },
-                    properties: {}
-                },
-                    angle2 - angle1,
-                    {
-                        mutate: false,
-                        pivot: center
-                    });
-                newCoordinates = transformedFature.geometry.coordinates[0] as Corners;
-            } else if (this._isScaling) {
-                const oppositePoint = this.getOpositePoint(this._startPointCoordinates!, this._startPoint!)
-                const distanceStartOpposite = distance(this._startPoint!, oppositePoint);
-                const distanceCurrentOpposite = distance([e.lngLat.lng, e.lngLat.lat], oppositePoint);
-                const scale = distanceCurrentOpposite / distanceStartOpposite;
-                let transformedFature = transformScale({
-                    type: "Feature",
-                    geometry: {
-                        type: "Polygon",
-                        coordinates: [this._startPointCoordinates!]
-                    },
-                    properties: {}
-                },
-                    scale,
-                    {
-                        mutate: false,
-                        origin: oppositePoint
-                    });
-                newCoordinates = transformedFature.geometry.coordinates[0] as Corners;
-            } else {
-                newCoordinates = this._startPointCoordinates!.map((coordinate) => [
-                    coordinate[0] + diff[0]!,
-                    coordinate[1] + diff[1]!
-                ]) as Corners;
-            }
-
-            this._map?.getSource<ImageSource>(this._selectedImageId)?.setCoordinates(newCoordinates);
-            this._map?.getSource<GeoJSONSource>('geojson-' + this._selectedImageId)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
-        });
-
-        this._map?.on('mouseup', () => {
-            this._selectedImageId = null;
-            this._startPoint = null;
-            this._startPointCoordinates = undefined;
-            this._isScaling = false;
-            this._isRotating = false;
-        });
+        this._map?.on('mousemove', this.onMouseMoveForCursor);
+        this._map?.on('mousedown', this.onMouseDown);
+        this._map?.on('mousemove', this.onMouseMove);
+        this._map?.on('mouseup', this.onMouseUp);
     }
 
     private buildGeoJSON(coordinates: Corners, imageId: string): GeoJSON.FeatureCollection {
@@ -322,4 +229,107 @@ export class MaplibreAreaTransform implements IControl {
         }
         return offsetPoint;
     }
+
+    private onMouseMoveForCursor = (e: MapMouseEvent) => {
+        if (this._startPoint != null) return;
+        const features = this._map?.queryRenderedFeatures(e.point);
+        const rotate = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-') && feature.properties["type"] === 'rotate-handle');
+        const scale = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-'));
+        const drag = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-area-'));
+        if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
+        else if (scale) this._map!.getCanvas().style.cursor = 'nwse-resize';
+        else if (drag) this._map!.getCanvas().style.cursor = 'move';
+        else this._map!.getCanvas().style.cursor = '';
+    }
+
+    private onMouseDown = (e: MapMouseEvent) => {
+        let features = this._map?.queryRenderedFeatures(e.point);
+        features = features?.filter((feature) => feature.source.startsWith('geojson-georeferenced-image-')) ?? [];
+        if (features.length <= 0) {
+            return;
+        }
+        e.preventDefault();
+        this._selectedImageId = features[0]!.properties["id"];
+        this._startPointCoordinates = this._map?.getSource<ImageSource>(this._selectedImageId!)?.coordinates;
+        const currentPoint = [e.lngLat.lng, e.lngLat.lat] as [number, number];
+        if (!features.some(f => f.layer.id.startsWith('layer-polygon-circle-'))) {
+            this._startPoint = currentPoint;
+            return;
+        }
+        if (features.some(f => f.properties["type"] === "rotate-handle")) {
+            this._isRotating = true;
+            this._startPoint = currentPoint;
+            return;
+        }
+        this._isScaling = true;
+        this._startPoint = this._startPointCoordinates![0];
+        for (let coordinate of this._startPointCoordinates!) {
+            if (distance(coordinate, currentPoint) < distance(this._startPoint, currentPoint)) {
+                this._startPoint = coordinate;
+            }
+        }
+    }
+
+    private onMouseMove = (e: MapMouseEvent) => {
+        if (!this._selectedImageId) {
+            return;
+        }
+        const diff = [e.lngLat.lng - this._startPoint![0], e.lngLat.lat - this._startPoint![1]];
+        let newCoordinates: Corners;
+        if (this._isRotating) {
+            const center = this.getCenter(this._startPointCoordinates!);
+            const angle1 = bearing(this._startPoint!, center);
+            const angle2 = bearing([e.lngLat.lng, e.lngLat.lat], center);
+            let transformedFature = transformRotate({
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [this._startPointCoordinates!]
+                },
+                properties: {}
+            },
+                angle2 - angle1,
+                {
+                    mutate: false,
+                    pivot: center
+                });
+            newCoordinates = transformedFature.geometry.coordinates[0] as Corners;
+        } else if (this._isScaling) {
+            const oppositePoint = this.getOpositePoint(this._startPointCoordinates!, this._startPoint!)
+            const distanceStartOpposite = distance(this._startPoint!, oppositePoint);
+            const distanceCurrentOpposite = distance([e.lngLat.lng, e.lngLat.lat], oppositePoint);
+            const scale = distanceCurrentOpposite / distanceStartOpposite;
+            let transformedFature = transformScale({
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [this._startPointCoordinates!]
+                },
+                properties: {}
+            },
+                scale,
+                {
+                    mutate: false,
+                    origin: oppositePoint
+                });
+            newCoordinates = transformedFature.geometry.coordinates[0] as Corners;
+        } else {
+            newCoordinates = this._startPointCoordinates!.map((coordinate) => [
+                coordinate[0] + diff[0]!,
+                coordinate[1] + diff[1]!
+            ]) as Corners;
+        }
+
+        this._map?.getSource<ImageSource>(this._selectedImageId)?.setCoordinates(newCoordinates);
+        this._map?.getSource<GeoJSONSource>('geojson-' + this._selectedImageId)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
+    }
+
+    private onMouseUp = () => {
+        this._selectedImageId = null;
+        this._startPoint = null;
+        this._startPointCoordinates = undefined;
+        this._isScaling = false;
+        this._isRotating = false;
+    }
+
 }
