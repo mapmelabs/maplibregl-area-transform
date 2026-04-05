@@ -11,7 +11,7 @@ export type MaplibreAreaTransformOptions = {
     showAddImageButton?: boolean;
 }
 
-type Corners = [[number, number], [number, number], [number, number], [number, number]];
+export type Corners = [[number, number], [number, number], [number, number], [number, number]];
 
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
@@ -32,6 +32,7 @@ export class MaplibreAreaTransform implements IControl {
         this.options = { ...defaultOptions, ...options };
     }
 
+    /** @inheritdoc */
     public onAdd(map: Map): HTMLElement {
         this._map = map;
         this._container = document.createElement('div');
@@ -64,6 +65,7 @@ export class MaplibreAreaTransform implements IControl {
         return this._container;
     }
 
+    /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
         this._map = null;
