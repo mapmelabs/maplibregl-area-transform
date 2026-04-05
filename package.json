@@ -26,7 +26,7 @@
     "build-css": "mkdir -p dist && cp src/index.css dist/maplibregl-area-transform.css",
     "build-dist": "npm run build && npm run build-css",
     "test": "vitest",
-    "docs": "typedoc --out docs src/index.ts"
+    "docs": "typedoc --out docs src/index.ts && cp -rf dist docs/ && mkdir -p docs/demo && cp test/demo.html docs/demo/index.html"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^29.0.2",
