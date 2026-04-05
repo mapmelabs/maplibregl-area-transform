@@ -1,0 +1,48 @@
+{
+  "name": "maplibregl-area-transform",
+  "version": "1.0.0",
+  "description": "A maplibre-gl-js control to allow scaling, rotating and moving images on the map",
+  "keywords": [
+    "maplibre-gl-js",
+    "image",
+    "scale",
+    "rotate",
+    "transfrom"
+  ],
+  "homepage": "https://github.com/mapmelabs/maplibregl-area-transform#readme",
+  "bugs": {
+    "url": "https://github.com/mapmelabs/maplibregl-area-transform/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mapmelabs/maplibregl-area-transform.git"
+  },
+  "author": "Harel Mazor",
+  "type": "commonjs",
+  "main": "index.ts",
+  "scripts": {
+    "build": "rollup --configPlugin @rollup/plugin-typescript -c",
+    "build:watch": "rollup --configPlugin @rollup/plugin-typescript -c -w",
+    "build-css": "mkdir -p dist && cp src/index.css dist/maplibregl-area-transform.css",
+    "build-dist": "npm run build && npm run build-css",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "maplibre-gl": "^5.22.0",
+    "rollup": "^4.60.1",
+    "rollup-plugin-dts": "^6.4.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@turf/bearing": "^7.3.4",
+    "@turf/destination": "^7.3.4",
+    "@turf/distance": "^7.3.4",
+    "@turf/transform-rotate": "^7.3.4",
+    "@turf/transform-scale": "^7.3.4",
+    "eventemitter3": "^5.0.4"
+  }
+}
