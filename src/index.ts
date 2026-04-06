@@ -5,6 +5,10 @@ import { distance } from "@turf/distance";
 import { bearing } from "@turf/bearing";
 import { destination } from "@turf/destination";
 
+import rotate from '../assets/rotate.png';
+import scaleNESW from '../assets/nesw-resize.png';
+import scaleNWSE from '../assets/nwse-resize.png';
+
 import type { Map, IControl, ImageSource, GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 
 export type MaplibreAreaTransformOptions = {
@@ -16,6 +20,12 @@ export type Corners = [[number, number], [number, number], [number, number], [nu
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
 }
+
+const HANDLE_PREFIX = 'layer-polygon-handle-';
+const AREA_PREFIX = 'layer-polygon-area-';
+const ID_PREFIX = 'georeferenced-image-';
+const IMAGE_SOURCE_PREFIX = 'raster-';
+const GEOJSON_SOURCE_PREFIX = 'geojson-';
 
 export class MaplibreAreaTransform implements IControl {
     private _map: Map | null = null;
@@ -38,6 +48,7 @@ export class MaplibreAreaTransform implements IControl {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-georeferenced-image';
         this.initMapListener();
+        this.initImages();
         if (this.options.showAddImageButton) {
             // add file input picker with a button
             const fileInput = document.createElement('input');
@@ -76,8 +87,9 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     public addImage(imageUrl: string, coordinates: Corners): string {
-        const imageId = `georeferenced-image-${this._maxImageId++}`;
-        this._map?.addSource(imageId, {
+        const imageId = `${ID_PREFIX}${this._maxImageId++}`;
+        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
+        this._map?.addSource(imageSourceId, {
             type: 'image',
             url: imageUrl,
             coordinates: coordinates
@@ -86,30 +98,44 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.addLayer({
             id: 'layer-' + imageId,
             type: 'raster',
-            source: imageId,
+            source: imageSourceId,
             paint: {
                 'raster-opacity': 0.9,
                 'raster-fade-duration': 0
             }
         });
 
-        const geojsonSourceId = 'geojson-' + imageId;
+        const geojsonSourceId = `${GEOJSON_SOURCE_PREFIX}${imageId}`;
         this._map?.addSource(geojsonSourceId, {
             type: 'geojson',
             data: this.buildGeoJSON(coordinates, imageId)
         });
-        // HM TODO: add images for drag points
         this._map?.addLayer({
-            id: 'layer-polygon-circle-' + imageId,
+            id: HANDLE_PREFIX + imageId,
+            type: 'symbol',
+            source: geojsonSourceId,
+            layout: {
+                'icon-image': ['get', 'icon'],
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+            },
+            filter: ["==", "$type", "Point"]
+        });
+        this._map?.addLayer({
+            id: HANDLE_PREFIX + 'circle-' + imageId,
             type: 'circle',
             source: geojsonSourceId,
             paint: {
                 'circle-color': 'orange',
-                'circle-radius': 5
-            }
+                'circle-radius': 3,
+                'circle-stroke-color': 'white',
+                'circle-stroke-width': 2,
+            },
+            filter: ["==", "$type", "Point"]
         });
+
         this._map?.addLayer({
-            id: 'layer-polygon-area-' + imageId,
+            id: AREA_PREFIX + imageId,
             type: 'fill',
             source: geojsonSourceId,
             paint: {
@@ -208,6 +234,20 @@ export class MaplibreAreaTransform implements IControl {
                         id: imageId
                     }
                 },
+                ...coordinates.map((coordinate, index) => {
+                    return {
+                        type: 'Feature' as const,
+                        geometry: {
+                            type: 'Point' as const,
+                            coordinates: coordinate
+                        },
+                        properties: {
+                            id: imageId,
+                            type: 'scale',
+                            icon: index % 2 === 0 ? 'nwse-resize' : 'nesw-resize'
+                        }
+                    };
+                }),
                 this.getRotateHandlePoint(coordinates, imageId)
             ]
         }
@@ -225,7 +265,8 @@ export class MaplibreAreaTransform implements IControl {
         const offsetPoint = destination(mid, pointsDistance * 0.05, perpendicularBearing, { units: 'kilometers' });
         offsetPoint.properties = {
             id: imageId,
-            type: 'rotate-handle'
+            type: 'rotate-handle',
+            icon: 'rotate'
         }
         return offsetPoint;
     }
@@ -233,26 +274,26 @@ export class MaplibreAreaTransform implements IControl {
     private onMouseMoveForCursor = (e: MapMouseEvent) => {
         if (this._startPoint != null) return;
         const features = this._map?.queryRenderedFeatures(e.point);
-        const rotate = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-') && feature.properties["type"] === 'rotate-handle');
-        const scale = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-'));
-        const drag = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-area-'));
+        const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX) && feature.properties["type"] === 'rotate-handle');
+        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX));
+        const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_PREFIX));
         if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
-        else if (scale) this._map!.getCanvas().style.cursor = 'nwse-resize';
+        else if (scale) this._map!.getCanvas().style.cursor = scale.properties["icon"];
         else if (drag) this._map!.getCanvas().style.cursor = 'move';
         else this._map!.getCanvas().style.cursor = '';
     }
 
     private onMouseDown = (e: MapMouseEvent) => {
         let features = this._map?.queryRenderedFeatures(e.point);
-        features = features?.filter((feature) => feature.source.startsWith('geojson-georeferenced-image-')) ?? [];
+        features = features?.filter((feature) => feature.source.startsWith(`${GEOJSON_SOURCE_PREFIX}${ID_PREFIX}`)) ?? [];
         if (features.length <= 0) {
             return;
         }
         e.preventDefault();
         this._selectedImageId = features[0]!.properties["id"];
-        this._startPointCoordinates = this._map?.getSource<ImageSource>(this._selectedImageId!)?.coordinates;
+        this._startPointCoordinates = this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId!}`)?.coordinates;
         const currentPoint = [e.lngLat.lng, e.lngLat.lat] as [number, number];
-        if (!features.some(f => f.layer.id.startsWith('layer-polygon-circle-'))) {
+        if (!features.some(f => f.layer.id.startsWith(HANDLE_PREFIX))) {
             this._startPoint = currentPoint;
             return;
         }
@@ -320,8 +361,8 @@ export class MaplibreAreaTransform implements IControl {
             ]) as Corners;
         }
 
-        this._map?.getSource<ImageSource>(this._selectedImageId)?.setCoordinates(newCoordinates);
-        this._map?.getSource<GeoJSONSource>('geojson-' + this._selectedImageId)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
+        this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId}`)?.setCoordinates(newCoordinates);
+        this._map?.getSource<GeoJSONSource>(`${GEOJSON_SOURCE_PREFIX}${this._selectedImageId}`)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
     }
 
     private onMouseUp = () => {
@@ -332,4 +373,12 @@ export class MaplibreAreaTransform implements IControl {
         this._isRotating = false;
     }
 
+    private async initImages() {
+        const rotateImage = await this._map?.loadImage(rotate);
+        this._map?.addImage('rotate', rotateImage?.data!);
+        const resizeNESWImage = await this._map?.loadImage(scaleNESW);
+        this._map?.addImage('nesw-resize', resizeNESWImage?.data!);
+        const resizeNWSEImage = await this._map?.loadImage(scaleNWSE);
+        this._map?.addImage('nwse-resize', resizeNWSEImage?.data!);
+    }
 }

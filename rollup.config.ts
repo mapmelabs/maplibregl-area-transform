@@ -1,7 +1,8 @@
 import dts from 'rollup-plugin-dts';
 import typescript from '@rollup/plugin-typescript';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import image from '@rollup/plugin-image';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import type { RollupOptions } from 'rollup';
 
 const name = 'maplibregl-area-transform';
@@ -10,6 +11,7 @@ const config: RollupOptions[] = [
     {
         input: 'src/index.ts',
         plugins: [
+            image(),
             commonjs(),
             nodeResolve({
                 browser: true,
