@@ -6,8 +6,7 @@ import { bearing } from "@turf/bearing";
 import { destination } from "@turf/destination";
 
 import rotate from '../assets/rotate.png';
-import scaleNESW from '../assets/nesw-resize.png';
-import scaleNWSE from '../assets/nwse-resize.png';
+import scale from '../assets/scale.png';
 
 import type { Map, IControl, ImageSource, GeoJSONSource, MapMouseEvent } from "maplibre-gl";
 
@@ -118,6 +117,7 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
+                'icon-rotate': ['get', 'heading']
             },
             filter: ["==", "$type", "Point"]
         });
@@ -234,7 +234,7 @@ export class MaplibreAreaTransform implements IControl {
                         id: imageId
                     }
                 },
-                ...coordinates.map((coordinate, index) => {
+                ...coordinates.map((coordinate) => {
                     return {
                         type: 'Feature' as const,
                         geometry: {
@@ -243,8 +243,9 @@ export class MaplibreAreaTransform implements IControl {
                         },
                         properties: {
                             id: imageId,
-                            type: 'scale',
-                            icon: index % 2 === 0 ? 'nwse-resize' : 'nesw-resize'
+                            type: 'scale-handle',
+                            icon: 'scale',
+                            heading: this.getScaleHandleHeading(coordinates, coordinate)
                         }
                     };
                 }),
@@ -271,6 +272,11 @@ export class MaplibreAreaTransform implements IControl {
         return offsetPoint;
     }
 
+    private getScaleHandleHeading(coordinates: Corners, currentPoint: [number, number]): number {
+        const center = this.getCenter(coordinates);
+        return bearing(center, currentPoint);
+    }
+
     private onMouseMoveForCursor = (e: MapMouseEvent) => {
         if (this._startPoint != null) return;
         const features = this._map?.queryRenderedFeatures(e.point);
@@ -278,7 +284,10 @@ export class MaplibreAreaTransform implements IControl {
         const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX));
         const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_PREFIX));
         if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
-        else if (scale) this._map!.getCanvas().style.cursor = scale.properties["icon"];
+        else if (scale) {
+            const headingNormalized = (scale.properties["heading"] + 180) % 180;
+            this._map!.getCanvas().style.cursor = headingNormalized <= 90 ? "nesw-resize" : "nwse-resize";
+        }
         else if (drag) this._map!.getCanvas().style.cursor = 'move';
         else this._map!.getCanvas().style.cursor = '';
     }
@@ -376,9 +385,7 @@ export class MaplibreAreaTransform implements IControl {
     private async initImages() {
         const rotateImage = await this._map?.loadImage(rotate);
         this._map?.addImage('rotate', rotateImage?.data!);
-        const resizeNESWImage = await this._map?.loadImage(scaleNESW);
-        this._map?.addImage('nesw-resize', resizeNESWImage?.data!);
-        const resizeNWSEImage = await this._map?.loadImage(scaleNWSE);
-        this._map?.addImage('nwse-resize', resizeNWSEImage?.data!);
+        const scaleImage = await this._map?.loadImage(scale);
+        this._map?.addImage('scale', scaleImage?.data!);
     }
 }
