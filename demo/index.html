@@ -32,7 +32,8 @@
             container: 'map',
             center: [34.8, 32.0],
             zoom: 5,
-            style: 'https://demotiles.maplibre.org/style.json'
+            style: 'https://demotiles.maplibre.org/style.json',
+            doubleClickZoom: false
         });
         map.on('load', () => {
             const image = new MaplibreAreaTransform();
