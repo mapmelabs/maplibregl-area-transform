@@ -33,6 +33,7 @@ declare class MaplibreAreaTransform implements IControl {
     private onMouseDown;
     private onMouseMove;
     private onMouseUp;
+    private initImages;
 }
 
 export { MaplibreAreaTransform };

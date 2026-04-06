@@ -1048,9 +1048,20 @@
 	  return point([lng, lat], options.properties);
 	}
 
+	var img$2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
+
+	var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAcRJREFUeNpi/P//PwMVgCIQK2ARvwDE78EskEUUYB0gPvwfP1gGUstIoY8OA7HN/2/PGf5/e4EhycSvysDAygNiClFiESi47oEs+bUzBKsCVtspDEwihiCmExMDnQAlFt0H4iOMXJIMbO5rGFh082hmEQgwg8nfXxj+3JhHM4tcgNjy/8fbDL8O54AtA9ss50V1i2xBxN9nh+CWsBhXMzCrhMEVMEJSHAM4L1GQh1xAmeTfh1v/fx3K/v/32UF4xgGJgTAUHAOnbAoz7DG0zPkMTewYNFNTnGFBoBkajKDMOxGI3wCxAVIRBAlGKpV1BAHdLEJOdSJAHAjEjdCkqwLEm4H4A5R2ocgmpFL4GVrEfsNSEruQm3BgDHBRD0qiv6/N+f//12ewqX8ebv3/Y7MbRAwCJpNrEQvUYzbgkuREJSKjsfEy/DnbCub/ew5MUJrJcHXkABZsgn8fbWcAFS1wRZpJMOYRqpbeKJYAixUmSTsQ8zk0oVC/mmAE1ZC/PsPKMkkc7QLygw7ZZ38uQ3zHrBIOK0jP0KbiAyYMRgE1BvQihdx8RKglAwLXgJiF0nyEr9n0AYg3A7EMJSU93co6gAADAExPv3Dfgxh1AAAAAElFTkSuQmCC";
+
+	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAcFJREFUeNpi/P//PwMUCAKxAQMmeADE9xkoBSCLgHjZf/zgMBDrQNWShRmBBMgn7xh+f2H49/E2hkMYuSSAWBLEPALEtuR6CGSRI5De9+/NeYbfh3OwKmJzXwOzTIncYGRioBNgwSupm8fAJGWHHHRkJwq8PvpzYx4DKO6ggJkSH2G1iFnOC8IAWvILGG//IYnEEohdKLHoPThVsPIgLFIJY2AxroZb9vfZIZiULaX56Bgos/z7cAuMYeDvs4P/fx3KRhZzITcfwRg6MMugAMR+hpZpj1GaYZE9CCuCLgCxCBDnQ4PrMBDXUpIY0C2iGaCbRZSWDKDkvhmIP0BpFahYIxAHQoMfJdWRg12wlPLf0PjPYKU+JRZNBpn0+9qc/z82u/3/83ArxOhfn8FioKyBVMXgL+sIABsQ8e/5YXCm/nO2FSL66zPDX2DR9RfIZA88CldHSRwdARe8mkmIshFo2d9H26meGEAR/pxJ0g5RXIHiHEvlSalFCkAsCS7dgcHFyK9Kfn1EAIAL2L8PtzL8uTyJpvnoAjjHC6gxMCCV/IRKb3IwCxBf+08YHKY0H4GwDBBvBuIPhJppdCvrAAIMADWbwbMcjb7kAAAAAElFTkSuQmCC";
+
 	const defaultOptions = {
 	    showAddImageButton: true,
 	};
+	const HANDLE_PREFIX = 'layer-polygon-handle-';
+	const AREA_PREFIX = 'layer-polygon-area-';
+	const ID_PREFIX = 'georeferenced-image-';
+	const IMAGE_SOURCE_PREFIX = 'raster-';
+	const GEOJSON_SOURCE_PREFIX = 'geojson-';
 	class MaplibreAreaTransform {
 	    options;
 	    _map = null;
@@ -1072,6 +1083,7 @@
 	        this._container = document.createElement('div');
 	        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-georeferenced-image';
 	        this.initMapListener();
+	        this.initImages();
 	        if (this.options.showAddImageButton) {
 	            // add file input picker with a button
 	            const fileInput = document.createElement('input');
@@ -1103,8 +1115,9 @@
 	        this._map = null;
 	    }
 	    addImage(imageUrl, coordinates) {
-	        const imageId = `georeferenced-image-${this._maxImageId++}`;
-	        this._map?.addSource(imageId, {
+	        const imageId = `${ID_PREFIX}${this._maxImageId++}`;
+	        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
+	        this._map?.addSource(imageSourceId, {
 	            type: 'image',
 	            url: imageUrl,
 	            coordinates: coordinates
@@ -1112,29 +1125,42 @@
 	        this._map?.addLayer({
 	            id: 'layer-' + imageId,
 	            type: 'raster',
-	            source: imageId,
+	            source: imageSourceId,
 	            paint: {
 	                'raster-opacity': 0.9,
 	                'raster-fade-duration': 0
 	            }
 	        });
-	        const geojsonSourceId = 'geojson-' + imageId;
+	        const geojsonSourceId = `${GEOJSON_SOURCE_PREFIX}${imageId}`;
 	        this._map?.addSource(geojsonSourceId, {
 	            type: 'geojson',
 	            data: this.buildGeoJSON(coordinates, imageId)
 	        });
-	        // HM TODO: add images for drag points
 	        this._map?.addLayer({
-	            id: 'layer-polygon-circle-' + imageId,
+	            id: HANDLE_PREFIX + imageId,
+	            type: 'symbol',
+	            source: geojsonSourceId,
+	            layout: {
+	                'icon-image': ['get', 'icon'],
+	                'icon-allow-overlap': true,
+	                'icon-ignore-placement': true,
+	            },
+	            filter: ["==", "$type", "Point"]
+	        });
+	        this._map?.addLayer({
+	            id: HANDLE_PREFIX + 'circle-' + imageId,
 	            type: 'circle',
 	            source: geojsonSourceId,
 	            paint: {
 	                'circle-color': 'orange',
-	                'circle-radius': 5
-	            }
+	                'circle-radius': 3,
+	                'circle-stroke-color': 'white',
+	                'circle-stroke-width': 2,
+	            },
+	            filter: ["==", "$type", "Point"]
 	        });
 	        this._map?.addLayer({
-	            id: 'layer-polygon-area-' + imageId,
+	            id: AREA_PREFIX + imageId,
 	            type: 'fill',
 	            source: geojsonSourceId,
 	            paint: {
@@ -1218,6 +1244,20 @@
 	                        id: imageId
 	                    }
 	                },
+	                ...coordinates.map((coordinate, index) => {
+	                    return {
+	                        type: 'Feature',
+	                        geometry: {
+	                            type: 'Point',
+	                            coordinates: coordinate
+	                        },
+	                        properties: {
+	                            id: imageId,
+	                            type: 'scale',
+	                            icon: index % 2 === 0 ? 'nwse-resize' : 'nesw-resize'
+	                        }
+	                    };
+	                }),
 	                this.getRotateHandlePoint(coordinates, imageId)
 	            ]
 	        };
@@ -1232,7 +1272,8 @@
 	        const offsetPoint = destination(mid, pointsDistance * 0.05, perpendicularBearing, { units: 'kilometers' });
 	        offsetPoint.properties = {
 	            id: imageId,
-	            type: 'rotate-handle'
+	            type: 'rotate-handle',
+	            icon: 'rotate'
 	        };
 	        return offsetPoint;
 	    }
@@ -1240,13 +1281,13 @@
 	        if (this._startPoint != null)
 	            return;
 	        const features = this._map?.queryRenderedFeatures(e.point);
-	        const rotate = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-') && feature.properties["type"] === 'rotate-handle');
-	        const scale = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-circle-'));
-	        const drag = features?.find((feature) => feature.layer.id.startsWith('layer-polygon-area-'));
+	        const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX) && feature.properties["type"] === 'rotate-handle');
+	        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX));
+	        const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_PREFIX));
 	        if (rotate)
 	            this._map.getCanvas().style.cursor = 'crosshair';
 	        else if (scale)
-	            this._map.getCanvas().style.cursor = 'nwse-resize';
+	            this._map.getCanvas().style.cursor = scale.properties["icon"];
 	        else if (drag)
 	            this._map.getCanvas().style.cursor = 'move';
 	        else
@@ -1254,15 +1295,15 @@
 	    };
 	    onMouseDown = (e) => {
 	        let features = this._map?.queryRenderedFeatures(e.point);
-	        features = features?.filter((feature) => feature.source.startsWith('geojson-georeferenced-image-')) ?? [];
+	        features = features?.filter((feature) => feature.source.startsWith(`${GEOJSON_SOURCE_PREFIX}${ID_PREFIX}`)) ?? [];
 	        if (features.length <= 0) {
 	            return;
 	        }
 	        e.preventDefault();
 	        this._selectedImageId = features[0].properties["id"];
-	        this._startPointCoordinates = this._map?.getSource(this._selectedImageId)?.coordinates;
+	        this._startPointCoordinates = this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId}`)?.coordinates;
 	        const currentPoint = [e.lngLat.lng, e.lngLat.lat];
-	        if (!features.some(f => f.layer.id.startsWith('layer-polygon-circle-'))) {
+	        if (!features.some(f => f.layer.id.startsWith(HANDLE_PREFIX))) {
 	            this._startPoint = currentPoint;
 	            return;
 	        }
@@ -1326,8 +1367,8 @@
 	                coordinate[1] + diff[1]
 	            ]);
 	        }
-	        this._map?.getSource(this._selectedImageId)?.setCoordinates(newCoordinates);
-	        this._map?.getSource('geojson-' + this._selectedImageId)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
+	        this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId}`)?.setCoordinates(newCoordinates);
+	        this._map?.getSource(`${GEOJSON_SOURCE_PREFIX}${this._selectedImageId}`)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
 	    };
 	    onMouseUp = () => {
 	        this._selectedImageId = null;
@@ -1336,6 +1377,14 @@
 	        this._isScaling = false;
 	        this._isRotating = false;
 	    };
+	    async initImages() {
+	        const rotateImage = await this._map?.loadImage(img$2);
+	        this._map?.addImage('rotate', rotateImage?.data);
+	        const resizeNESWImage = await this._map?.loadImage(img$1);
+	        this._map?.addImage('nesw-resize', resizeNESWImage?.data);
+	        const resizeNWSEImage = await this._map?.loadImage(img);
+	        this._map?.addImage('nwse-resize', resizeNWSEImage?.data);
+	    }
 	}
 
 	exports.MaplibreAreaTransform = MaplibreAreaTransform;
