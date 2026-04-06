@@ -2,10 +2,13 @@
 
 Interactive area transform tool for MapLibre GL JS. Draw, move, resize, rotate, and optionally warp rectangles into quadrilaterals to capture precise lat/lng coordinates. Supports image overlay alignment and georeferencing workflows with real-time visual feedback.
 
-## Demo
+## API Docs
 
 https://mapmelabs.github.io/maplibregl-area-transform/
 
+## Live Demo
+
+https://mapmelabs.github.io/maplibregl-area-transform/demo/
 
 ---
 
