@@ -46,33 +46,37 @@ export class MaplibreAreaTransform implements IControl {
         this._map = map;
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-georeferenced-image';
-        this.initMapListener();
+        this.initMapListeners();
         this.initImages();
         if (this.options.showAddImageButton) {
             // add file input picker with a button
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*';
-            fileInput.style.display = 'none';
-
-            fileInput.onchange = this.onFileSelected;
-
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.setAttribute('aria-label', 'Add Image');
-
-            // Create an internal span or div to hold the icon
-            const icon = document.createElement('span');
-            icon.className = 'maplibregl-ctrl-icon-add-image';
-            button.appendChild(icon);
-
-            button.onclick = () => fileInput.click();
-
-            this._container.appendChild(fileInput);
-            this._container.appendChild(button);
+            this.initFileButton();
         }
         this._eventEmitter.emit('init');
         return this._container;
+    }
+
+    private initFileButton() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+
+        fileInput.onchange = this.onFileSelected;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Add Image');
+
+        // Create an internal span or div to hold the icon
+        const icon = document.createElement('span');
+        icon.className = 'maplibregl-ctrl-icon-add-image';
+        button.appendChild(icon);
+
+        button.onclick = () => fileInput.click();
+
+        this._container!.appendChild(fileInput);
+        this._container!.appendChild(button);
     }
 
     /** @inheritdoc */
@@ -213,7 +217,7 @@ export class MaplibreAreaTransform implements IControl {
         return [x, y];
     }
 
-    private initMapListener() {
+    private initMapListeners() {
         this._map?.on('mousemove', this.onMouseMoveForCursor);
         this._map?.on('mousedown', this.onMouseDown);
         this._map?.on('mousemove', this.onMouseMove);
