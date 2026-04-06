@@ -18,6 +18,7 @@ declare class MaplibreAreaTransform implements IControl {
     constructor(options?: MaplibreAreaTransformOptions);
     /** @inheritdoc */
     onAdd(map: Map): HTMLElement;
+    private initFileButton;
     /** @inheritdoc */
     onRemove(): void;
     addImage(imageUrl: string, coordinates: Corners): string;
@@ -26,7 +27,7 @@ declare class MaplibreAreaTransform implements IControl {
     private onFileSelected;
     private getOpositePoint;
     private getCenter;
-    private initMapListener;
+    private initMapListeners;
     private buildGeoJSON;
     private getRotateHandlePoint;
     private getScaleHandleHeading;
