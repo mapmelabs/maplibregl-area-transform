@@ -1042,11 +1042,9 @@ function destination(origin, distance, bearing, options = {}) {
   return point([lng, lat], options.properties);
 }
 
-var img$2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
+var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
 
-var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAcRJREFUeNpi/P//PwMVgCIQK2ARvwDE78EskEUUYB0gPvwfP1gGUstIoY8OA7HN/2/PGf5/e4EhycSvysDAygNiClFiESi47oEs+bUzBKsCVtspDEwihiCmExMDnQAlFt0H4iOMXJIMbO5rGFh082hmEQgwg8nfXxj+3JhHM4tcgNjy/8fbDL8O54AtA9ss50V1i2xBxN9nh+CWsBhXMzCrhMEVMEJSHAM4L1GQh1xAmeTfh1v/fx3K/v/32UF4xgGJgTAUHAOnbAoz7DG0zPkMTewYNFNTnGFBoBkajKDMOxGI3wCxAVIRBAlGKpV1BAHdLEJOdSJAHAjEjdCkqwLEm4H4A5R2ocgmpFL4GVrEfsNSEruQm3BgDHBRD0qiv6/N+f//12ewqX8ebv3/Y7MbRAwCJpNrEQvUYzbgkuREJSKjsfEy/DnbCub/ew5MUJrJcHXkABZsgn8fbWcAFS1wRZpJMOYRqpbeKJYAixUmSTsQ8zk0oVC/mmAE1ZC/PsPKMkkc7QLygw7ZZ38uQ3zHrBIOK0jP0KbiAyYMRgE1BvQihdx8RKglAwLXgJiF0nyEr9n0AYg3A7EMJSU93co6gAADAExPv3Dfgxh1AAAAAElFTkSuQmCC";
-
-var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAcFJREFUeNpi/P//PwMUCAKxAQMmeADE9xkoBSCLgHjZf/zgMBDrQNWShRmBBMgn7xh+f2H49/E2hkMYuSSAWBLEPALEtuR6CGSRI5De9+/NeYbfh3OwKmJzXwOzTIncYGRioBNgwSupm8fAJGWHHHRkJwq8PvpzYx4DKO6ggJkSH2G1iFnOC8IAWvILGG//IYnEEohdKLHoPThVsPIgLFIJY2AxroZb9vfZIZiULaX56Bgos/z7cAuMYeDvs4P/fx3KRhZzITcfwRg6MMugAMR+hpZpj1GaYZE9CCuCLgCxCBDnQ4PrMBDXUpIY0C2iGaCbRZSWDKDkvhmIP0BpFahYIxAHQoMfJdWRg12wlPLf0PjPYKU+JRZNBpn0+9qc/z82u/3/83ArxOhfn8FioKyBVMXgL+sIABsQ8e/5YXCm/nO2FSL66zPDX2DR9RfIZA88CldHSRwdARe8mkmIshFo2d9H26meGEAR/pxJ0g5RXIHiHEvlSalFCkAsCS7dgcHFyK9Kfn1EAIAL2L8PtzL8uTyJpvnoAjjHC6gxMCCV/IRKb3IwCxBf+08YHKY0H4GwDBBvBuIPhJppdCvrAAIMADWbwbMcjb7kAAAAAElFTkSuQmCC";
+var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAActJREFUeNpi/P//PwMJwAWIbYH4MBDvIUUjA8giIvGy/6igmQS9RFnEA7fk1+f/v6/NQbZsGbUsAllyDGbJz73x/3+ss/r/61A2mE+KZUwEQnY6EFv+/3ib4de+BAYQDQL/3pxn+HU4h4Hh9xcQNxKIiwlFESGLQBHP8PtEJcP/b89R4xZo6e+zrSjq8AEWAvKg1CXPJOcJNPgOAyO3JMPfOysZmCTtIK4UMUBWR1Gqc0GOeVBCAMURWoIAARNK4wiUV1yBuAlZkJGVB8YsAWJTID5DrXzkAkt5f1+fI8knpOQjbBn2GimWgDAjiUWQIBAbQCP/DykaSbWIbMDEQCdAjkUGtLYoGYiPAfF5KK1Di2oiGZbc/n24BWM+A2IRYlMdMT4ygZVlf4BlG6hw/ff8EIgrSUwZR2zQgSw5DcTxYN9DC9Z/H27D5NdBg5Fii+pBBKggBWE4+POV4c/1ubBqw5KYaoJQPvoAxPw/t7jD6h5UVwJLcVaLdhBzIxAHUOIjcPHPZjuFgQFRkEJcyK/KwKKZRLVqQgZWlYNS24/NbuBqAlSlI1Xlx6hVqKJY9ut4BcntBVJKb7hl5LSAyCm9i5EakL2kaAQIMAAP/aLE8VYEBwAAAABJRU5ErkJggg==";
 
 const defaultOptions = {
     showAddImageButton: true,
@@ -1138,6 +1136,7 @@ class MaplibreAreaTransform {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
+                'icon-rotate': ['get', 'heading']
             },
             filter: ["==", "$type", "Point"]
         });
@@ -1238,7 +1237,7 @@ class MaplibreAreaTransform {
                         id: imageId
                     }
                 },
-                ...coordinates.map((coordinate, index) => {
+                ...coordinates.map((coordinate) => {
                     return {
                         type: 'Feature',
                         geometry: {
@@ -1247,8 +1246,9 @@ class MaplibreAreaTransform {
                         },
                         properties: {
                             id: imageId,
-                            type: 'scale',
-                            icon: index % 2 === 0 ? 'nwse-resize' : 'nesw-resize'
+                            type: 'scale-handle',
+                            icon: 'scale',
+                            heading: this.getScaleHandleHeading(coordinates, coordinate)
                         }
                     };
                 }),
@@ -1271,6 +1271,10 @@ class MaplibreAreaTransform {
         };
         return offsetPoint;
     }
+    getScaleHandleHeading(coordinates, currentPoint) {
+        const center = this.getCenter(coordinates);
+        return bearing(center, currentPoint);
+    }
     onMouseMoveForCursor = (e) => {
         if (this._startPoint != null)
             return;
@@ -1280,8 +1284,10 @@ class MaplibreAreaTransform {
         const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_PREFIX));
         if (rotate)
             this._map.getCanvas().style.cursor = 'crosshair';
-        else if (scale)
-            this._map.getCanvas().style.cursor = scale.properties["icon"];
+        else if (scale) {
+            const headingNormalized = (scale.properties["heading"] + 180) % 180;
+            this._map.getCanvas().style.cursor = headingNormalized <= 90 ? "nesw-resize" : "nwse-resize";
+        }
         else if (drag)
             this._map.getCanvas().style.cursor = 'move';
         else
@@ -1372,12 +1378,10 @@ class MaplibreAreaTransform {
         this._isRotating = false;
     };
     async initImages() {
-        const rotateImage = await this._map?.loadImage(img$2);
+        const rotateImage = await this._map?.loadImage(img$1);
         this._map?.addImage('rotate', rotateImage?.data);
-        const resizeNESWImage = await this._map?.loadImage(img$1);
-        this._map?.addImage('nesw-resize', resizeNESWImage?.data);
-        const resizeNWSEImage = await this._map?.loadImage(img);
-        this._map?.addImage('nwse-resize', resizeNWSEImage?.data);
+        const scaleImage = await this._map?.loadImage(img);
+        this._map?.addImage('scale', scaleImage?.data);
     }
 }
 

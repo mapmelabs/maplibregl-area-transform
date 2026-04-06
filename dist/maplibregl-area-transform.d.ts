@@ -29,6 +29,7 @@ declare class MaplibreAreaTransform implements IControl {
     private initMapListener;
     private buildGeoJSON;
     private getRotateHandlePoint;
+    private getScaleHandleHeading;
     private onMouseMoveForCursor;
     private onMouseDown;
     private onMouseMove;
