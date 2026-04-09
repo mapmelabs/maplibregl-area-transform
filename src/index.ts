@@ -8,32 +8,37 @@ import { destination } from "@turf/destination";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, MapMouseEvent } from "maplibre-gl";
+import { type Map, type IControl, type ImageSource, type GeoJSONSource, type MapMouseEvent, type MapGeoJSONFeature } from "maplibre-gl";
 
 export type MaplibreAreaTransformOptions = {
     showAddImageButton?: boolean;
+    showAddRectangleButton?: boolean;
 }
 
 export type Corners = [[number, number], [number, number], [number, number], [number, number]];
 
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
+    showAddRectangleButton: true,
 }
 
-const HANDLE_PREFIX = 'layer-polygon-handle-';
-const AREA_PREFIX = 'layer-polygon-area-';
-const ID_PREFIX = 'georeferenced-image-';
+const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
+const AREA_LAYER = 'area-transform-layer-polygon-area-';
+const ID_PREFIX = 'area-transform-feature-';
 const IMAGE_SOURCE_PREFIX = 'raster-';
-const GEOJSON_SOURCE_PREFIX = 'geojson-';
+const GEOJSON_SOURCE = 'area-transform-geojson-source';
+
+let maxFeatureId = 0;
 
 export class MaplibreAreaTransform implements IControl {
     private _map: Map | null = null;
     private _container: HTMLElement | null = null;
     private _eventEmitter: EventEmitter = new EventEmitter();
-    private _maxImageId: number = 0;
-    private _selectedImageId: string | null = null;
+    private _selectedFeatureId: string | null = null;
     private _isScaling: boolean = false;
     private _isRotating: boolean = false;
+    private _isAddingRectangle: boolean = false;
+    private _rectanglePoints: [number, number][] = [];
     private _startPoint: [number, number] | null = null;
     private _startPointCoordinates: Corners | undefined = undefined;
 
@@ -45,12 +50,16 @@ export class MaplibreAreaTransform implements IControl {
     public onAdd(map: Map): HTMLElement {
         this._map = map;
         this._container = document.createElement('div');
-        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-georeferenced-image';
+        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
         this.initMapListeners();
         this.initImages();
+        this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
             // add file input picker with a button
             this.initFileButton();
+        }
+        if (this.options.showAddRectangleButton) {
+            this.initRectangleButton();
         }
         this._eventEmitter.emit('init');
         return this._container;
@@ -79,6 +88,67 @@ export class MaplibreAreaTransform implements IControl {
         this._container!.appendChild(button);
     }
 
+    private initRectangleButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Add Rectangle');
+        const icon = document.createElement('span');
+        icon.className = 'maplibregl-ctrl-icon-add-rectangle';
+        button.appendChild(icon);
+        button.onclick = () => this.startAddRectangleSequence();
+        this._container!.appendChild(button);
+    }
+
+    private initGeojsonSourceAndLayers() {
+        this._map?.addSource(GEOJSON_SOURCE, {
+            type: 'geojson',
+            promoteId: 'id',
+            data: {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        });
+        this._map?.addLayer({
+            id: HANDLE_LAYER,
+            type: 'symbol',
+            source: GEOJSON_SOURCE,
+            layout: {
+                'icon-image': ['get', 'icon'],
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'icon-rotate': ['get', 'heading']
+            },
+            filter: [
+                'all',
+                ['==', '$type', 'Point'],
+                ['==', 'isSelected', true]
+            ],
+        });
+        this._map?.addLayer({
+            id: HANDLE_LAYER + '-circle',
+            type: 'circle',
+            source: GEOJSON_SOURCE,
+            paint: {
+                'circle-color': 'orange',
+                'circle-radius': 3,
+                'circle-stroke-color': 'white',
+                'circle-stroke-width': 2,
+            },
+            filter: ["==", "$type", "Point"]
+        });
+
+        this._map?.addLayer({
+            id: AREA_LAYER,
+            type: 'fill',
+            source: GEOJSON_SOURCE,
+            paint: {
+                'fill-color': 'orange',
+                'fill-opacity': 0.1
+            },
+            filter: ["==", "$type", "Polygon"]
+        });
+    }
+
     /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
@@ -86,11 +156,12 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.off('mousedown', this.onMouseDown);
         this._map?.off('mousemove', this.onMouseMove);
         this._map?.off('mouseup', this.onMouseUp);
+        this._map?.off('click', this.onClick);
         this._map = null;
     }
 
-    public addImage(imageUrl: string, coordinates: Corners): string {
-        const imageId = `${ID_PREFIX}${this._maxImageId++}`;
+    public async addImage(imageUrl: string, coordinates: Corners): Promise<string> {
+        const imageId = `${ID_PREFIX}${maxFeatureId++}`;
         const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
         this._map?.addSource(imageSourceId, {
             type: 'image',
@@ -106,50 +177,90 @@ export class MaplibreAreaTransform implements IControl {
                 'raster-opacity': 0.9,
                 'raster-fade-duration': 0
             }
-        });
-
-        const geojsonSourceId = `${GEOJSON_SOURCE_PREFIX}${imageId}`;
-        this._map?.addSource(geojsonSourceId, {
-            type: 'geojson',
-            data: this.buildGeoJSON(coordinates, imageId)
-        });
-        this._map?.addLayer({
-            id: HANDLE_PREFIX + imageId,
-            type: 'symbol',
-            source: geojsonSourceId,
-            layout: {
-                'icon-image': ['get', 'icon'],
-                'icon-allow-overlap': true,
-                'icon-ignore-placement': true,
-                'icon-rotate': ['get', 'heading']
-            },
-            filter: ["==", "$type", "Point"]
-        });
-        this._map?.addLayer({
-            id: HANDLE_PREFIX + 'circle-' + imageId,
-            type: 'circle',
-            source: geojsonSourceId,
-            paint: {
-                'circle-color': 'orange',
-                'circle-radius': 3,
-                'circle-stroke-color': 'white',
-                'circle-stroke-width': 2,
-            },
-            filter: ["==", "$type", "Point"]
-        });
-
-        this._map?.addLayer({
-            id: AREA_PREFIX + imageId,
-            type: 'fill',
-            source: geojsonSourceId,
-            paint: {
-                'fill-color': 'orange',
-                'fill-opacity': 0.1
-            },
-            filter: ["==", "$type", "Polygon"]
-        });
-
+        }, HANDLE_LAYER);
+        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!
+        await geojsonSource.updateData({
+            add: this.buildPolygonGeoJSONFeatures(coordinates as Corners, imageId, true)
+        }, true);
+        await this.removeSelection();
+        await this.setSelection(imageId);
         return imageId;
+    }
+
+    public startAddRectangleSequence() {
+        this._isAddingRectangle = true;
+        this._rectanglePoints = [];
+        this._map?.on('click', this.onClickAddRectanglePoint);
+    }
+
+    private onClickAddRectanglePoint = async (e: MapMouseEvent) => {
+        if (!this._isAddingRectangle) return;
+        const coordinates = [e.lngLat.lng, e.lngLat.lat] as [number, number];
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
+        this._rectanglePoints?.push(coordinates);
+        if (this._rectanglePoints?.length === 4) {
+            await source.updateData({
+                remove: ["temp-point-1", "temp-point-2", "temp-point-3"]
+            }, true);
+            const corners = this.sortCorners([
+                this._rectanglePoints[0],
+                this._rectanglePoints[1],
+                this._rectanglePoints[2],
+                this._rectanglePoints[3]
+            ] as Corners);
+
+            this.addRectangle(corners);
+            this._isAddingRectangle = false;
+            this._rectanglePoints = [];
+            this._map?.off('click', this.onClickAddRectanglePoint);
+        } else {
+            await source.updateData({
+                add: [{
+                    type: "Feature",
+                    geometry: {
+                        type: "Point",
+                        coordinates: coordinates
+                    },
+                    properties: {
+                        id: "temp-point-" + this._rectanglePoints.length,
+                        temp: true,
+                        isSelected: false
+                    }
+                }]
+            }, true);
+        }
+    }
+
+    /**
+     * Sort corners of a rectangle in clockwise order starting from the top-left corner.
+     * @param corners The corners of the rectangle.
+     * @returns The sorted corners of the rectangle.
+     */
+    private sortCorners(corners: Corners): Corners {
+        const center = this.getCenter(corners);
+        corners.sort((a, b) => bearing(center, a) - bearing(center, b));
+
+        // Find the top-left point (minimum longitude - latitude) to make it first
+        let topLeftIndex = 0;
+        let minVal = Infinity;
+        corners.forEach((c, i) => {
+            const val = c[0] - c[1];
+            if (val < minVal) {
+                minVal = val;
+                topLeftIndex = i;
+            }
+        });
+        return [...corners.slice(topLeftIndex), ...corners.slice(0, topLeftIndex)] as Corners;
+    }
+
+    public async addRectangle(coordinates: Corners) {
+        const rectangleId = `${ID_PREFIX}${maxFeatureId++}`;
+        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!
+        await geojsonSource.updateData({
+            add: this.buildPolygonGeoJSONFeatures(coordinates as Corners, rectangleId, true)
+        }, true);
+        await this.removeSelection();
+        await this.setSelection(rectangleId);
     }
 
     public on(event: string, listener: (...args: any[]) => void): void {
@@ -222,43 +333,44 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.on('mousedown', this.onMouseDown);
         this._map?.on('mousemove', this.onMouseMove);
         this._map?.on('mouseup', this.onMouseUp);
+        this._map?.on('click', this.onClick);
     }
 
-    private buildGeoJSON(coordinates: Corners, imageId: string): GeoJSON.FeatureCollection {
-        return {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature' as const,
-                    geometry: {
-                        type: 'Polygon' as const,
-                        coordinates: [[...coordinates, coordinates[0]]] // close the polygon
-                    },
-                    properties: {
-                        id: imageId
-                    }
+    private buildPolygonGeoJSONFeatures(coordinates: Corners, featureId: string, isSelected: boolean): GeoJSON.Feature[] {
+        let features: GeoJSON.Feature[] = [];
+        features.push({
+            type: 'Feature' as const,
+            geometry: {
+                type: 'Polygon' as const,
+                coordinates: [[...coordinates, coordinates[0]]] // close the polygon
+            },
+            properties: {
+                id: "rect-" + featureId,
+                featureId,
+            }
+        });
+        for (let i = 0; i < coordinates.length; i++) {
+            const coordinate = coordinates[i]!;
+            features.push({
+                type: 'Feature' as const,
+                geometry: {
+                    type: 'Point' as const,
+                    coordinates: coordinate
                 },
-                ...coordinates.map((coordinate) => {
-                    return {
-                        type: 'Feature' as const,
-                        geometry: {
-                            type: 'Point' as const,
-                            coordinates: coordinate
-                        },
-                        properties: {
-                            id: imageId,
-                            type: 'scale-handle',
-                            icon: 'scale',
-                            heading: this.getScaleHandleHeading(coordinates, coordinate)
-                        }
-                    };
-                }),
-                this.getRotateHandlePoint(coordinates, imageId)
-            ]
+                properties: {
+                    id: "scale-" + i + "-" + featureId,
+                    featureId,
+                    type: 'scale-handle',
+                    icon: 'scale',
+                    isSelected: isSelected,
+                    heading: this.getScaleHandleHeading(coordinates, coordinate)
+                }
+            });
         }
+        return features;
     }
 
-    private getRotateHandlePoint(coordinates: Corners, imageId: string): GeoJSON.Feature {
+    private getRotateHandlePoint(coordinates: Corners, featureId: string): GeoJSON.Feature {
         const point1 = coordinates[0];
         const point2 = coordinates[1];
 
@@ -269,9 +381,10 @@ export class MaplibreAreaTransform implements IControl {
         const pointsDistance = distance(point1, point2, { units: 'kilometers' });
         const offsetPoint = destination(mid, pointsDistance * 0.05, perpendicularBearing, { units: 'kilometers' });
         offsetPoint.properties = {
-            id: imageId,
+            id: "rotate-" + featureId,
             type: 'rotate-handle',
-            icon: 'rotate'
+            icon: 'rotate',
+            isSelected: true
         }
         return offsetPoint;
     }
@@ -282,11 +395,14 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseMoveForCursor = (e: MapMouseEvent) => {
-        if (this._startPoint != null) return;
+        if (this._selectedFeatureId == null || this._startPoint != null) {
+            this._map!.getCanvas().style.cursor = '';
+            return;
+        }
         const features = this._map?.queryRenderedFeatures(e.point);
-        const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX) && feature.properties["type"] === 'rotate-handle');
-        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_PREFIX));
-        const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_PREFIX));
+        const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'rotate-handle');
+        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER));
+        const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_LAYER));
         if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
         else if (scale) {
             const headingNormalized = (scale.properties["heading"] + 180) % 180;
@@ -297,20 +413,31 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseDown = (e: MapMouseEvent) => {
+        if (this._selectedFeatureId == null) {
+            return;
+        }
         let features = this._map?.queryRenderedFeatures(e.point);
-        features = features?.filter((feature) => feature.source.startsWith(`${GEOJSON_SOURCE_PREFIX}${ID_PREFIX}`)) ?? [];
+        features = features?.filter((feature) => feature.source === GEOJSON_SOURCE) ?? [];
         if (features.length <= 0) {
             return;
         }
         e.preventDefault();
-        this._selectedImageId = features[0]!.properties["id"];
-        this._startPointCoordinates = this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId!}`)?.coordinates;
         const currentPoint = [e.lngLat.lng, e.lngLat.lat] as [number, number];
-        if (!features.some(f => f.layer.id.startsWith(HANDLE_PREFIX))) {
+        this.setStateFromMouseDown(currentPoint, features);
+    }
+
+    private async setStateFromMouseDown(currentPoint: [number, number], queriedFeatures: MapGeoJSONFeature[]) {
+        const data = await this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)?.getData() as GeoJSON.FeatureCollection;
+
+        this._startPointCoordinates = data.features
+            .filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId)
+            .map(f => (f.geometry as GeoJSON.Point).coordinates) as Corners;
+
+        if (!queriedFeatures.some(f => f.layer.id.startsWith(HANDLE_LAYER))) {
             this._startPoint = currentPoint;
             return;
         }
-        if (features.some(f => f.properties["type"] === "rotate-handle")) {
+        if (queriedFeatures.some(f => f.properties["type"] === "rotate-handle")) {
             this._isRotating = true;
             this._startPoint = currentPoint;
             return;
@@ -325,9 +452,8 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseMove = (e: MapMouseEvent) => {
-        if (!this._selectedImageId) {
-            return;
-        }
+        if (!this._selectedFeatureId) return;
+        if (this._startPoint == null) return;
         const diff = [e.lngLat.lng - this._startPoint![0], e.lngLat.lat - this._startPoint![1]];
         let newCoordinates: Corners;
         if (this._isRotating) {
@@ -374,16 +500,27 @@ export class MaplibreAreaTransform implements IControl {
             ]) as Corners;
         }
 
-        this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedImageId}`)?.setCoordinates(newCoordinates);
-        this._map?.getSource<GeoJSONSource>(`${GEOJSON_SOURCE_PREFIX}${this._selectedImageId}`)?.setData(this.buildGeoJSON(newCoordinates, this._selectedImageId));
+        this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates);
+        this.updateCoordinates(this._selectedFeatureId, newCoordinates);
     }
 
     private onMouseUp = () => {
-        this._selectedImageId = null;
         this._startPoint = null;
         this._startPointCoordinates = undefined;
         this._isScaling = false;
         this._isRotating = false;
+    }
+
+    private onClick = (e: MapMouseEvent) => {
+        if (this._isAddingRectangle) {
+            return;
+        }
+        const features = this._map?.queryRenderedFeatures(e.point);
+        const polygonFeature = features?.find((feature) => feature.layer.id.startsWith(AREA_LAYER));
+        this.removeSelection();
+        if (polygonFeature) {
+            this.setSelection(polygonFeature.properties["featureId"]);
+        }
     }
 
     private async initImages() {
@@ -391,5 +528,42 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.addImage('rotate', rotateImage?.data!);
         const scaleImage = await this._map?.loadImage(scale);
         this._map?.addImage('scale', scaleImage?.data!);
+    }
+
+    private async removeSelection() {
+        this._selectedFeatureId = null;
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        for (let feature of data.features) {
+            delete feature?.properties?.["isSelected"];
+        }
+        data.features = data.features.filter(f => f.properties?.["type"] != "rotate-handle");
+        await source.setData(data, true);
+    }
+
+    private async setSelection(featureId: string) {
+        this._selectedFeatureId = featureId;
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const corners: GeoJSON.Feature<GeoJSON.Point>[] = []
+        for (let feature of data.features) {
+            if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId) {
+                feature.properties!["isSelected"] = true;
+                corners.push(feature as GeoJSON.Feature<GeoJSON.Point>);
+            }
+        }
+        corners.sort((f1, f2) => f2.properties?.["id"] < f1.properties?.["id"] ? 1 : -1);
+        data.features.push(this.getRotateHandlePoint(corners.map(f => (f.geometry.coordinates)) as Corners, featureId))
+        await source.setData(data, true);
+    }
+
+    private async updateCoordinates(featureId: string, newCoordinates: Corners) {
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
+        data.features.push(...this.buildPolygonGeoJSONFeatures(newCoordinates, featureId, true));
+        data.features = data.features.filter(f => f.properties?.["type"] != "rotate-handle");
+        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
+        await source.setData(data, true);
     }
 }
