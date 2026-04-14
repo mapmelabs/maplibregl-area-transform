@@ -670,13 +670,15 @@
 	        this.addPolygon(this.unprojectAll(corners), true);
 	    };
 	    startAddPolygonSequence() {
+	        this.removeSelection();
 	        this._state = "adding-points";
 	        this._polygonPoints = [];
 	        this._map?.on('click', this.onClickAddRectanglePoint);
 	    }
 	    onClickAddRectanglePoint = async (e) => {
-	        if (this._state !== "adding-points")
+	        if (this._state !== "adding-points") {
 	            return;
+	        }
 	        const coordinates = [e.lngLat.lng, e.lngLat.lat];
 	        const source = this._map?.getSource(GEOJSON_SOURCE);
 	        this._polygonPoints.push(coordinates);
@@ -968,10 +970,12 @@
 	    onMouseUp = () => {
 	        this._startPx = null;
 	        this._startCornersPx = undefined;
-	        this._state = "";
+	        if (this._state !== "adding-points") {
+	            this._state = "";
+	        }
 	    };
 	    onClick = (e) => {
-	        if (this._state !== "adding-points") {
+	        if (this._state === "adding-points") {
 	            return;
 	        }
 	        const features = this._map?.queryRenderedFeatures(e.point);
