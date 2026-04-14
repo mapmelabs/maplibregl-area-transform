@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@turf/bearing": "^7.3.4",
+    "@turf/centroid": "^7.3.4",
     "@turf/destination": "^7.3.4",
     "@turf/distance": "^7.3.4",
     "@turf/transform-rotate": "^7.3.4",
