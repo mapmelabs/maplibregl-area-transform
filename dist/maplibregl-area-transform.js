@@ -430,7 +430,6 @@
 	}
 	function pxResizeSide(cornersPx, startPx, currentPx) {
 	    const edgeIndex = pxGetClosestEdgeIndex(cornersPx, startPx);
-	    console.log(edgeIndex);
 	    const i0 = edgeIndex;
 	    const i1 = (edgeIndex + 1) % 4;
 	    const displacement = pxProjectOntoNormal(cornersPx[i0], cornersPx[i1], startPx, currentPx);
