@@ -39,13 +39,10 @@ declare class MaplibreAreaTransform implements IControl {
     private _container;
     private _eventEmitter;
     private _selectedFeatureId;
-    private _isScaling;
-    private _isRotating;
-    private _isAddingPolygon;
-    private _isResizing;
+    private _state;
     private _polygonPoints;
-    private _startPoint;
-    private _startPointCoordinates;
+    private _startPx;
+    private _startCornersPx;
     constructor(options?: MaplibreAreaTransformOptions);
     /** @inheritdoc */
     onAdd(map: Map): HTMLElement;
@@ -78,12 +75,11 @@ declare class MaplibreAreaTransform implements IControl {
     on(event: string, listener: (...args: any[]) => void): void;
     off(event: string, listener: (...args: any[]) => void): void;
     private onFileSelected;
-    private getOpositePoint;
-    private getCenter;
     private initMapListeners;
     private buildPolygonGeoJSONFeatures;
     private getRotateHandlePoint;
     private getResizeHandlePoints;
+    /** Heading in degrees for scale handle icon rotation — kept in geo-bearing for icon display */
     private getScaleHandleHeading;
     private onMouseMoveForCursor;
     private onMouseDown;
@@ -95,11 +91,14 @@ declare class MaplibreAreaTransform implements IControl {
     private removeSelection;
     private setSelection;
     private updateCoordinates;
-    private rotatePolygon;
-    private scalePolygon;
-    private resizeRectangleSide;
-    private getClosestEdgeIndex;
-    private getMidPoint;
+    /** Project a lat/lng GeoJSON position to map pixel point */
+    private project;
+    /** Unproject a pixel point back to [lng, lat] */
+    private unproject;
+    /** Project an array of lat/lng positions to pixel points */
+    private projectAll;
+    /** Unproject pixel points back to lat/lng positions */
+    private unprojectAll;
 }
 
 export { MaplibreAreaTransform };

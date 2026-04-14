@@ -358,694 +358,115 @@
 	var eventemitter3Exports = requireEventemitter3();
 	var EventEmitter = /*@__PURE__*/getDefaultExportFromCjs(eventemitter3Exports);
 
-	// index.ts
-	function clone(geojson) {
-	  if (!geojson) {
-	    throw new Error("geojson is required");
-	  }
-	  switch (geojson.type) {
-	    case "Feature":
-	      return cloneFeature(geojson);
-	    case "FeatureCollection":
-	      return cloneFeatureCollection(geojson);
-	    case "Point":
-	    case "LineString":
-	    case "Polygon":
-	    case "MultiPoint":
-	    case "MultiLineString":
-	    case "MultiPolygon":
-	    case "GeometryCollection":
-	      return cloneGeometry(geojson);
-	    default:
-	      throw new Error("unknown GeoJSON type");
-	  }
+	function pxCentroid(pts) {
+	    const x = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+	    const y = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+	    return [x, y];
 	}
-	function cloneFeature(geojson) {
-	  const cloned = { type: "Feature" };
-	  Object.keys(geojson).forEach((key) => {
-	    switch (key) {
-	      case "type":
-	      case "properties":
-	      case "geometry":
-	        return;
-	      default:
-	        cloned[key] = geojson[key];
+	function pxDistance(a, b) {
+	    return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
+	}
+	/** Angle in radians from a to b */
+	function pxAngle(from, to) {
+	    return Math.atan2(to[1] - from[1], to[0] - from[0]);
+	}
+	/** Rotate a single point around a pivot by `angle` radians */
+	function pxRotatePoint(pt, pivot, angle) {
+	    const cos = Math.cos(angle);
+	    const sin = Math.sin(angle);
+	    const dx = pt[0] - pivot[0];
+	    const dy = pt[1] - pivot[1];
+	    return [
+	        pivot[0] + dx * cos - dy * sin,
+	        pivot[1] + dx * sin + dy * cos
+	    ];
+	}
+	/** Rotate all corners around their centroid */
+	function pxRotatePolygon(cornersPx, startPx, currentPx) {
+	    const center = pxCentroid(cornersPx);
+	    const angle = pxAngle(center, currentPx) - pxAngle(center, startPx);
+	    return cornersPx.map(pt => pxRotatePoint(pt, center, angle));
+	}
+	/** Scale corners from opposite anchor point */
+	function pxScalePolygon(cornersPx, handlePx, currentPx) {
+	    const oppositePx = pxGetOppositePoint(cornersPx, handlePx);
+	    const distStart = pxDistance(handlePx, oppositePx);
+	    const distCurrent = pxDistance(currentPx, oppositePx);
+	    if (distStart === 0)
+	        return cornersPx;
+	    const scale = distCurrent / distStart;
+	    return cornersPx.map(pt => [
+	        oppositePx[0] + (pt[0] - oppositePx[0]) * scale,
+	        oppositePx[1] + (pt[1] - oppositePx[1]) * scale
+	    ]);
+	}
+	function pxGetOppositePoint(cornersPx, handlePx) {
+	    let maxDist = -Infinity;
+	    let opposite = cornersPx[0];
+	    for (const pt of cornersPx) {
+	        if (Math.abs(pt[0] - handlePx[0]) < 0.1 && Math.abs(pt[1] - handlePx[1]) < 0.1)
+	            continue;
+	        const d = pxDistance(pt, handlePx);
+	        if (d > maxDist) {
+	            maxDist = d;
+	            opposite = pt;
+	        }
 	    }
-	  });
-	  cloned.properties = cloneProperties(geojson.properties);
-	  if (geojson.geometry == null) {
-	    cloned.geometry = null;
-	  } else {
-	    cloned.geometry = cloneGeometry(geojson.geometry);
-	  }
-	  return cloned;
+	    return opposite;
 	}
-	function cloneProperties(properties) {
-	  const cloned = {};
-	  if (!properties) {
-	    return cloned;
-	  }
-	  Object.keys(properties).forEach((key) => {
-	    const value = properties[key];
-	    if (typeof value === "object") {
-	      if (value === null) {
-	        cloned[key] = null;
-	      } else if (Array.isArray(value)) {
-	        cloned[key] = value.map((item) => {
-	          return item;
-	        });
-	      } else {
-	        cloned[key] = cloneProperties(value);
-	      }
-	    } else {
-	      cloned[key] = value;
+	function pxMidpoint(a, b) {
+	    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+	}
+	/** Project a point onto the normal of an edge, return signed pixel distance */
+	function pxProjectOntoNormal(edgePx0, edgePx1, fromPx, toPx) {
+	    const edgeVec = [edgePx1[0] - edgePx0[0], edgePx1[1] - edgePx0[1]];
+	    const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
+	    if (edgeLen === 0)
+	        return 0;
+	    // Normal perpendicular to edge (pointing inward/outward)
+	    const normal = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
+	    const drag = [toPx[0] - fromPx[0], toPx[1] - fromPx[1]];
+	    return drag[0] * normal[0] + drag[1] * normal[1];
+	}
+	function pxResizeSide(cornersPx, startPx, currentPx) {
+	    const edgeIndex = pxGetClosestEdgeIndex(cornersPx, startPx);
+	    console.log(edgeIndex);
+	    const i0 = edgeIndex;
+	    const i1 = (edgeIndex + 1) % 4;
+	    const displacement = pxProjectOntoNormal(cornersPx[i0], cornersPx[i1], startPx, currentPx);
+	    // Clamp: can't push past 90% toward the opposite edge
+	    const oppI0 = (edgeIndex + 2) % 4;
+	    const oppI1 = (edgeIndex + 3) % 4;
+	    const draggedMid = pxMidpoint(cornersPx[i0], cornersPx[i1]);
+	    const oppMid = pxMidpoint(cornersPx[oppI0], cornersPx[oppI1]);
+	    const maxDisp = pxDistance(draggedMid, oppMid);
+	    const edgeVec = [cornersPx[i1][0] - cornersPx[i0][0], cornersPx[i1][1] - cornersPx[i0][1]];
+	    const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
+	    const normal = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
+	    const clampedDisp = Math.max(displacement, -(maxDisp * 0.9));
+	    const newCorners = [...cornersPx];
+	    newCorners[i0] = [
+	        cornersPx[i0][0] + normal[0] * clampedDisp,
+	        cornersPx[i0][1] + normal[1] * clampedDisp
+	    ];
+	    newCorners[i1] = [
+	        cornersPx[i1][0] + normal[0] * clampedDisp,
+	        cornersPx[i1][1] + normal[1] * clampedDisp
+	    ];
+	    return newCorners;
+	}
+	function pxGetClosestEdgeIndex(cornersPx, pointPx) {
+	    let closest = 0;
+	    let minDist = Infinity;
+	    for (let i = 0; i < cornersPx.length; i++) {
+	        const mid = pxMidpoint(cornersPx[i], cornersPx[(i + 1) % cornersPx.length]);
+	        const d = pxDistance(pointPx, mid);
+	        if (d < minDist) {
+	            minDist = d;
+	            closest = i;
+	        }
 	    }
-	  });
-	  return cloned;
-	}
-	function cloneFeatureCollection(geojson) {
-	  const cloned = { type: "FeatureCollection" };
-	  Object.keys(geojson).forEach((key) => {
-	    switch (key) {
-	      case "type":
-	      case "features":
-	        return;
-	      default:
-	        cloned[key] = geojson[key];
-	    }
-	  });
-	  cloned.features = geojson.features.map((feature) => {
-	    return cloneFeature(feature);
-	  });
-	  return cloned;
-	}
-	function cloneGeometry(geometry) {
-	  const geom = { type: geometry.type };
-	  if (geometry.bbox) {
-	    geom.bbox = geometry.bbox;
-	  }
-	  if (geometry.type === "GeometryCollection") {
-	    geom.geometries = geometry.geometries.map((g) => {
-	      return cloneGeometry(g);
-	    });
-	    return geom;
-	  }
-	  geom.coordinates = deepSlice(geometry.coordinates);
-	  return geom;
-	}
-	function deepSlice(coords) {
-	  const cloned = coords;
-	  if (typeof cloned[0] !== "object") {
-	    return cloned.slice();
-	  }
-	  return cloned.map((coord) => {
-	    return deepSlice(coord);
-	  });
-	}
-
-	// index.ts
-	var earthRadius = 63710088e-1;
-	var factors = {
-	  centimeters: earthRadius * 100,
-	  centimetres: earthRadius * 100,
-	  degrees: 360 / (2 * Math.PI),
-	  feet: earthRadius * 3.28084,
-	  inches: earthRadius * 39.37,
-	  kilometers: earthRadius / 1e3,
-	  kilometres: earthRadius / 1e3,
-	  meters: earthRadius,
-	  metres: earthRadius,
-	  miles: earthRadius / 1609.344,
-	  millimeters: earthRadius * 1e3,
-	  millimetres: earthRadius * 1e3,
-	  nauticalmiles: earthRadius / 1852,
-	  radians: 1,
-	  yards: earthRadius * 1.0936
-	};
-	function feature(geom, properties, options = {}) {
-	  const feat = { type: "Feature" };
-	  if (options.id === 0 || options.id) {
-	    feat.id = options.id;
-	  }
-	  if (options.bbox) {
-	    feat.bbox = options.bbox;
-	  }
-	  feat.properties = properties || {};
-	  feat.geometry = geom;
-	  return feat;
-	}
-	function point(coordinates, properties, options = {}) {
-	  if (!coordinates) {
-	    throw new Error("coordinates is required");
-	  }
-	  if (!Array.isArray(coordinates)) {
-	    throw new Error("coordinates must be an Array");
-	  }
-	  if (coordinates.length < 2) {
-	    throw new Error("coordinates must be at least 2 numbers long");
-	  }
-	  if (!isNumber(coordinates[0]) || !isNumber(coordinates[1])) {
-	    throw new Error("coordinates must contain numbers");
-	  }
-	  const geom = {
-	    type: "Point",
-	    coordinates
-	  };
-	  return feature(geom, properties, options);
-	}
-	function radiansToLength(radians, units = "kilometers") {
-	  const factor = factors[units];
-	  if (!factor) {
-	    throw new Error(units + " units is invalid");
-	  }
-	  return radians * factor;
-	}
-	function lengthToRadians(distance, units = "kilometers") {
-	  const factor = factors[units];
-	  if (!factor) {
-	    throw new Error(units + " units is invalid");
-	  }
-	  return distance / factor;
-	}
-	function radiansToDegrees(radians) {
-	  const normalisedRadians = radians % (2 * Math.PI);
-	  return normalisedRadians * 180 / Math.PI;
-	}
-	function degreesToRadians(degrees) {
-	  const normalisedDegrees = degrees % 360;
-	  return normalisedDegrees * Math.PI / 180;
-	}
-	function convertLength(length, originalUnit = "kilometers", finalUnit = "kilometers") {
-	  if (!(length >= 0)) {
-	    throw new Error("length must be a positive number");
-	  }
-	  return radiansToLength(lengthToRadians(length, originalUnit), finalUnit);
-	}
-	function isNumber(num) {
-	  return !isNaN(num) && num !== null && !Array.isArray(num);
-	}
-	function isObject(input) {
-	  return input !== null && typeof input === "object" && !Array.isArray(input);
-	}
-
-	// index.ts
-	function coordEach(geojson, callback, excludeWrapCoord) {
-	  if (geojson === null) return;
-	  var j, k, l, geometry, stopG, coords, geometryMaybeCollection, wrapShrink = 0, coordIndex = 0, isGeometryCollection, type = geojson.type, isFeatureCollection = type === "FeatureCollection", isFeature = type === "Feature", stop = isFeatureCollection ? geojson.features.length : 1;
-	  for (var featureIndex = 0; featureIndex < stop; featureIndex++) {
-	    geometryMaybeCollection = isFeatureCollection ? (
-	      // @ts-expect-error: Known type conflict
-	      geojson.features[featureIndex].geometry
-	    ) : isFeature ? (
-	      // @ts-expect-error: Known type conflict
-	      geojson.geometry
-	    ) : geojson;
-	    isGeometryCollection = geometryMaybeCollection ? geometryMaybeCollection.type === "GeometryCollection" : false;
-	    stopG = isGeometryCollection ? geometryMaybeCollection.geometries.length : 1;
-	    for (var geomIndex = 0; geomIndex < stopG; geomIndex++) {
-	      var multiFeatureIndex = 0;
-	      var geometryIndex = 0;
-	      geometry = isGeometryCollection ? geometryMaybeCollection.geometries[geomIndex] : geometryMaybeCollection;
-	      if (geometry === null) continue;
-	      coords = geometry.coordinates;
-	      var geomType = geometry.type;
-	      wrapShrink = excludeWrapCoord && (geomType === "Polygon" || geomType === "MultiPolygon") ? 1 : 0;
-	      switch (geomType) {
-	        case null:
-	          break;
-	        case "Point":
-	          if (
-	            // @ts-expect-error: Known type conflict
-	            callback(
-	              coords,
-	              coordIndex,
-	              featureIndex,
-	              multiFeatureIndex,
-	              geometryIndex
-	            ) === false
-	          )
-	            return false;
-	          coordIndex++;
-	          multiFeatureIndex++;
-	          break;
-	        case "LineString":
-	        case "MultiPoint":
-	          for (j = 0; j < coords.length; j++) {
-	            if (
-	              // @ts-expect-error: Known type conflict
-	              callback(
-	                coords[j],
-	                coordIndex,
-	                featureIndex,
-	                multiFeatureIndex,
-	                geometryIndex
-	              ) === false
-	            )
-	              return false;
-	            coordIndex++;
-	            if (geomType === "MultiPoint") multiFeatureIndex++;
-	          }
-	          if (geomType === "LineString") multiFeatureIndex++;
-	          break;
-	        case "Polygon":
-	        case "MultiLineString":
-	          for (j = 0; j < coords.length; j++) {
-	            for (k = 0; k < coords[j].length - wrapShrink; k++) {
-	              if (
-	                // @ts-expect-error: Known type conflict
-	                callback(
-	                  coords[j][k],
-	                  coordIndex,
-	                  featureIndex,
-	                  multiFeatureIndex,
-	                  geometryIndex
-	                ) === false
-	              )
-	                return false;
-	              coordIndex++;
-	            }
-	            if (geomType === "MultiLineString") multiFeatureIndex++;
-	            if (geomType === "Polygon") geometryIndex++;
-	          }
-	          if (geomType === "Polygon") multiFeatureIndex++;
-	          break;
-	        case "MultiPolygon":
-	          for (j = 0; j < coords.length; j++) {
-	            geometryIndex = 0;
-	            for (k = 0; k < coords[j].length; k++) {
-	              for (l = 0; l < coords[j][k].length - wrapShrink; l++) {
-	                if (
-	                  // @ts-expect-error: Known type conflict
-	                  callback(
-	                    coords[j][k][l],
-	                    coordIndex,
-	                    featureIndex,
-	                    multiFeatureIndex,
-	                    geometryIndex
-	                  ) === false
-	                )
-	                  return false;
-	                coordIndex++;
-	              }
-	              geometryIndex++;
-	            }
-	            multiFeatureIndex++;
-	          }
-	          break;
-	        case "GeometryCollection":
-	          for (j = 0; j < geometry.geometries.length; j++)
-	            if (
-	              // @ts-expect-error: Known type conflict
-	              coordEach(geometry.geometries[j], callback, excludeWrapCoord) === false
-	            )
-	              return false;
-	          break;
-	        default:
-	          throw new Error("Unknown Geometry Type");
-	      }
-	    }
-	  }
-	}
-	function featureEach(geojson, callback) {
-	  if (geojson.type === "Feature") {
-	    callback(geojson, 0);
-	  } else if (geojson.type === "FeatureCollection") {
-	    for (var i = 0; i < geojson.features.length; i++) {
-	      if (callback(geojson.features[i], i) === false) break;
-	    }
-	  }
-	}
-
-	// index.ts
-	function bbox(geojson, options = {}) {
-	  if (geojson.bbox != null && true !== options.recompute) {
-	    return geojson.bbox;
-	  }
-	  const result = [Infinity, Infinity, -Infinity, -Infinity];
-	  coordEach(geojson, (coord) => {
-	    if (result[0] > coord[0]) {
-	      result[0] = coord[0];
-	    }
-	    if (result[1] > coord[1]) {
-	      result[1] = coord[1];
-	    }
-	    if (result[2] < coord[0]) {
-	      result[2] = coord[0];
-	    }
-	    if (result[3] < coord[1]) {
-	      result[3] = coord[1];
-	    }
-	  });
-	  return result;
-	}
-
-	// index.ts
-	function center(geojson, options = {}) {
-	  const ext = bbox(geojson);
-	  const x = (ext[0] + ext[2]) / 2;
-	  const y = (ext[1] + ext[3]) / 2;
-	  return point([x, y], options.properties, options);
-	}
-
-	// index.ts
-	function centroid(geojson, options = {}) {
-	  let xSum = 0;
-	  let ySum = 0;
-	  let len = 0;
-	  coordEach(
-	    geojson,
-	    function(coord) {
-	      xSum += coord[0];
-	      ySum += coord[1];
-	      len++;
-	    },
-	    true
-	  );
-	  return point([xSum / len, ySum / len], options.properties);
-	}
-
-	// index.ts
-	function getCoord(coord) {
-	  if (!coord) {
-	    throw new Error("coord is required");
-	  }
-	  if (!Array.isArray(coord)) {
-	    if (coord.type === "Feature" && coord.geometry !== null && coord.geometry.type === "Point") {
-	      return [...coord.geometry.coordinates];
-	    }
-	    if (coord.type === "Point") {
-	      return [...coord.coordinates];
-	    }
-	  }
-	  if (Array.isArray(coord) && coord.length >= 2 && !Array.isArray(coord[0]) && !Array.isArray(coord[1])) {
-	    return [...coord];
-	  }
-	  throw new Error("coord must be GeoJSON Point or an Array of numbers");
-	}
-	function getCoords(coords) {
-	  if (Array.isArray(coords)) {
-	    return coords;
-	  }
-	  if (coords.type === "Feature") {
-	    if (coords.geometry !== null) {
-	      return coords.geometry.coordinates;
-	    }
-	  } else {
-	    if (coords.coordinates) {
-	      return coords.coordinates;
-	    }
-	  }
-	  throw new Error(
-	    "coords must be GeoJSON Feature, Geometry Object or an Array"
-	  );
-	}
-	function getType(geojson, _name) {
-	  if (geojson.type === "FeatureCollection") {
-	    return "FeatureCollection";
-	  }
-	  if (geojson.type === "GeometryCollection") {
-	    return "GeometryCollection";
-	  }
-	  if (geojson.type === "Feature" && geojson.geometry !== null) {
-	    return geojson.geometry.type;
-	  }
-	  return geojson.type;
-	}
-
-	// index.ts
-	function rhumbBearing(start, end, options = {}) {
-	  let bear360;
-	  if (options.final) {
-	    bear360 = calculateRhumbBearing(getCoord(end), getCoord(start));
-	  } else {
-	    bear360 = calculateRhumbBearing(getCoord(start), getCoord(end));
-	  }
-	  const bear180 = bear360 > 180 ? -(360 - bear360) : bear360;
-	  return bear180;
-	}
-	function calculateRhumbBearing(from, to) {
-	  const phi1 = degreesToRadians(from[1]);
-	  const phi2 = degreesToRadians(to[1]);
-	  let deltaLambda = degreesToRadians(to[0] - from[0]);
-	  if (deltaLambda > Math.PI) {
-	    deltaLambda -= 2 * Math.PI;
-	  }
-	  if (deltaLambda < -Math.PI) {
-	    deltaLambda += 2 * Math.PI;
-	  }
-	  const deltaPsi = Math.log(
-	    Math.tan(phi2 / 2 + Math.PI / 4) / Math.tan(phi1 / 2 + Math.PI / 4)
-	  );
-	  const theta = Math.atan2(deltaLambda, deltaPsi);
-	  return (radiansToDegrees(theta) + 360) % 360;
-	}
-
-	// index.ts
-	function rhumbDistance(from, to, options = {}) {
-	  const origin = getCoord(from);
-	  const destination = getCoord(to);
-	  destination[0] += destination[0] - origin[0] > 180 ? -360 : origin[0] - destination[0] > 180 ? 360 : 0;
-	  const distanceInMeters = calculateRhumbDistance(origin, destination);
-	  const distance = convertLength(distanceInMeters, "meters", options.units);
-	  return distance;
-	}
-	function calculateRhumbDistance(origin, destination, radius) {
-	  radius = radius === void 0 ? earthRadius : Number(radius);
-	  const R = radius;
-	  const phi1 = origin[1] * Math.PI / 180;
-	  const phi2 = destination[1] * Math.PI / 180;
-	  const DeltaPhi = phi2 - phi1;
-	  let DeltaLambda = Math.abs(destination[0] - origin[0]) * Math.PI / 180;
-	  if (DeltaLambda > Math.PI) {
-	    DeltaLambda -= 2 * Math.PI;
-	  }
-	  const DeltaPsi = Math.log(
-	    Math.tan(phi2 / 2 + Math.PI / 4) / Math.tan(phi1 / 2 + Math.PI / 4)
-	  );
-	  const q = Math.abs(DeltaPsi) > 1e-11 ? DeltaPhi / DeltaPsi : Math.cos(phi1);
-	  const delta = Math.sqrt(
-	    DeltaPhi * DeltaPhi + q * q * DeltaLambda * DeltaLambda
-	  );
-	  const dist = delta * R;
-	  return dist;
-	}
-
-	// index.ts
-	function rhumbDestination(origin, distance, bearing, options = {}) {
-	  const wasNegativeDistance = distance < 0;
-	  let distanceInMeters = convertLength(
-	    Math.abs(distance),
-	    options.units,
-	    "meters"
-	  );
-	  if (wasNegativeDistance) distanceInMeters = -Math.abs(distanceInMeters);
-	  const coords = getCoord(origin);
-	  const destination = calculateRhumbDestination(
-	    coords,
-	    distanceInMeters,
-	    bearing
-	  );
-	  destination[0] += destination[0] - coords[0] > 180 ? -360 : coords[0] - destination[0] > 180 ? 360 : 0;
-	  return point(destination, options.properties);
-	}
-	function calculateRhumbDestination(origin, distance, bearing, radius) {
-	  radius = radius === void 0 ? earthRadius : Number(radius);
-	  const delta = distance / radius;
-	  const lambda1 = origin[0] * Math.PI / 180;
-	  const phi1 = degreesToRadians(origin[1]);
-	  const theta = degreesToRadians(bearing);
-	  const DeltaPhi = delta * Math.cos(theta);
-	  let phi2 = phi1 + DeltaPhi;
-	  if (Math.abs(phi2) > Math.PI / 2) {
-	    phi2 = phi2 > 0 ? Math.PI - phi2 : -Math.PI - phi2;
-	  }
-	  const DeltaPsi = Math.log(
-	    Math.tan(phi2 / 2 + Math.PI / 4) / Math.tan(phi1 / 2 + Math.PI / 4)
-	  );
-	  const q = Math.abs(DeltaPsi) > 1e-11 ? DeltaPhi / DeltaPsi : Math.cos(phi1);
-	  const DeltaLambda = delta * Math.sin(theta) / q;
-	  const lambda2 = lambda1 + DeltaLambda;
-	  return [
-	    (lambda2 * 180 / Math.PI + 540) % 360 - 180,
-	    phi2 * 180 / Math.PI
-	  ];
-	}
-
-	// index.ts
-	function transformScale(geojson, factor, options) {
-	  options = options || {};
-	  if (!isObject(options)) throw new Error("options is invalid");
-	  const origin = options.origin || "centroid";
-	  const mutate = options.mutate || false;
-	  if (!geojson) throw new Error("geojson required");
-	  if (typeof factor !== "number" || factor <= 0)
-	    throw new Error("invalid factor");
-	  const originIsPoint = Array.isArray(origin) || typeof origin === "object";
-	  if (mutate !== true) geojson = clone(geojson);
-	  if (geojson.type === "FeatureCollection" && !originIsPoint) {
-	    featureEach(geojson, function(feature, index) {
-	      geojson.features[index] = scale(
-	        feature,
-	        factor,
-	        origin
-	      );
-	    });
-	    return geojson;
-	  }
-	  return scale(geojson, factor, origin);
-	}
-	function scale(feature, factor, origin) {
-	  const isPoint = getType(feature) === "Point";
-	  const originCoord = defineOrigin(feature, origin);
-	  if (factor === 1 || isPoint) return feature;
-	  coordEach(feature, function(coord) {
-	    const originalDistance = rhumbDistance(originCoord, coord);
-	    const bearing = rhumbBearing(originCoord, coord);
-	    const newDistance = originalDistance * factor;
-	    const newCoord = getCoords(
-	      rhumbDestination(originCoord, newDistance, bearing)
-	    );
-	    coord[0] = newCoord[0];
-	    coord[1] = newCoord[1];
-	    if (coord.length === 3) coord[2] *= factor;
-	  });
-	  delete feature.bbox;
-	  return feature;
-	}
-	function defineOrigin(geojson, origin) {
-	  if (origin === void 0 || origin === null) origin = "centroid";
-	  if (Array.isArray(origin) || typeof origin === "object")
-	    return getCoord(origin);
-	  const bbox$1 = geojson.bbox ? geojson.bbox : bbox(geojson, { recompute: true });
-	  const west = bbox$1[0];
-	  const south = bbox$1[1];
-	  const east = bbox$1[2];
-	  const north = bbox$1[3];
-	  switch (origin) {
-	    case "sw":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "southwest":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "westsouth":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "bottomleft":
-	      return point([west, south]);
-	    case "se":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "southeast":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "eastsouth":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "bottomright":
-	      return point([east, south]);
-	    case "nw":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "northwest":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "westnorth":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "topleft":
-	      return point([west, north]);
-	    case "ne":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "northeast":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "eastnorth":
-	    // @ts-expect-error undocumented, to be removed for v8 #techdebt
-	    case "topright":
-	      return point([east, north]);
-	    case "center":
-	      return center(geojson);
-	    case void 0:
-	    case null:
-	    case "centroid":
-	      return centroid(geojson);
-	    default:
-	      throw new Error("invalid origin");
-	  }
-	}
-
-	// index.ts
-	function transformRotate(geojson, angle, options) {
-	  options = options || {};
-	  if (!isObject(options)) throw new Error("options is invalid");
-	  const pivot = options.pivot;
-	  const mutate = options.mutate;
-	  if (!geojson) throw new Error("geojson is required");
-	  if (angle === void 0 || angle === null || isNaN(angle))
-	    throw new Error("angle is required");
-	  if (angle === 0) return geojson;
-	  const pivotCoord = pivot != null ? pivot : centroid(geojson);
-	  if (mutate === false || mutate === void 0) geojson = clone(geojson);
-	  coordEach(geojson, function(pointCoords) {
-	    const initialAngle = rhumbBearing(pivotCoord, pointCoords);
-	    const finalAngle = initialAngle + angle;
-	    const distance = rhumbDistance(pivotCoord, pointCoords);
-	    const newCoords = getCoords(
-	      rhumbDestination(pivotCoord, distance, finalAngle)
-	    );
-	    pointCoords[0] = newCoords[0];
-	    pointCoords[1] = newCoords[1];
-	  });
-	  return geojson;
-	}
-
-	// index.ts
-	function distance(from, to, options = {}) {
-	  var coordinates1 = getCoord(from);
-	  var coordinates2 = getCoord(to);
-	  var dLat = degreesToRadians(coordinates2[1] - coordinates1[1]);
-	  var dLon = degreesToRadians(coordinates2[0] - coordinates1[0]);
-	  var lat1 = degreesToRadians(coordinates1[1]);
-	  var lat2 = degreesToRadians(coordinates2[1]);
-	  var a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
-	  return radiansToLength(
-	    2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)),
-	    options.units
-	  );
-	}
-
-	// index.ts
-	function bearing(start, end, options = {}) {
-	  if (options.final === true) {
-	    return calculateFinalBearing(start, end);
-	  }
-	  const coordinates1 = getCoord(start);
-	  const coordinates2 = getCoord(end);
-	  const lon1 = degreesToRadians(coordinates1[0]);
-	  const lon2 = degreesToRadians(coordinates2[0]);
-	  const lat1 = degreesToRadians(coordinates1[1]);
-	  const lat2 = degreesToRadians(coordinates2[1]);
-	  const a = Math.sin(lon2 - lon1) * Math.cos(lat2);
-	  const b = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
-	  return radiansToDegrees(Math.atan2(a, b));
-	}
-	function calculateFinalBearing(start, end) {
-	  let bear = bearing(end, start);
-	  bear = (bear + 180) % 360;
-	  return bear;
-	}
-
-	// index.ts
-	function destination(origin, distance, bearing, options = {}) {
-	  const coordinates1 = getCoord(origin);
-	  const longitude1 = degreesToRadians(coordinates1[0]);
-	  const latitude1 = degreesToRadians(coordinates1[1]);
-	  const bearingRad = degreesToRadians(bearing);
-	  const radians = lengthToRadians(distance, options.units);
-	  const latitude2 = Math.asin(
-	    Math.sin(latitude1) * Math.cos(radians) + Math.cos(latitude1) * Math.sin(radians) * Math.cos(bearingRad)
-	  );
-	  const longitude2 = longitude1 + Math.atan2(
-	    Math.sin(bearingRad) * Math.sin(radians) * Math.cos(latitude1),
-	    Math.cos(radians) - Math.sin(latitude1) * Math.sin(latitude2)
-	  );
-	  const lng = radiansToDegrees(longitude2);
-	  const lat = radiansToDegrees(latitude2);
-	  if (coordinates1[2] !== void 0) {
-	    return point([lng, lat, coordinates1[2]], options.properties);
-	  }
-	  return point([lng, lat], options.properties);
+	    return closest;
 	}
 
 	var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
@@ -1083,13 +504,10 @@
 	    _container = null;
 	    _eventEmitter = new EventEmitter();
 	    _selectedFeatureId = null;
-	    _isScaling = false;
-	    _isRotating = false;
-	    _isAddingPolygon = false;
-	    _isResizing = false;
+	    _state = "";
 	    _polygonPoints = [];
-	    _startPoint = null;
-	    _startPointCoordinates = undefined;
+	    _startPx = null;
+	    _startCornersPx = undefined; // corners at drag start
 	    constructor(options = defaultOptions) {
 	        this.options = options;
 	        this.options = { ...defaultOptions, ...options };
@@ -1126,7 +544,6 @@
 	        const button = document.createElement('button');
 	        button.type = 'button';
 	        button.setAttribute('aria-label', 'Add Image');
-	        // Create an internal span or div to hold the icon
 	        const icon = document.createElement('span');
 	        icon.className = 'maplibregl-ctrl-icon-add-image';
 	        button.appendChild(icon);
@@ -1165,8 +582,8 @@
 	            type: 'geojson',
 	            promoteId: 'id',
 	            data: {
-	                "type": "FeatureCollection",
-	                "features": []
+	                type: "FeatureCollection",
+	                features: []
 	            }
 	        });
 	        this._map?.addLayer({
@@ -1183,7 +600,7 @@
 	                'all',
 	                ['==', '$type', 'Point'],
 	                ['==', 'isSelected', true]
-	            ],
+	            ]
 	        });
 	        this._map?.addLayer({
 	            id: HANDLE_LAYER + '-circle',
@@ -1193,7 +610,7 @@
 	                'circle-color': 'orange',
 	                'circle-radius': 3,
 	                'circle-stroke-color': 'white',
-	                'circle-stroke-width': 2,
+	                'circle-stroke-width': 2
 	            },
 	            filter: ["==", "$type", "Point"]
 	        });
@@ -1249,40 +666,28 @@
 	        const startY = canvas.height / 3;
 	        const width = canvas.width / 3;
 	        const height = canvas.height / 3;
-	        const topLeft = this._map.unproject([startX, startY]);
-	        const topRight = this._map.unproject([startX + width, startY]);
-	        const bottomRight = this._map.unproject([startX + width, startY + height]);
-	        const bottomLeft = this._map.unproject([startX, startY + height]);
-	        this.addPolygon([
-	            [topLeft.lng, topLeft.lat],
-	            [topRight.lng, topRight.lat],
-	            [bottomRight.lng, bottomRight.lat],
-	            [bottomLeft.lng, bottomLeft.lat]
-	        ], true);
+	        const corners = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
+	        this.addPolygon(this.unprojectAll(corners), true);
 	    };
 	    startAddPolygonSequence() {
-	        this._isAddingPolygon = true;
+	        this._state = "adding-points";
 	        this._polygonPoints = [];
 	        this._map?.on('click', this.onClickAddRectanglePoint);
 	    }
 	    onClickAddRectanglePoint = async (e) => {
-	        if (!this._isAddingPolygon)
+	        if (this._state !== "adding-points")
 	            return;
 	        const coordinates = [e.lngLat.lng, e.lngLat.lat];
 	        const source = this._map?.getSource(GEOJSON_SOURCE);
-	        this._polygonPoints?.push(coordinates);
-	        if (this._polygonPoints?.length === 4) {
-	            await source.updateData({
-	                remove: ["temp-point-1", "temp-point-2", "temp-point-3"]
-	            }, true);
+	        this._polygonPoints.push(coordinates);
+	        if (this._polygonPoints.length === 4) {
+	            await source.updateData({ remove: ["temp-point-1", "temp-point-2", "temp-point-3"] }, true);
 	            const corners = this.sortCorners([
-	                this._polygonPoints[0],
-	                this._polygonPoints[1],
-	                this._polygonPoints[2],
-	                this._polygonPoints[3]
+	                this._polygonPoints[0], this._polygonPoints[1],
+	                this._polygonPoints[2], this._polygonPoints[3]
 	            ]);
 	            this.addPolygon(corners, false);
-	            this._isAddingPolygon = false;
+	            this._state = "";
 	            this._polygonPoints = [];
 	            this._map?.off('click', this.onClickAddRectanglePoint);
 	        }
@@ -1292,7 +697,7 @@
 	                        type: "Feature",
 	                        geometry: {
 	                            type: "Point",
-	                            coordinates: coordinates
+	                            coordinates
 	                        },
 	                        properties: {
 	                            id: "temp-point-" + this._polygonPoints.length,
@@ -1309,19 +714,26 @@
 	     * @returns The sorted corners of the rectangle.
 	     */
 	    sortCorners(corners) {
-	        const center = this.getCenter(corners);
-	        corners.sort((a, b) => bearing(center, a) - bearing(center, b));
-	        // Find the top-left point (minimum longitude - latitude) to make it first
+	        // Sort in pixel space (flat, unambiguous)
+	        const cornersPx = this.projectAll(corners);
+	        const centerPx = pxCentroid(cornersPx);
+	        const indexed = cornersPx.map((px, i) => ({
+	            px, i,
+	            angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
+	        }));
+	        indexed.sort((a, b) => a.angle - b.angle);
+	        // Find top-left (min x - y in pixel space)
 	        let topLeftIndex = 0;
 	        let minVal = Infinity;
-	        corners.forEach((c, i) => {
-	            const val = c[0] - c[1];
+	        indexed.forEach((item, i) => {
+	            const val = item.px[0] - item.px[1];
 	            if (val < minVal) {
 	                minVal = val;
 	                topLeftIndex = i;
 	            }
 	        });
-	        return [...corners.slice(topLeftIndex), ...corners.slice(0, topLeftIndex)];
+	        const sorted = [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)];
+	        return sorted.map(item => corners[item.i]);
 	    }
 	    async addPolygon(coordinates, resizable) {
 	        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
@@ -1348,48 +760,20 @@
 	        img.onload = () => {
 	            const aspect = img.naturalWidth / img.naturalHeight;
 	            const canvas = this._map.getCanvas();
-	            // Define a base size (e.g., 1/4 of canvas width)
 	            const baseWidth = canvas.width / 4;
-	            const calculatedHeight = baseWidth / aspect;
-	            // Calculate screen coordinates (centering the image)
+	            const baseHeight = baseWidth / aspect;
 	            const startX = canvas.width / 4;
 	            const startY = canvas.height / 4;
-	            const topLeft = this._map.unproject([startX, startY]);
-	            const topRight = this._map.unproject([startX + baseWidth, startY]);
-	            const bottomRight = this._map.unproject([startX + baseWidth, startY + calculatedHeight]);
-	            const bottomLeft = this._map.unproject([startX, startY + calculatedHeight]);
-	            this.addImage(imageUrl, [
-	                [topLeft.lng, topLeft.lat],
-	                [topRight.lng, topRight.lat],
-	                [bottomRight.lng, bottomRight.lat],
-	                [bottomLeft.lng, bottomLeft.lat]
-	            ]);
+	            const corners = [
+	                [startX, startY], [startX + baseWidth, startY],
+	                [startX + baseWidth, startY + baseHeight], [startX, startY + baseHeight]
+	            ];
+	            this.addImage(imageUrl, this.unprojectAll(corners));
 	            this._eventEmitter.emit('fileSelected', { file, imageUrl });
 	        };
 	        img.src = imageUrl;
 	        target.value = '';
 	    };
-	    getOpositePoint(coordinates, point) {
-	        let maxDistance = -Infinity;
-	        let oppositePoint = coordinates[0];
-	        for (const coordinate of coordinates) {
-	            // Skip the point itself
-	            if (Math.abs(coordinate[0] - point[0]) < 1e-4 &&
-	                Math.abs(coordinate[1] - point[1]) < 1e-4) {
-	                continue;
-	            }
-	            const dist = distance(point, coordinate);
-	            if (dist > maxDistance) {
-	                maxDistance = dist;
-	                oppositePoint = coordinate;
-	            }
-	        }
-	        return oppositePoint;
-	    }
-	    getCenter(coordinates) {
-	        const center = centroid({ type: 'Polygon', coordinates: [[...coordinates, coordinates[0]]] });
-	        return center.geometry.coordinates;
-	    }
 	    initMapListeners() {
 	        this._map?.on('mousemove', this.onMouseMoveForCursor);
 	        this._map?.on('mousedown', this.onMouseDown);
@@ -1399,59 +783,60 @@
 	    }
 	    buildPolygonGeoJSONFeatures(buildOptions) {
 	        const { coordinates, featureId, isSelected } = buildOptions;
-	        let features = [];
-	        features.push({
-	            type: 'Feature',
-	            geometry: {
-	                type: 'Polygon',
-	                coordinates: [[...coordinates, coordinates[0]]] // close the polygon
-	            },
-	            properties: {
-	                id: "rect-" + featureId,
-	                featureId,
-	            }
-	        });
+	        const features = [{
+	                type: 'Feature',
+	                geometry: { type: 'Polygon', coordinates: [[...coordinates, coordinates[0]]] },
+	                properties: { id: "rect-" + featureId, featureId }
+	            }];
 	        for (let i = 0; i < coordinates.length; i++) {
-	            const coordinate = coordinates[i];
 	            features.push({
 	                type: 'Feature',
 	                geometry: {
 	                    type: 'Point',
-	                    coordinates: coordinate
+	                    coordinates: coordinates[i]
 	                },
 	                properties: {
 	                    id: "scale-" + i + "-" + featureId,
 	                    featureId,
 	                    type: 'scale-handle',
 	                    icon: 'scale',
-	                    isSelected: isSelected,
-	                    heading: this.getScaleHandleHeading(coordinates, coordinate)
+	                    isSelected,
+	                    heading: this.getScaleHandleHeading(coordinates, coordinates[i])
 	                }
 	            });
 	        }
 	        return features;
 	    }
 	    getRotateHandlePoint(coordinates, featureId) {
-	        const point1 = coordinates[0];
-	        const point2 = coordinates[1];
-	        const mid = this.getMidPoint(point1, point2);
-	        const pointsBearing = bearing(point1, point2);
-	        const perpendicularBearing = (pointsBearing - 90 + 360) % 360;
-	        const pointsDistance = distance(point1, point2, { units: 'kilometers' });
-	        const offsetPoint = destination(mid, pointsDistance * 0.075, perpendicularBearing, { units: 'kilometers' });
-	        offsetPoint.properties = {
-	            id: "rotate-" + featureId,
-	            type: 'rotate-handle',
-	            icon: 'rotate',
-	            isSelected: true
+	        const pxCorners = this.projectAll(coordinates);
+	        const p0 = pxCorners[0];
+	        const p1 = pxCorners[1];
+	        const midPx = pxMidpoint(p0, p1);
+	        // Offset perpendicular to the first edge
+	        const edgeVec = [p0[0] - p1[0], p0[1] - p1[1]];
+	        const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
+	        const normalPx = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
+	        const offsetDist = edgeLen * 0.075;
+	        const handlePx = [midPx[0] + normalPx[0] * offsetDist, midPx[1] + normalPx[1] * offsetDist];
+	        const handleCoord = this.unproject(handlePx);
+	        return {
+	            type: 'Feature',
+	            geometry: { type: 'Point', coordinates: handleCoord },
+	            properties: {
+	                id: "rotate-" + featureId,
+	                type: 'rotate-handle',
+	                icon: 'rotate',
+	                isSelected: true
+	            }
 	        };
-	        return offsetPoint;
 	    }
 	    getResizeHandlePoints(coordinates, featureId) {
 	        const points = [];
-	        for (let i = 0; i < coordinates.length; i++) {
-	            const nextIndex = (i + 1) % coordinates.length;
-	            const coordinate = this.getMidPoint(coordinates[i], coordinates[nextIndex]);
+	        const pxCorners = this.projectAll(coordinates);
+	        for (let i = 0; i < pxCorners.length; i++) {
+	            const nextPx = pxCorners[(i + 1) % pxCorners.length];
+	            const midPx = pxMidpoint(pxCorners[i], nextPx);
+	            const coordinate = this.unproject(midPx);
 	            points.push({
 	                type: 'Feature',
 	                geometry: {
@@ -1470,20 +855,26 @@
 	        }
 	        return points;
 	    }
+	    /** Heading in degrees for scale handle icon rotation — kept in geo-bearing for icon display */
 	    getScaleHandleHeading(coordinates, currentPoint) {
-	        const center = this.getCenter(coordinates);
-	        return bearing(center, currentPoint);
+	        // bearing() here is fine — it's only used for icon heading display, not geometry
+	        const px = this.projectAll(coordinates);
+	        const centerPx = pxCentroid(px);
+	        const currentPx = this.project(currentPoint);
+	        const angleDeg = Math.atan2(currentPx[1] - centerPx[1], currentPx[0] - centerPx[0]) * (180 / Math.PI);
+	        // Convert from canvas angle (east=0, clockwise) to map bearing (north=0, clockwise)
+	        return (angleDeg + 90 + 360) % 360;
 	    }
 	    onMouseMoveForCursor = (e) => {
-	        if (this._selectedFeatureId == null || this._startPoint != null) {
+	        if (this._selectedFeatureId == null || this._startPx != null) {
 	            this._map.getCanvas().style.cursor = '';
 	            return;
 	        }
 	        const features = this._map?.queryRenderedFeatures(e.point);
-	        const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'rotate-handle');
-	        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'scale-handle');
-	        const resize = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'resize-handle');
-	        const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_LAYER));
+	        const rotate = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'rotate-handle');
+	        const scale = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'scale-handle');
+	        const resize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'resize-handle');
+	        const drag = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
 	        if (rotate) {
 	            this._map.getCanvas().style.cursor = 'crosshair';
 	        }
@@ -1492,95 +883,99 @@
 	            this._map.getCanvas().style.cursor = headingNormalized <= 90 ? "nesw-resize" : "nwse-resize";
 	        }
 	        else if (resize) {
-	            const headingNormalized = ((resize.properties["heading"] + 225) % 180);
+	            const headingNormalized = (resize.properties["heading"] + 225) % 180;
 	            this._map.getCanvas().style.cursor = headingNormalized <= 90 ? "ns-resize" : "ew-resize";
 	        }
 	        else if (drag) {
 	            this._map.getCanvas().style.cursor = 'move';
 	        }
-	        else
+	        else {
 	            this._map.getCanvas().style.cursor = '';
+	        }
 	    };
 	    onMouseDown = (e) => {
 	        if (this._selectedFeatureId == null) {
 	            return;
 	        }
 	        let features = this._map?.queryRenderedFeatures(e.point);
-	        features = features?.filter((feature) => feature.source === GEOJSON_SOURCE) ?? [];
+	        features = features?.filter(f => f.source === GEOJSON_SOURCE) ?? [];
 	        if (features.length <= 0) {
 	            return;
 	        }
 	        e.preventDefault();
-	        const currentPoint = [e.lngLat.lng, e.lngLat.lat];
-	        this.setStateFromMouseDown(currentPoint, features);
+	        const currentPx = [e.point.x, e.point.y];
+	        this.setStateFromMouseDown(currentPx, features);
 	    };
-	    async setStateFromMouseDown(currentPoint, queriedFeatures) {
+	    async setStateFromMouseDown(currentPx, queriedFeatures) {
 	        const data = await this._map?.getSource(GEOJSON_SOURCE)?.getData();
 	        const featurePoints = data.features.filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId);
-	        this._startPointCoordinates = featurePoints
+	        this._startCornersPx = featurePoints
 	            .filter(f => f.properties?.["type"] === "scale-handle")
-	            .map(f => f.geometry.coordinates);
+	            .map(f => this.project(f.geometry.coordinates));
 	        if (!queriedFeatures.some(f => f.layer.id.startsWith(HANDLE_LAYER))) {
-	            this._startPoint = currentPoint;
+	            this._state = "moving";
+	            this._startPx = currentPx;
 	            return;
 	        }
 	        if (queriedFeatures.some(f => f.properties["type"] === "rotate-handle")) {
-	            this._isRotating = true;
-	            this._startPoint = currentPoint;
+	            this._state = "rotating";
+	            this._startPx = currentPx;
 	            return;
 	        }
 	        let closestFeature = featurePoints[0];
-	        for (let feature of featurePoints) {
-	            if (distance(feature.geometry.coordinates, currentPoint) < distance(closestFeature.geometry.coordinates, currentPoint)) {
+	        for (const feature of featurePoints) {
+	            const fPx = this.project(feature.geometry.coordinates);
+	            const bestPx = this.project(closestFeature.geometry.coordinates);
+	            if (pxDistance(fPx, currentPx) < pxDistance(bestPx, currentPx)) {
 	                closestFeature = feature;
 	            }
 	        }
-	        this._startPoint = closestFeature.geometry.coordinates;
+	        this._startPx = this.project(closestFeature.geometry.coordinates);
 	        if (closestFeature.properties?.["type"] === "scale-handle") {
-	            this._isScaling = true;
+	            this._state = "scaling";
 	        }
 	        else {
-	            this._isResizing = true;
+	            this._state = "resizeing";
 	        }
 	    }
 	    onMouseMove = (e) => {
-	        if (!this._selectedFeatureId)
+	        if (!this._selectedFeatureId || this._startPx == null)
 	            return;
-	        if (this._startPoint == null)
-	            return;
-	        let newCoordinates;
-	        if (this._isRotating) {
-	            newCoordinates = this.rotatePolygon([e.lngLat.lng, e.lngLat.lat]);
+	        const currentPx = [e.point.x, e.point.y];
+	        let newCornersPx;
+	        switch (this._state) {
+	            case "rotating":
+	                newCornersPx = pxRotatePolygon(this._startCornersPx, this._startPx, currentPx);
+	                break;
+	            case "scaling":
+	                newCornersPx = pxScalePolygon(this._startCornersPx, this._startPx, currentPx);
+	                break;
+	            case "resizeing":
+	                newCornersPx = pxResizeSide(this._startCornersPx, this._startPx, currentPx);
+	                break;
+	            default:
+	            case "moving": {
+	                const dx = currentPx[0] - this._startPx[0];
+	                const dy = currentPx[1] - this._startPx[1];
+	                newCornersPx = this._startCornersPx.map(p => [p[0] + dx, p[1] + dy]);
+	                break;
+	            }
 	        }
-	        else if (this._isScaling) {
-	            newCoordinates = this.scalePolygon([e.lngLat.lng, e.lngLat.lat]);
-	        }
-	        else if (this._isResizing) {
-	            newCoordinates = this.resizeRectangleSide([e.lngLat.lng, e.lngLat.lat]);
-	        }
-	        else {
-	            const diff = [e.lngLat.lng - this._startPoint[0], e.lngLat.lat - this._startPoint[1]];
-	            newCoordinates = this._startPointCoordinates.map((coordinate) => [
-	                coordinate[0] + diff[0],
-	                coordinate[1] + diff[1]
-	            ]);
-	        }
+	        const newCoordinates = this.unprojectAll(newCornersPx);
 	        this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates);
 	        this.updateCoordinates(this._selectedFeatureId, newCoordinates);
 	    };
 	    onMouseUp = () => {
-	        this._startPoint = null;
-	        this._startPointCoordinates = undefined;
-	        this._isScaling = false;
-	        this._isRotating = false;
-	        this._isResizing = false;
+	        this._startPx = null;
+	        this._startCornersPx = undefined;
+	        this._state = "";
 	    };
 	    onClick = (e) => {
-	        if (this._isAddingPolygon) {
+	        if (this._state !== "adding-points") {
 	            return;
 	        }
 	        const features = this._map?.queryRenderedFeatures(e.point);
-	        const polygonFeature = features?.find((feature) => feature.layer.id.startsWith(AREA_LAYER));
+	        const polygonFeature = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
 	        this.removeSelection();
 	        if (polygonFeature) {
 	            this.setSelection(polygonFeature.properties["featureId"]);
@@ -1596,7 +991,7 @@
 	        this._selectedFeatureId = null;
 	        const source = this._map?.getSource(GEOJSON_SOURCE);
 	        const data = await source.getData();
-	        for (let feature of data.features) {
+	        for (const feature of data.features) {
 	            delete feature?.properties?.["isSelected"];
 	        }
 	        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle");
@@ -1607,7 +1002,7 @@
 	        const source = this._map?.getSource(GEOJSON_SOURCE);
 	        const data = await source.getData();
 	        const corners = [];
-	        for (let feature of data.features) {
+	        for (const feature of data.features) {
 	            if (feature.geometry.type === "Point" &&
 	                feature.properties?.["featureId"] === featureId &&
 	                feature.properties?.["type"] === "scale-handle") {
@@ -1615,10 +1010,11 @@
 	                corners.push(feature);
 	            }
 	        }
-	        corners.sort((f1, f2) => f2.properties?.["id"] < f1.properties?.["id"] ? 1 : -1);
-	        data.features.push(this.getRotateHandlePoint(corners.map(f => (f.geometry.coordinates)), featureId));
+	        corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
+	        const coords = corners.map(f => f.geometry.coordinates);
+	        data.features.push(this.getRotateHandlePoint(coords, featureId));
 	        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-	            data.features.push(...this.getResizeHandlePoints(corners.map(f => (f.geometry.coordinates)), featureId));
+	            data.features.push(...this.getResizeHandlePoints(coords, featureId));
 	        }
 	        await source.setData(data, true);
 	    }
@@ -1634,89 +1030,23 @@
 	        }
 	        await source.setData(data, true);
 	    }
-	    rotatePolygon(currentPoint) {
-	        const center = this.getCenter(this._startPointCoordinates);
-	        const angle1 = bearing(this._startPoint, center);
-	        const angle2 = bearing(currentPoint, center);
-	        let transformedFature = transformRotate({
-	            type: "Feature",
-	            geometry: {
-	                type: "Polygon",
-	                coordinates: [this._startPointCoordinates]
-	            },
-	            properties: {}
-	        }, angle2 - angle1, {
-	            mutate: false,
-	            pivot: center
-	        });
-	        return transformedFature.geometry.coordinates[0];
+	    /** Project a lat/lng GeoJSON position to map pixel point */
+	    project(pos) {
+	        const pt = this._map.project([pos[0], pos[1]]);
+	        return [pt.x, pt.y];
 	    }
-	    scalePolygon(currentPoint) {
-	        const oppositePoint = this.getOpositePoint(this._startPointCoordinates, this._startPoint);
-	        const distanceStartOpposite = distance(this._startPoint, oppositePoint);
-	        const distanceCurrentOpposite = distance(currentPoint, oppositePoint);
-	        const scale = distanceCurrentOpposite / distanceStartOpposite;
-	        let transformedFature = transformScale({
-	            type: "Feature",
-	            geometry: {
-	                type: "Polygon",
-	                coordinates: [this._startPointCoordinates]
-	            },
-	            properties: {}
-	        }, scale, {
-	            mutate: false,
-	            origin: oppositePoint
-	        });
-	        return transformedFature.geometry.coordinates[0];
+	    /** Unproject a pixel point back to [lng, lat] */
+	    unproject(px) {
+	        const ll = this._map.unproject(px);
+	        return [ll.lng, ll.lat];
 	    }
-	    resizeRectangleSide(currentPoint) {
-	        const startCoord = this._startPoint;
-	        const edgeIndex = this.getClosestEdgeIndex(this._startPointCoordinates, startCoord);
-	        const i0 = edgeIndex;
-	        const i1 = (edgeIndex + 1) % 4;
-	        const edgeBearing = bearing(this._startPointCoordinates[i0], this._startPointCoordinates[i1]);
-	        const normalBearing = edgeBearing - 90;
-	        const dragDistance = distance(startCoord, currentPoint, { units: 'kilometers' });
-	        const dragBearing = bearing(startCoord, currentPoint);
-	        const angleDiff = ((dragBearing - normalBearing + 360) % 360);
-	        let projectedDistance = dragDistance * Math.cos((angleDiff * Math.PI) / 180);
-	        // Find the opposite edge midpoint and measure how far the dragged edge
-	        // currently is from it — this is the maximum we can move before flipping
-	        const oppositeEdgeIndex = (edgeIndex + 2) % 4;
-	        const i2 = oppositeEdgeIndex;
-	        const i3 = (oppositeEdgeIndex + 1) % 4;
-	        const draggedEdgeMid = this.getMidPoint(this._startPointCoordinates[i0], this._startPointCoordinates[i1]);
-	        const oppositeEdgeMid = this.getMidPoint(this._startPointCoordinates[i2], this._startPointCoordinates[i3]);
-	        const maxDistance = distance(draggedEdgeMid, oppositeEdgeMid, { units: 'kilometers' });
-	        projectedDistance = Math.max(projectedDistance, -(maxDistance * 0.9));
-	        const newP0 = destination(this._startPointCoordinates[i0], projectedDistance, normalBearing, { units: 'kilometers' }).geometry.coordinates;
-	        const newP1 = destination(this._startPointCoordinates[i1], projectedDistance, normalBearing, { units: 'kilometers' }).geometry.coordinates;
-	        const newCoordinates = [...this._startPointCoordinates];
-	        newCoordinates[i0] = newP0;
-	        newCoordinates[i1] = newP1;
-	        return newCoordinates;
+	    /** Project an array of lat/lng positions to pixel points */
+	    projectAll(coords) {
+	        return coords.map(c => this.project(c));
 	    }
-	    getClosestEdgeIndex(coordinates, point) {
-	        let closestIndex = 0;
-	        let minDistance = Infinity;
-	        for (let i = 0; i < coordinates.length; i++) {
-	            const p0 = coordinates[i];
-	            const p1 = coordinates[(i + 1) % coordinates.length];
-	            // Midpoint of this edge
-	            const midPoint = this.getMidPoint(p0, p1);
-	            const dist = distance(point, midPoint);
-	            if (dist < minDistance) {
-	                minDistance = dist;
-	                closestIndex = i;
-	            }
-	        }
-	        return closestIndex;
-	    }
-	    getMidPoint(p1, p2) {
-	        return [
-	            (p1[0] + p2[0]) / 2,
-	            (p1[1] + p2[1]) / 2
-	        ];
+	    /** Unproject pixel points back to lat/lng positions */
+	    unprojectAll(pxPoints) {
+	        return pxPoints.map(p => this.unproject(p));
 	    }
 	}
 
