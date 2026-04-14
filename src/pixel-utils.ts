@@ -75,7 +75,6 @@ export function pxProjectOntoNormal(edgePx0: PxPoint, edgePx1: PxPoint, fromPx: 
 
 export function pxResizeSide(cornersPx: PxPoint[], startPx: PxPoint, currentPx: PxPoint): PxPoint[] {
     const edgeIndex = pxGetClosestEdgeIndex(cornersPx, startPx);
-    console.log(edgeIndex);
     const i0 = edgeIndex;
     const i1 = (edgeIndex + 1) % 4;
 
