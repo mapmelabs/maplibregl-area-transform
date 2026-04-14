@@ -47,12 +47,6 @@
     "vitest": "^4.1.2"
   },
   "dependencies": {
-    "@turf/bearing": "^7.3.4",
-    "@turf/centroid": "^7.3.4",
-    "@turf/destination": "^7.3.4",
-    "@turf/distance": "^7.3.4",
-    "@turf/transform-rotate": "^7.3.4",
-    "@turf/transform-scale": "^7.3.4",
     "eventemitter3": "^5.0.4"
   }
 }
