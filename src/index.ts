@@ -36,7 +36,6 @@ type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[];
     featureId: string;
     isSelected: boolean;
-    hasResizeHandles: boolean;
 }
 
 const defaultOptions: MaplibreAreaTransformOptions = {
@@ -48,6 +47,7 @@ const defaultOptions: MaplibreAreaTransformOptions = {
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
 const AREA_LAYER = 'area-transform-layer-polygon-area-';
 const ID_PREFIX = 'area-transform-feature-';
+const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = 'raster-';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
 
@@ -74,6 +74,7 @@ export class MaplibreAreaTransform implements IControl {
     private _isScaling: boolean = false;
     private _isRotating: boolean = false;
     private _isAddingPolygon: boolean = false;
+    private _isResizing: boolean = false;
     private _polygonPoints: GeoJSON.Position[] = [];
     private _startPoint: GeoJSON.Position | null = null;
     private _startPointCoordinates: GeoJSON.Position[] | undefined = undefined;
@@ -238,7 +239,7 @@ export class MaplibreAreaTransform implements IControl {
         }, HANDLE_LAYER);
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!
         await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, hasResizeHandles: false })
+            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true })
         }, true);
         await this.removeSelection();
         await this.setSelection(imageId);
@@ -257,12 +258,12 @@ export class MaplibreAreaTransform implements IControl {
         const bottomRight = this._map!.unproject([startX + width, startY + height]);
         const bottomLeft = this._map!.unproject([startX, startY + height]);
 
-        this.addRectangle([
+        this.addPolygon([
             [topLeft.lng, topLeft.lat],
             [topRight.lng, topRight.lat],
             [bottomRight.lng, bottomRight.lat],
             [bottomLeft.lng, bottomLeft.lat]
-        ]);
+        ], true);
     }
 
     public startAddPolygonSequence() {
@@ -287,7 +288,7 @@ export class MaplibreAreaTransform implements IControl {
                 this._polygonPoints[3]!
             ]);
 
-            this.addRectangle(corners);
+            this.addPolygon(corners, false);
             this._isAddingPolygon = false;
             this._polygonPoints = [];
             this._map?.off('click', this.onClickAddRectanglePoint);
@@ -331,14 +332,14 @@ export class MaplibreAreaTransform implements IControl {
         return [...corners.slice(topLeftIndex), ...corners.slice(0, topLeftIndex)];
     }
 
-    public async addRectangle(coordinates: GeoJSON.Position[]) {
-        const rectangleId = `${ID_PREFIX}${maxFeatureId++}`;
+    public async addPolygon(coordinates: GeoJSON.Position[], resizable: boolean) {
+        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!
         await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: rectangleId, isSelected: true, hasResizeHandles: false })
+            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true })
         }, true);
         await this.removeSelection();
-        await this.setSelection(rectangleId);
+        await this.setSelection(polygonId);
     }
 
     public on(event: string, listener: (...args: any[]) => void): void {
@@ -425,7 +426,7 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private buildPolygonGeoJSONFeatures(buildOptions: BuildPolygonOptions): GeoJSON.Feature[] {
-        const { coordinates, featureId, isSelected, hasResizeHandles } = buildOptions;
+        const { coordinates, featureId, isSelected } = buildOptions;
         let features: GeoJSON.Feature[] = [];
         features.push({
             type: 'Feature' as const,
@@ -463,12 +464,12 @@ export class MaplibreAreaTransform implements IControl {
         const point1 = coordinates[0]!;
         const point2 = coordinates[1]!;
 
-        const mid = [(point2[0]! + point1[0]!) / 2, (point2[1]! + point1[1]!) / 2];
+        const mid = this.getMidPoint(point1, point2);
         const pointsBearing = bearing(point1, point2);
         const perpendicularBearing = (pointsBearing - 90 + 360) % 360;
 
         const pointsDistance = distance(point1, point2, { units: 'kilometers' });
-        const offsetPoint = destination(mid, pointsDistance * 0.05, perpendicularBearing, { units: 'kilometers' });
+        const offsetPoint = destination(mid, pointsDistance * 0.075, perpendicularBearing, { units: 'kilometers' });
         offsetPoint.properties = {
             id: "rotate-" + featureId,
             type: 'rotate-handle',
@@ -476,6 +477,30 @@ export class MaplibreAreaTransform implements IControl {
             isSelected: true
         }
         return offsetPoint;
+    }
+
+    private getResizeHandlePoints(coordinates: GeoJSON.Position[], featureId: string): GeoJSON.Feature[] {
+        const points: GeoJSON.Feature[] = [];
+        for (let i = 0; i < coordinates.length; i++) {
+            const nextIndex = (i + 1) % coordinates.length;
+            const coordinate = this.getMidPoint(coordinates[i]!, coordinates[nextIndex]!);
+            points.push({
+                type: 'Feature' as const,
+                geometry: {
+                    type: 'Point' as const,
+                    coordinates: coordinate
+                },
+                properties: {
+                    id: "resize-" + i + "-" + featureId,
+                    featureId,
+                    type: 'resize-handle',
+                    icon: 'scale',
+                    isSelected: true,
+                    heading: this.getScaleHandleHeading(coordinates, coordinate)
+                }
+            });
+        }
+        return points;
     }
 
     private getScaleHandleHeading(coordinates: GeoJSON.Position[], currentPoint: GeoJSON.Position): number {
@@ -490,15 +515,20 @@ export class MaplibreAreaTransform implements IControl {
         }
         const features = this._map?.queryRenderedFeatures(e.point);
         const rotate = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'rotate-handle');
-        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER));
+        const scale = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'scale-handle');
+        const resize = features?.find((feature) => feature.layer.id.startsWith(HANDLE_LAYER) && feature.properties["type"] === 'resize-handle');
         const drag = features?.find((feature) => feature.layer.id.startsWith(AREA_LAYER));
-        if (rotate) this._map!.getCanvas().style.cursor = 'crosshair';
-        else if (scale) {
+        if (rotate) {
+            this._map!.getCanvas().style.cursor = 'crosshair';
+        } else if (scale) {
             const headingNormalized = (scale.properties["heading"] + 180) % 180;
             this._map!.getCanvas().style.cursor = headingNormalized <= 90 ? "nesw-resize" : "nwse-resize";
-        }
-        else if (drag) this._map!.getCanvas().style.cursor = 'move';
-        else this._map!.getCanvas().style.cursor = '';
+        } else if (resize) {
+            const headingNormalized = ((resize.properties["heading"] + 225) % 180);
+            this._map!.getCanvas().style.cursor = headingNormalized <= 90 ? "ns-resize" : "ew-resize";
+        } else if (drag) {
+            this._map!.getCanvas().style.cursor = 'move';
+        } else this._map!.getCanvas().style.cursor = '';
     }
 
     private onMouseDown = (e: MapMouseEvent) => {
@@ -518,8 +548,10 @@ export class MaplibreAreaTransform implements IControl {
     private async setStateFromMouseDown(currentPoint: [number, number], queriedFeatures: MapGeoJSONFeature[]) {
         const data = await this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)?.getData() as GeoJSON.FeatureCollection;
 
-        this._startPointCoordinates = data.features
-            .filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId)
+        const featurePoints = data.features.filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId) as GeoJSON.Feature<GeoJSON.Point>[];
+
+        this._startPointCoordinates = featurePoints
+            .filter(f => f.properties?.["type"] === "scale-handle")
             .map(f => (f.geometry as GeoJSON.Point).coordinates);
 
         if (!queriedFeatures.some(f => f.layer.id.startsWith(HANDLE_LAYER))) {
@@ -531,58 +563,33 @@ export class MaplibreAreaTransform implements IControl {
             this._startPoint = currentPoint;
             return;
         }
-        this._isScaling = true;
-        this._startPoint = this._startPointCoordinates![0]!;
-        for (let coordinate of this._startPointCoordinates!) {
-            if (distance(coordinate, currentPoint) < distance(this._startPoint, currentPoint)) {
-                this._startPoint = coordinate;
+        let closestFeature: GeoJSON.Feature<GeoJSON.Point> = featurePoints[0]!;
+        for (let feature of featurePoints) {
+            if (distance(feature.geometry.coordinates, currentPoint) < distance(closestFeature.geometry.coordinates, currentPoint)) {
+                closestFeature = feature;
             }
+        }
+
+        this._startPoint = closestFeature.geometry.coordinates;
+        if (closestFeature.properties?.["type"] === "scale-handle") {
+            this._isScaling = true;
+        } else {
+            this._isResizing = true;
         }
     }
 
     private onMouseMove = (e: MapMouseEvent) => {
         if (!this._selectedFeatureId) return;
         if (this._startPoint == null) return;
-        const diff = [e.lngLat.lng - this._startPoint![0]!, e.lngLat.lat - this._startPoint![1]!];
         let newCoordinates: GeoJSON.Position[];
         if (this._isRotating) {
-            const center = this.getCenter(this._startPointCoordinates!);
-            const angle1 = bearing(this._startPoint!, center);
-            const angle2 = bearing([e.lngLat.lng, e.lngLat.lat], center);
-            let transformedFature = transformRotate({
-                type: "Feature",
-                geometry: {
-                    type: "Polygon",
-                    coordinates: [this._startPointCoordinates!]
-                },
-                properties: {}
-            },
-                angle2 - angle1,
-                {
-                    mutate: false,
-                    pivot: center
-                });
-            newCoordinates = transformedFature.geometry.coordinates[0]!;
+            newCoordinates = this.rotatePolygon([e.lngLat.lng, e.lngLat.lat]);
         } else if (this._isScaling) {
-            const oppositePoint = this.getOpositePoint(this._startPointCoordinates!, this._startPoint!)
-            const distanceStartOpposite = distance(this._startPoint!, oppositePoint);
-            const distanceCurrentOpposite = distance([e.lngLat.lng, e.lngLat.lat], oppositePoint);
-            const scale = distanceCurrentOpposite / distanceStartOpposite;
-            let transformedFature = transformScale({
-                type: "Feature",
-                geometry: {
-                    type: "Polygon",
-                    coordinates: [this._startPointCoordinates!]
-                },
-                properties: {}
-            },
-                scale,
-                {
-                    mutate: false,
-                    origin: oppositePoint
-                });
-            newCoordinates = transformedFature.geometry.coordinates[0]!;
+            newCoordinates = this.scalePolygon([e.lngLat.lng, e.lngLat.lat]);
+        } else if (this._isResizing) {
+            newCoordinates = this.resizeRectangleSide([e.lngLat.lng, e.lngLat.lat]);
         } else {
+            const diff = [e.lngLat.lng - this._startPoint![0]!, e.lngLat.lat - this._startPoint![1]!];
             newCoordinates = this._startPointCoordinates!.map((coordinate) => [
                 coordinate[0]! + diff[0]!,
                 coordinate[1]! + diff[1]!
@@ -598,6 +605,7 @@ export class MaplibreAreaTransform implements IControl {
         this._startPointCoordinates = undefined;
         this._isScaling = false;
         this._isRotating = false;
+        this._isResizing = false;
     }
 
     private onClick = (e: MapMouseEvent) => {
@@ -626,7 +634,7 @@ export class MaplibreAreaTransform implements IControl {
         for (let feature of data.features) {
             delete feature?.properties?.["isSelected"];
         }
-        data.features = data.features.filter(f => f.properties?.["type"] != "rotate-handle");
+        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle");
         await source.setData(data, true);
     }
 
@@ -636,13 +644,18 @@ export class MaplibreAreaTransform implements IControl {
         const data = await source.getData() as GeoJSON.FeatureCollection;
         const corners: GeoJSON.Feature<GeoJSON.Point>[] = []
         for (let feature of data.features) {
-            if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId) {
+            if (feature.geometry.type === "Point" &&
+                feature.properties?.["featureId"] === featureId &&
+                feature.properties?.["type"] === "scale-handle") {
                 feature.properties!["isSelected"] = true;
                 corners.push(feature as GeoJSON.Feature<GeoJSON.Point>);
             }
         }
         corners.sort((f1, f2) => f2.properties?.["id"] < f1.properties?.["id"] ? 1 : -1);
         data.features.push(this.getRotateHandlePoint(corners.map(f => (f.geometry.coordinates)), featureId))
+        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
+            data.features.push(...this.getResizeHandlePoints(corners.map(f => (f.geometry.coordinates)), featureId));
+        }
         await source.setData(data, true);
     }
 
@@ -650,9 +663,141 @@ export class MaplibreAreaTransform implements IControl {
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         const data = await source.getData() as GeoJSON.FeatureCollection;
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, hasResizeHandles: false }));
-        data.features = data.features.filter(f => f.properties?.["type"] != "rotate-handle");
+        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true }));
+        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle");
         data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
+        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
+            data.features.push(...this.getResizeHandlePoints(newCoordinates, featureId));
+        }
         await source.setData(data, true);
+    }
+
+    private rotatePolygon(currentPoint: GeoJSON.Position): GeoJSON.Position[] {
+        const center = this.getCenter(this._startPointCoordinates!);
+        const angle1 = bearing(this._startPoint!, center);
+        const angle2 = bearing(currentPoint, center);
+        let transformedFature = transformRotate(
+            {
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [this._startPointCoordinates!]
+                },
+                properties: {}
+            },
+            angle2 - angle1,
+            {
+                mutate: false,
+                pivot: center
+            }
+        );
+        return transformedFature.geometry.coordinates[0]!;
+    }
+
+    private scalePolygon(currentPoint: GeoJSON.Position): GeoJSON.Position[] {
+        const oppositePoint = this.getOpositePoint(this._startPointCoordinates!, this._startPoint!)
+        const distanceStartOpposite = distance(this._startPoint!, oppositePoint);
+        const distanceCurrentOpposite = distance(currentPoint, oppositePoint);
+        const scale = distanceCurrentOpposite / distanceStartOpposite;
+        let transformedFature = transformScale({
+            type: "Feature",
+            geometry: {
+                type: "Polygon",
+                coordinates: [this._startPointCoordinates!]
+            },
+            properties: {}
+        },
+            scale,
+            {
+                mutate: false,
+                origin: oppositePoint
+            });
+        return transformedFature.geometry.coordinates[0]!;
+    }
+
+    private resizeRectangleSide(
+        currentPoint: GeoJSON.Position
+    ): GeoJSON.Position[] {
+        const startCoord = this._startPoint as [number, number];
+
+        const edgeIndex = this.getClosestEdgeIndex(this._startPointCoordinates!, startCoord);
+        const i0 = edgeIndex;
+        const i1 = (edgeIndex + 1) % 4;
+
+        const edgeBearing = bearing(this._startPointCoordinates![i0]!, this._startPointCoordinates![i1]!);
+        const normalBearing = edgeBearing - 90;
+
+        const dragDistance = distance(startCoord, currentPoint, { units: 'kilometers' });
+        const dragBearing = bearing(startCoord, currentPoint);
+
+        const angleDiff = ((dragBearing - normalBearing + 360) % 360);
+        let projectedDistance = dragDistance * Math.cos((angleDiff * Math.PI) / 180);
+
+        // Find the opposite edge midpoint and measure how far the dragged edge
+        // currently is from it — this is the maximum we can move before flipping
+        const oppositeEdgeIndex = (edgeIndex + 2) % 4;
+        const i2 = oppositeEdgeIndex;
+        const i3 = (oppositeEdgeIndex + 1) % 4;
+
+        const draggedEdgeMid = this.getMidPoint(
+            this._startPointCoordinates![i0]!,
+            this._startPointCoordinates![i1]!
+        );
+        const oppositeEdgeMid = this.getMidPoint(
+            this._startPointCoordinates![i2]!,
+            this._startPointCoordinates![i3]!
+        );
+
+        const maxDistance = distance(draggedEdgeMid, oppositeEdgeMid, { units: 'kilometers' });
+
+        projectedDistance = Math.max(projectedDistance, -(maxDistance * 0.9));
+
+        const newP0 = destination(
+            this._startPointCoordinates![i0]!,
+            projectedDistance,
+            normalBearing,
+            { units: 'kilometers' }
+        ).geometry.coordinates;
+
+        const newP1 = destination(
+            this._startPointCoordinates![i1]!,
+            projectedDistance,
+            normalBearing,
+            { units: 'kilometers' }
+        ).geometry.coordinates;
+
+        const newCoordinates = [...this._startPointCoordinates!];
+        newCoordinates[i0] = newP0;
+        newCoordinates[i1] = newP1;
+
+        return newCoordinates;
+    }
+
+    private getClosestEdgeIndex(coordinates: GeoJSON.Position[], point: GeoJSON.Position): number {
+        let closestIndex = 0;
+        let minDistance = Infinity;
+
+        for (let i = 0; i < coordinates.length; i++) {
+            const p0 = coordinates[i] as [number, number];
+            const p1 = coordinates[(i + 1) % coordinates.length] as [number, number];
+
+            // Midpoint of this edge
+            const midPoint = this.getMidPoint(p0, p1);
+            const dist = distance(point, midPoint);
+
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    private getMidPoint(p1: GeoJSON.Position, p2: GeoJSON.Position): GeoJSON.Position {
+        return [
+            (p1![0]! + p2![0]!) / 2,
+            (p1![1]! + p2![1]!) / 2
+        ];
     }
 }
