@@ -245,13 +245,16 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     public startAddPolygonSequence() {
+        this.removeSelection();
         this._state = "adding-points";
         this._polygonPoints = [];
         this._map?.on('click', this.onClickAddRectanglePoint);
     }
 
     private onClickAddRectanglePoint = async (e: MapMouseEvent) => {
-        if (this._state !== "adding-points") return;
+        if (this._state !== "adding-points") {
+            return;
+        }
         const coordinates = [e.lngLat.lng, e.lngLat.lat] as GeoJSON.Position;
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         this._polygonPoints.push(coordinates);
@@ -566,11 +569,13 @@ export class MaplibreAreaTransform implements IControl {
     private onMouseUp = () => {
         this._startPx = null;
         this._startCornersPx = undefined;
-        this._state = "";
+        if (this._state !== "adding-points") {
+            this._state = "";
+        }
     }
 
     private onClick = (e: MapMouseEvent) => {
-        if (this._state !== "adding-points") {
+        if (this._state === "adding-points") {
             return;
         }
         const features = this._map?.queryRenderedFeatures(e.point);
