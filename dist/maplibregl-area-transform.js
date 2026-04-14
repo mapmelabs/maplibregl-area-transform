@@ -432,25 +432,24 @@
 	    const edgeIndex = pxGetClosestEdgeIndex(cornersPx, startPx);
 	    const i0 = edgeIndex;
 	    const i1 = (edgeIndex + 1) % 4;
-	    const displacement = pxProjectOntoNormal(cornersPx[i0], cornersPx[i1], startPx, currentPx);
+	    const displacement = pxProjectOntoNormal(cornersPx[i0], cornersPx[i1], currentPx, startPx);
 	    // Clamp: can't push past 90% toward the opposite edge
 	    const oppI0 = (edgeIndex + 2) % 4;
 	    const oppI1 = (edgeIndex + 3) % 4;
-	    const draggedMid = pxMidpoint(cornersPx[i0], cornersPx[i1]);
 	    const oppMid = pxMidpoint(cornersPx[oppI0], cornersPx[oppI1]);
-	    const maxDisp = pxDistance(draggedMid, oppMid);
+	    const maxDisp = pxProjectOntoNormal(cornersPx[oppI0], cornersPx[oppI1], oppMid, startPx);
 	    const edgeVec = [cornersPx[i1][0] - cornersPx[i0][0], cornersPx[i1][1] - cornersPx[i0][1]];
 	    const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
 	    const normal = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
 	    const clampedDisp = Math.max(displacement, -(maxDisp * 0.9));
 	    const newCorners = [...cornersPx];
 	    newCorners[i0] = [
-	        cornersPx[i0][0] + normal[0] * clampedDisp,
-	        cornersPx[i0][1] + normal[1] * clampedDisp
+	        cornersPx[i0][0] - normal[0] * clampedDisp,
+	        cornersPx[i0][1] - normal[1] * clampedDisp
 	    ];
 	    newCorners[i1] = [
-	        cornersPx[i1][0] + normal[0] * clampedDisp,
-	        cornersPx[i1][1] + normal[1] * clampedDisp
+	        cornersPx[i1][0] - normal[0] * clampedDisp,
+	        cornersPx[i1][1] - normal[1] * clampedDisp
 	    ];
 	    return newCorners;
 	}
