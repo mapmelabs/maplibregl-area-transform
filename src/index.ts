@@ -474,7 +474,6 @@ export class MaplibreAreaTransform implements IControl {
             this._map!.getCanvas().style.cursor = 'crosshair';
         } else if (scaleOrResize) {
             const headingNormalized = (scaleOrResize.properties["heading"] + 180) % 180;
-            console.log(headingNormalized);
             let cursor = "ns-resize"
             if (headingNormalized > 157) {
                 cursor = "ns-resize"
