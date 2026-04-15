@@ -731,7 +731,6 @@
 	        const startY = canvas.height * (1 - this.options.rectangleSizeFactor) / 2;
 	        const width = canvas.width * this.options.rectangleSizeFactor;
 	        const height = canvas.height * this.options.rectangleSizeFactor;
-	        console.log(startX, startY, width, height);
 	        const corners = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
 	        return this.addPolygon(this.unprojectAll(corners), true);
 	    }
