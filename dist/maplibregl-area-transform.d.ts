@@ -19,6 +19,11 @@ type MaplibreAreaTransformOptions = {
      * @default true
      */
     showAddRectangleButton?: boolean;
+    /**
+     * Show the delete button
+     * @default true
+     */
+    showDeleteButton?: boolean;
 };
 /**
  * Maplibre area transform control
@@ -58,20 +63,29 @@ declare class MaplibreAreaTransform implements IControl {
      * Initialize the rectangle button
      */
     private initRectangleButton;
+    private initDeleteButton;
     private initGeojsonSourceAndLayers;
     /** @inheritdoc */
     onRemove(): void;
     addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string>;
-    onClickAddRectangle: () => void;
-    startAddPolygonSequence(): void;
-    private onClickAddRectanglePoint;
     /**
-     * Sort corners of a rectangle in clockwise order starting from the top-left corner.
-     * @param corners The corners of the rectangle.
-     * @returns The sorted corners of the rectangle.
+     * This adds a rectangle to the middle of the screen
+     * @returns a pomise that resolves to the newly added rectangle ID
      */
-    private sortCorners;
-    addPolygon(coordinates: GeoJSON.Position[], resizable: boolean): Promise<void>;
+    addRectangle(): Promise<string>;
+    /**
+     * Initiates the state of adding points in order to create a polygon on the screen
+     */
+    startAddPolygonSequence(): void;
+    private onDeleteButtonClick;
+    /**
+     * Adds a polygon to the map
+     * @param coordinates - the polygon coordinates
+     * @param resizable - only relevant for rectangles
+     * @returns a promise with the polygon ID
+     */
+    addPolygon(coordinates: GeoJSON.Position[], resizable: boolean): Promise<string>;
+    deleteFeature(featureId: string): Promise<void>;
     on(event: string, listener: (...args: any[]) => void): void;
     off(event: string, listener: (...args: any[]) => void): void;
     private onFileSelected;
@@ -87,6 +101,7 @@ declare class MaplibreAreaTransform implements IControl {
     private onMouseMove;
     private onMouseUp;
     private onClick;
+    private onClickWhenInPolygonMode;
     private initImages;
     private removeSelection;
     private setSelection;
@@ -99,6 +114,7 @@ declare class MaplibreAreaTransform implements IControl {
     private projectAll;
     /** Unproject pixel points back to lat/lng positions */
     private unprojectAll;
+    private setState;
 }
 
 export { MaplibreAreaTransform };

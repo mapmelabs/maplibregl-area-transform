@@ -460,6 +460,36 @@ function pxGetClosestEdgeIndex(cornersPx, pointPx) {
     }
     return closest;
 }
+function pxMovePoints(cornersPx, startPx, currentPx) {
+    const dx = currentPx[0] - startPx[0];
+    const dy = currentPx[1] - startPx[1];
+    return cornersPx.map(p => [p[0] + dx, p[1] + dy]);
+}
+/**
+ * Sort points in clockwise order starting from the top-left corner.
+ * @param corners The corners of the rectangle.
+ * @returns The sorted corners of the rectangle.
+ */
+function sortPoints(points) {
+    const centerPx = pxCentroid(points);
+    const indexed = points.map((px, i) => ({
+        px, i,
+        angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
+    }));
+    indexed.sort((a, b) => a.angle - b.angle);
+    // Find top-left (min x - y in pixel space)
+    let topLeftIndex = 0;
+    let minVal = Infinity;
+    indexed.forEach((item, i) => {
+        const val = item.px[0] - item.px[1];
+        if (val < minVal) {
+            minVal = val;
+            topLeftIndex = i;
+        }
+    });
+    const sorted = [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)];
+    return sorted.map(item => points[item.i]);
+}
 
 var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
 
@@ -468,7 +498,8 @@ var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAA
 const defaultOptions = {
     showAddImageButton: true,
     showAddRectangleButton: true,
-    showPolygonButton: true
+    showPolygonButton: true,
+    showDeleteButton: true
 };
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
 const AREA_LAYER = 'area-transform-layer-polygon-area-';
@@ -476,6 +507,8 @@ const ID_PREFIX = 'area-transform-feature-';
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = 'raster-';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const POLYGON_BUTTON_ID = 'area-transfrom-polygon';
+const DELETE_BUTTON_ID = 'area-transfrom-delete';
 let maxFeatureId = 0;
 /**
  * Maplibre area transform control
@@ -521,6 +554,9 @@ class MaplibreAreaTransform {
         if (this.options.showPolygonButton) {
             this.initPolygonButton();
         }
+        if (this.options.showDeleteButton) {
+            this.initDeleteButton();
+        }
         this._eventEmitter.emit('init');
         return this._container;
     }
@@ -537,7 +573,7 @@ class MaplibreAreaTransform {
         button.type = 'button';
         button.setAttribute('aria-label', 'Add Image');
         const icon = document.createElement('span');
-        icon.className = 'maplibregl-ctrl-icon-add-image';
+        icon.className = 'icon-add-image';
         button.appendChild(icon);
         button.onclick = () => fileInput.click();
         this._container.appendChild(fileInput);
@@ -549,9 +585,10 @@ class MaplibreAreaTransform {
     initPolygonButton() {
         const button = document.createElement('button');
         button.type = 'button';
+        button.id = POLYGON_BUTTON_ID;
         button.setAttribute('aria-label', 'Add Polygon');
         const icon = document.createElement('span');
-        icon.className = 'maplibregl-ctrl-icon-add-polygon';
+        icon.className = 'icon-add-polygon';
         button.appendChild(icon);
         button.onclick = () => this.startAddPolygonSequence();
         this._container.appendChild(button);
@@ -564,9 +601,20 @@ class MaplibreAreaTransform {
         button.type = 'button';
         button.setAttribute('aria-label', 'Add Rectangle');
         const icon = document.createElement('span');
-        icon.className = 'maplibregl-ctrl-icon-add-rectangle';
+        icon.className = 'icon-add-rectangle';
         button.appendChild(icon);
-        button.onclick = () => this.onClickAddRectangle();
+        button.onclick = () => this.addRectangle();
+        this._container.appendChild(button);
+    }
+    initDeleteButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = DELETE_BUTTON_ID;
+        button.setAttribute('aria-label', 'Delete');
+        const icon = document.createElement('span');
+        icon.className = 'icon-delete';
+        button.appendChild(icon);
+        button.onclick = () => this.onDeleteButtonClick();
         this._container.appendChild(button);
     }
     initGeojsonSourceAndLayers() {
@@ -652,83 +700,48 @@ class MaplibreAreaTransform {
         await this.setSelection(imageId);
         return imageId;
     }
-    onClickAddRectangle = () => {
+    /**
+     * This adds a rectangle to the middle of the screen
+     * @returns a pomise that resolves to the newly added rectangle ID
+     */
+    addRectangle() {
+        if (this._state === "adding-ploygon") {
+            return Promise.reject("Cannot add rectangle while adding polygon");
+        }
         const canvas = this._map.getCanvas();
         const startX = canvas.width / 3;
         const startY = canvas.height / 3;
         const width = canvas.width / 3;
         const height = canvas.height / 3;
         const corners = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
-        this.addPolygon(this.unprojectAll(corners), true);
-    };
+        return this.addPolygon(this.unprojectAll(corners), true);
+    }
+    /**
+     * Initiates the state of adding points in order to create a polygon on the screen
+     */
     startAddPolygonSequence() {
         this.removeSelection();
-        this._state = "adding-points";
+        this.setState("adding-ploygon");
         this._polygonPoints = [];
-        this._map?.on('click', this.onClickAddRectanglePoint);
     }
-    onClickAddRectanglePoint = async (e) => {
-        if (this._state !== "adding-points") {
+    onDeleteButtonClick() {
+        if (this._state === "adding-ploygon") {
             return;
         }
-        const coordinates = [e.lngLat.lng, e.lngLat.lat];
-        const source = this._map?.getSource(GEOJSON_SOURCE);
-        this._polygonPoints.push(coordinates);
-        if (this._polygonPoints.length === 4) {
-            await source.updateData({ remove: ["temp-point-1", "temp-point-2", "temp-point-3"] }, true);
-            const corners = this.sortCorners([
-                this._polygonPoints[0], this._polygonPoints[1],
-                this._polygonPoints[2], this._polygonPoints[3]
-            ]);
-            this.addPolygon(corners, false);
-            this._state = "";
-            this._polygonPoints = [];
-            this._map?.off('click', this.onClickAddRectanglePoint);
+        this.removeSelection();
+        if (this._state === "deleting") {
+            this.setState("");
         }
         else {
-            await source.updateData({
-                add: [{
-                        type: "Feature",
-                        geometry: {
-                            type: "Point",
-                            coordinates
-                        },
-                        properties: {
-                            id: "temp-point-" + this._polygonPoints.length,
-                            temp: true,
-                            isSelected: false
-                        }
-                    }]
-            }, true);
+            this.setState("deleting");
         }
-    };
-    /**
-     * Sort corners of a rectangle in clockwise order starting from the top-left corner.
-     * @param corners The corners of the rectangle.
-     * @returns The sorted corners of the rectangle.
-     */
-    sortCorners(corners) {
-        // Sort in pixel space (flat, unambiguous)
-        const cornersPx = this.projectAll(corners);
-        const centerPx = pxCentroid(cornersPx);
-        const indexed = cornersPx.map((px, i) => ({
-            px, i,
-            angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
-        }));
-        indexed.sort((a, b) => a.angle - b.angle);
-        // Find top-left (min x - y in pixel space)
-        let topLeftIndex = 0;
-        let minVal = Infinity;
-        indexed.forEach((item, i) => {
-            const val = item.px[0] - item.px[1];
-            if (val < minVal) {
-                minVal = val;
-                topLeftIndex = i;
-            }
-        });
-        const sorted = [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)];
-        return sorted.map(item => corners[item.i]);
     }
+    /**
+     * Adds a polygon to the map
+     * @param coordinates - the polygon coordinates
+     * @param resizable - only relevant for rectangles
+     * @returns a promise with the polygon ID
+     */
     async addPolygon(coordinates, resizable) {
         const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
         const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
@@ -737,6 +750,15 @@ class MaplibreAreaTransform {
         }, true);
         await this.removeSelection();
         await this.setSelection(polygonId);
+        this.setState("");
+        return polygonId;
+    }
+    async deleteFeature(featureId) {
+        this.removeSelection();
+        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
+        let data = await geojsonSource.getData();
+        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
+        geojsonSource.setData(data);
     }
     on(event, listener) {
         this._eventEmitter.on(event, listener);
@@ -818,6 +840,7 @@ class MaplibreAreaTransform {
             geometry: { type: 'Point', coordinates: handleCoord },
             properties: {
                 id: "rotate-" + featureId,
+                featureId,
                 type: 'rotate-handle',
                 icon: 'rotate',
                 isSelected: true
@@ -864,21 +887,33 @@ class MaplibreAreaTransform {
             this._map.getCanvas().style.cursor = '';
             return;
         }
-        const features = this._map?.queryRenderedFeatures(e.point);
+        if (!this._selectedFeatureId) {
+            return;
+        }
+        const features = this._map?.queryRenderedFeatures(e.point).filter(f => f.properties?.["featureId"] === this._selectedFeatureId);
         const rotate = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'rotate-handle');
-        const scale = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'scale-handle');
-        const resize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'resize-handle');
+        const scaleOrResize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && (f.properties["type"] === 'scale-handle' || f.properties["type"] === 'resize-handle'));
         const drag = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
         if (rotate) {
             this._map.getCanvas().style.cursor = 'crosshair';
         }
-        else if (scale) {
-            const headingNormalized = (scale.properties["heading"] + 180) % 180;
-            this._map.getCanvas().style.cursor = headingNormalized <= 90 ? "nesw-resize" : "nwse-resize";
-        }
-        else if (resize) {
-            const headingNormalized = (resize.properties["heading"] + 225) % 180;
-            this._map.getCanvas().style.cursor = headingNormalized <= 90 ? "ns-resize" : "ew-resize";
+        else if (scaleOrResize) {
+            const headingNormalized = (scaleOrResize.properties["heading"] + 180) % 180;
+            console.log(headingNormalized);
+            let cursor = "ns-resize";
+            if (headingNormalized > 157) {
+                cursor = "ns-resize";
+            }
+            else if (headingNormalized > 112) {
+                cursor = "nwse-resize";
+            }
+            else if (headingNormalized > 67) {
+                cursor = "ew-resize";
+            }
+            else if (headingNormalized > 22) {
+                cursor = "nesw-resize";
+            }
+            this._map.getCanvas().style.cursor = cursor;
         }
         else if (drag) {
             this._map.getCanvas().style.cursor = 'move';
@@ -892,7 +927,7 @@ class MaplibreAreaTransform {
             return;
         }
         let features = this._map?.queryRenderedFeatures(e.point);
-        features = features?.filter(f => f.source === GEOJSON_SOURCE) ?? [];
+        features = features?.filter(f => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this._selectedFeatureId) ?? [];
         if (features.length <= 0) {
             return;
         }
@@ -907,12 +942,12 @@ class MaplibreAreaTransform {
             .filter(f => f.properties?.["type"] === "scale-handle")
             .map(f => this.project(f.geometry.coordinates));
         if (!queriedFeatures.some(f => f.layer.id.startsWith(HANDLE_LAYER))) {
-            this._state = "moving";
+            this.setState("moving");
             this._startPx = currentPx;
             return;
         }
         if (queriedFeatures.some(f => f.properties["type"] === "rotate-handle")) {
-            this._state = "rotating";
+            this.setState("rotating");
             this._startPx = currentPx;
             return;
         }
@@ -926,10 +961,10 @@ class MaplibreAreaTransform {
         }
         this._startPx = this.project(closestFeature.geometry.coordinates);
         if (closestFeature.properties?.["type"] === "scale-handle") {
-            this._state = "scaling";
+            this.setState("scaling");
         }
         else {
-            this._state = "resizeing";
+            this.setState("resizeing");
         }
     }
     onMouseMove = (e) => {
@@ -949,9 +984,7 @@ class MaplibreAreaTransform {
                 break;
             default:
             case "moving": {
-                const dx = currentPx[0] - this._startPx[0];
-                const dy = currentPx[1] - this._startPx[1];
-                newCornersPx = this._startCornersPx.map(p => [p[0] + dx, p[1] + dy]);
+                newCornersPx = pxMovePoints(this._startCornersPx, this._startPx, currentPx);
                 break;
             }
         }
@@ -962,21 +995,88 @@ class MaplibreAreaTransform {
     onMouseUp = () => {
         this._startPx = null;
         this._startCornersPx = undefined;
-        if (this._state !== "adding-points") {
-            this._state = "";
+        if (this._state === "moving" ||
+            this._state === "resizeing" ||
+            this._state === "rotating" ||
+            this._state === "scaling") {
+            this.setState("");
         }
     };
     onClick = (e) => {
-        if (this._state === "adding-points") {
+        if (this._state === "adding-ploygon") {
+            this.onClickWhenInPolygonMode(e);
             return;
         }
         const features = this._map?.queryRenderedFeatures(e.point);
         const polygonFeature = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
         this.removeSelection();
         if (polygonFeature) {
+            if (this._state === "deleting") {
+                this.deleteFeature(polygonFeature.properties["featureId"]);
+                return;
+            }
             this.setSelection(polygonFeature.properties["featureId"]);
         }
     };
+    async onClickWhenInPolygonMode(e) {
+        const coordinates = [e.lngLat.lng, e.lngLat.lat];
+        const source = this._map?.getSource(GEOJSON_SOURCE);
+        const pixelThreshold = 10;
+        if (this._polygonPoints.length > 0 &&
+            Math.abs(this._polygonPoints[0][0] - e.point.x) < pixelThreshold &&
+            Math.abs(this._polygonPoints[0][1] - e.point.y) < pixelThreshold) {
+            // last point is near the first one
+            const ids = this._polygonPoints.map((_, i) => "temp-point-" + (i + 1));
+            await source.updateData({ remove: [...ids, 'temp-area'] }, true);
+            const points = sortPoints(this._polygonPoints);
+            this.addPolygon(this.unprojectAll(points), false);
+            this._polygonPoints = [];
+            return;
+        }
+        // Adding the point
+        this._polygonPoints.push([e.point.x, e.point.y]);
+        const point = {
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates
+            },
+            properties: {
+                id: "temp-point-" + this._polygonPoints.length,
+                temp: true,
+                isSelected: false
+            }
+        };
+        if (this._polygonPoints.length < 3) {
+            await source.updateData({
+                add: [point]
+            }, true);
+            return;
+        }
+        const areaGeometry = {
+            type: "Polygon",
+            coordinates: [[...this.unprojectAll(this._polygonPoints), this.unproject(this._polygonPoints[0])]]
+        };
+        if (this._polygonPoints.length === 3) {
+            const area = {
+                type: "Feature",
+                geometry: areaGeometry,
+                properties: {
+                    id: "temp-area",
+                    temp: true,
+                    isSelected: false
+                }
+            };
+            await source.updateData({
+                add: [point, area]
+            }, true);
+            return;
+        }
+        await source.updateData({
+            add: [point],
+            update: [{ id: "temp-area", newGeometry: areaGeometry }]
+        }, true);
+    }
     async initImages() {
         const rotateImage = await this._map?.loadImage(img$1);
         this._map?.addImage('rotate', rotateImage?.data);
@@ -1043,6 +1143,11 @@ class MaplibreAreaTransform {
     /** Unproject pixel points back to lat/lng positions */
     unprojectAll(pxPoints) {
         return pxPoints.map(p => this.unproject(p));
+    }
+    setState(state) {
+        this._state = state;
+        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-ploygon");
+        document.getElementById(DELETE_BUTTON_ID)?.classList.toggle('active', this._state === "deleting");
     }
 }
 
