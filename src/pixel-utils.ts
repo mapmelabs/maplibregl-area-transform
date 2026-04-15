@@ -122,3 +122,37 @@ export function pxGetClosestEdgeIndex(cornersPx: PxPoint[], pointPx: PxPoint): n
     }
     return closest;
 }
+
+export function pxMovePoints(cornersPx: PxPoint[], startPx: PxPoint, currentPx: PxPoint) {
+    const dx = currentPx[0] - startPx[0];
+    const dy = currentPx[1] - startPx[1];
+    return cornersPx!.map(p => [p[0] + dx, p[1] + dy] as PxPoint);
+}
+
+/**
+ * Sort points in clockwise order starting from the top-left corner.
+ * @param corners The corners of the rectangle.
+ * @returns The sorted corners of the rectangle.
+ */
+export function sortPoints(points: PxPoint[]): PxPoint[] {
+    const centerPx = pxCentroid(points);
+    const indexed = points.map((px, i) => ({
+        px, i,
+        angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
+    }));
+    indexed.sort((a, b) => a.angle - b.angle);
+
+    // Find top-left (min x - y in pixel space)
+    let topLeftIndex = 0;
+    let minVal = Infinity;
+    indexed.forEach((item, i) => {
+        const val = item.px[0] - item.px[1];
+        if (val < minVal) {
+            minVal = val;
+            topLeftIndex = i;
+        }
+    });
+
+    const sorted = [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)];
+    return sorted.map(item => points[item.i]!);
+}
