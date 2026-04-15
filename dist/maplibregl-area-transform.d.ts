@@ -10,10 +10,10 @@ type MaplibreAreaTransformOptions = {
      */
     showAddImageButton?: boolean;
     /**
-     * Show the polygon button
+     * Show the add polygon button
      * @default true
      */
-    showPolygonButton?: boolean;
+    showAddPolygonButton?: boolean;
     /**
      * Show the add rectangle button
      * @default true

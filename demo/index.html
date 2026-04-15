@@ -36,7 +36,9 @@
             doubleClickZoom: false
         });
         map.on('load', () => {
-            const image = new MaplibreAreaTransform();
+            const image = new MaplibreAreaTransform({
+                showAddPolygonButton: false
+            });
             map.addControl(image);
         });
     </script>

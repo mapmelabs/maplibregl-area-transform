@@ -504,7 +504,7 @@
 	const defaultOptions = {
 	    showAddImageButton: true,
 	    showAddRectangleButton: true,
-	    showPolygonButton: true,
+	    showAddPolygonButton: true,
 	    showDeleteButton: true
 	};
 	const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
@@ -558,7 +558,7 @@
 	        if (this.options.showAddRectangleButton) {
 	            this.initRectangleButton();
 	        }
-	        if (this.options.showPolygonButton) {
+	        if (this.options.showAddPolygonButton) {
 	            this.initPolygonButton();
 	        }
 	        if (this.options.showDeleteButton) {
@@ -641,7 +641,7 @@
 	                'icon-image': ['get', 'icon'],
 	                'icon-allow-overlap': true,
 	                'icon-ignore-placement': true,
-	                'icon-rotate': ["coalesce", ['get', 'heading'], 0]
+	                'icon-rotate': ['get', 'heading']
 	            },
 	            filter: [
 	                'all',
@@ -683,6 +683,9 @@
 	        this._map = null;
 	    }
 	    async addImage(imageUrl, coordinates) {
+	        if (this._state === "adding-ploygon") {
+	            return Promise.reject("Cannot add image while adding polygon");
+	        }
 	        const imageId = `${ID_PREFIX}${maxFeatureId++}`;
 	        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
 	        this._map?.addSource(imageSourceId, {
@@ -705,6 +708,7 @@
 	        }, true);
 	        await this.removeSelection();
 	        await this.setSelection(imageId);
+	        this.setState("");
 	        return imageId;
 	    }
 	    /**
@@ -855,7 +859,8 @@
 	                featureId,
 	                type: 'rotate-handle',
 	                icon: 'rotate',
-	                isSelected: true
+	                isSelected: true,
+	                heading: 0
 	            }
 	        };
 	    }
