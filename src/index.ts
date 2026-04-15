@@ -189,7 +189,7 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
-                'icon-rotate': ['get', 'heading']
+                'icon-rotate': ["coalesce", ['get', 'heading'], 0]
             },
             filter: [
                 'all',
