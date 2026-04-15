@@ -497,15 +497,18 @@
 	    return sorted.map(item => points[item.i]);
 	}
 
-	var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
+	var img$1 = "data:image/png;base64,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";
 
-	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAActJREFUeNpi/P//PwMJwAWIbYH4MBDvIUUjA8giIvGy/6igmQS9RFnEA7fk1+f/v6/NQbZsGbUsAllyDGbJz73x/3+ss/r/61A2mE+KZUwEQnY6EFv+/3ib4de+BAYQDQL/3pxn+HU4h4Hh9xcQNxKIiwlFESGLQBHP8PtEJcP/b89R4xZo6e+zrSjq8AEWAvKg1CXPJOcJNPgOAyO3JMPfOysZmCTtIK4UMUBWR1Gqc0GOeVBCAMURWoIAARNK4wiUV1yBuAlZkJGVB8YsAWJTID5DrXzkAkt5f1+fI8knpOQjbBn2GimWgDAjiUWQIBAbQCP/DykaSbWIbMDEQCdAjkUGtLYoGYiPAfF5KK1Di2oiGZbc/n24BWM+A2IRYlMdMT4ygZVlf4BlG6hw/ff8EIgrSUwZR2zQgSw5DcTxYN9DC9Z/H27D5NdBg5Fii+pBBKggBWE4+POV4c/1ubBqw5KYaoJQPvoAxPw/t7jD6h5UVwJLcVaLdhBzIxAHUOIjcPHPZjuFgQFRkEJcyK/KwKKZRLVqQgZWlYNS24/NbuBqAlSlI1Xlx6hVqKJY9ut4BcntBVJKb7hl5LSAyCm9i5EakL2kaAQIMAAP/aLE8VYEBwAAAABJRU5ErkJggg==";
+	var img = "data:image/png;base64,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ZURhdGUAMjAxOS0wNC0yMFQwNzo1MDozNCswODowMJMv63oAAAAsdEVYdHhtcDpDcmVhdG9yVG9vbABBZG9iZSBQaG90b3Nob3AgQ0MgKFdpbmRvd3MpKBmP8QAAACp0RVh0eG1wOk1ldGFkYXRhRGF0ZQAyMDE5LTA0LTIwVDA5OjE1OjE5KzA4OjAwlJFWNgAAACh0RVh0eG1wOk1vZGlmeURhdGUAMjAxOS0wNC0yMFQwOToxNToxOSswODowMKg1BYgAAAAYdEVYdHhtcDpQaXhlbFhEaW1lbnNpb24AMjAwMEY4r7oAAAAYdEVYdHhtcDpQaXhlbFlEaW1lbnNpb24AMjAwMP/DdFIAAAA+dEVYdHhtcE1NOkRlcml2ZWRGcm9tAHhtcC5kaWQ6ZDA3MGQyYTYtOTQ2Mi02ZjQ1LTk2ZGQtODY0NzkwMDIxODJhtJUlXwAAAD10RVh0eG1wTU06RG9jdW1lbnRJRAB4bXAuZGlkOmQwNzBkMmE2LTk0NjItNmY0NS05NmRkLTg2NDc5MDAyMTgyYY712Y8AAAA9dEVYdHhtcE1NOkluc3RhbmNlSUQAeG1wLmlpZDplNzQ4MGY4Ny03Mzg0LWYxNDgtYjU0NC0zOWMyOWJkYmRjMjEQmyaQAAAARXRFWHR4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQAeG1wLmRpZDpkMDcwZDJhNi05NDYyLTZmNDUtOTZkZC04NjQ3OTAwMjE4MmGCKLd8AAAAAElFTkSuQmCC";
 
 	const defaultOptions = {
 	    showAddImageButton: true,
 	    showAddRectangleButton: true,
 	    showAddPolygonButton: true,
-	    showDeleteButton: true
+	    showDeleteButton: true,
+	    rectangleSizeFactor: 0.5,
+	    areaBackgroundColor: 'orange',
+	    areaOpacity: 0.1
 	};
 	const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
 	const AREA_LAYER = 'area-transform-layer-polygon-area-';
@@ -641,7 +644,11 @@
 	                'icon-image': ['get', 'icon'],
 	                'icon-allow-overlap': true,
 	                'icon-ignore-placement': true,
-	                'icon-rotate': ['get', 'heading']
+	                'icon-rotate': ['get', 'heading'],
+	                'icon-size': 0.4
+	            },
+	            paint: {
+	                'icon-color': this.options.areaBackgroundColor
 	            },
 	            filter: [
 	                'all',
@@ -654,7 +661,7 @@
 	            type: 'circle',
 	            source: GEOJSON_SOURCE,
 	            paint: {
-	                'circle-color': 'orange',
+	                'circle-color': this.options.areaBackgroundColor,
 	                'circle-radius': 3,
 	                'circle-stroke-color': 'white',
 	                'circle-stroke-width': 2
@@ -666,8 +673,8 @@
 	            type: 'fill',
 	            source: GEOJSON_SOURCE,
 	            paint: {
-	                'fill-color': 'orange',
-	                'fill-opacity': 0.1
+	                'fill-color': ['get', 'color'],
+	                'fill-opacity': this.options.areaOpacity
 	            },
 	            filter: ["==", "$type", "Polygon"]
 	        });
@@ -704,7 +711,7 @@
 	        }, HANDLE_LAYER);
 	        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
 	        await geojsonSource.updateData({
-	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true })
+	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: "transparent" })
 	        }, true);
 	        await this.removeSelection();
 	        await this.setSelection(imageId);
@@ -720,10 +727,11 @@
 	            return Promise.reject("Cannot add rectangle while adding polygon");
 	        }
 	        const canvas = this._map.getCanvas();
-	        const startX = canvas.width / 3;
-	        const startY = canvas.height / 3;
-	        const width = canvas.width / 3;
-	        const height = canvas.height / 3;
+	        const startX = canvas.width * (1 - this.options.rectangleSizeFactor) / 2;
+	        const startY = canvas.height * (1 - this.options.rectangleSizeFactor) / 2;
+	        const width = canvas.width * this.options.rectangleSizeFactor;
+	        const height = canvas.height * this.options.rectangleSizeFactor;
+	        console.log(startX, startY, width, height);
 	        const corners = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
 	        return this.addPolygon(this.unprojectAll(corners), true);
 	    }
@@ -757,7 +765,7 @@
 	        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
 	        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
 	        await geojsonSource.updateData({
-	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true })
+	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true, color: this.options.areaBackgroundColor })
 	        }, true);
 	        await this.removeSelection();
 	        await this.setSelection(polygonId);
@@ -814,11 +822,18 @@
 	        this._map?.on('click', this.onClick);
 	    }
 	    buildPolygonGeoJSONFeatures(buildOptions) {
-	        const { coordinates, featureId, isSelected } = buildOptions;
+	        const { coordinates, featureId, isSelected, color } = buildOptions;
 	        const features = [{
 	                type: 'Feature',
-	                geometry: { type: 'Polygon', coordinates: [[...coordinates, coordinates[0]]] },
-	                properties: { id: "rect-" + featureId, featureId }
+	                geometry: {
+	                    type: 'Polygon',
+	                    coordinates: [[...coordinates, coordinates[0]]]
+	                },
+	                properties: {
+	                    id: "rect-" + featureId,
+	                    featureId,
+	                    color
+	                }
 	            }];
 	        for (let i = 0; i < coordinates.length; i++) {
 	            features.push({
@@ -1095,9 +1110,9 @@
 	    }
 	    async initImages() {
 	        const rotateImage = await this._map?.loadImage(img$1);
-	        this._map?.addImage('rotate', rotateImage?.data);
+	        this._map?.addImage('rotate', rotateImage?.data, { sdf: true });
 	        const scaleImage = await this._map?.loadImage(img);
-	        this._map?.addImage('scale', scaleImage?.data);
+	        this._map?.addImage('scale', scaleImage?.data, { sdf: true });
 	    }
 	    async removeSelection() {
 	        this._selectedFeatureId = null;
@@ -1133,8 +1148,9 @@
 	    async updateCoordinates(featureId, newCoordinates) {
 	        const source = this._map?.getSource(GEOJSON_SOURCE);
 	        const data = await source.getData();
+	        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
 	        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-	        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true }));
+	        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
 	        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle");
 	        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
 	        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {

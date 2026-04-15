@@ -24,6 +24,21 @@ type MaplibreAreaTransformOptions = {
      * @default true
      */
     showDeleteButton?: boolean;
+    /**
+     * The ratio of the rectangle width to height
+     * @default 0.5
+     */
+    rectangleSizeFactor?: number;
+    /**
+     * The background color of the area
+     * @default 'orange'
+     */
+    areaBackgroundColor?: string;
+    /**
+     * The opacity of the area
+     * @default 0.1
+     */
+    areaOpacity?: number;
 };
 /**
  * Maplibre area transform control
