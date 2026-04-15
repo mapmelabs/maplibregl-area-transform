@@ -15,10 +15,10 @@ export type MaplibreAreaTransformOptions = {
      */
     showAddImageButton?: boolean;
     /**
-     * Show the polygon button
+     * Show the add polygon button
      * @default true
      */
-    showPolygonButton?: boolean;
+    showAddPolygonButton?: boolean;
     /**
      * Show the add rectangle button
      * @default true
@@ -42,7 +42,7 @@ type BuildPolygonOptions = {
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
     showAddRectangleButton: true,
-    showPolygonButton: true,
+    showAddPolygonButton: true,
     showDeleteButton: true
 }
 
@@ -99,7 +99,7 @@ export class MaplibreAreaTransform implements IControl {
         if (this.options.showAddRectangleButton) {
             this.initRectangleButton();
         }
-        if (this.options.showPolygonButton) {
+        if (this.options.showAddPolygonButton) {
             this.initPolygonButton();
         }
         if (this.options.showDeleteButton) {
@@ -189,7 +189,7 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
-                'icon-rotate': ["coalesce", ['get', 'heading'], 0]
+                'icon-rotate': ['get', 'heading']
             },
             filter: [
                 'all',
@@ -234,6 +234,9 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     public async addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
+        if (this._state === "adding-ploygon") {
+            return Promise.reject("Cannot add image while adding polygon");
+        }
         const imageId = `${ID_PREFIX}${maxFeatureId++}`;
         const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
         this._map?.addSource(imageSourceId, {
@@ -256,6 +259,7 @@ export class MaplibreAreaTransform implements IControl {
         }, true);
         await this.removeSelection();
         await this.setSelection(imageId);
+        this.setState("");
         return imageId;
     }
 
@@ -421,7 +425,8 @@ export class MaplibreAreaTransform implements IControl {
                 featureId,
                 type: 'rotate-handle',
                 icon: 'rotate',
-                isSelected: true
+                isSelected: true,
+                heading: 0
             }
         };
     }
