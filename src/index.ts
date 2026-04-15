@@ -50,7 +50,8 @@ const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
 const AREA_LAYER = 'area-transform-layer-polygon-area-';
 const ID_PREFIX = 'area-transform-feature-';
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
-const IMAGE_SOURCE_PREFIX = 'raster-';
+const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
+const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
 const POLYGON_BUTTON_ID = 'area-transfrom-polygon'
 const DELETE_BUTTON_ID = 'area-transfrom-delete';
@@ -241,7 +242,7 @@ export class MaplibreAreaTransform implements IControl {
             coordinates: coordinates as [[number, number], [number, number], [number, number], [number, number]]
         });
         this._map?.addLayer({
-            id: 'layer-' + imageId,
+            id: IMAGE_LAYER_PREFIX + imageId,
             type: 'raster',
             source: imageSourceId,
             paint: {
@@ -320,6 +321,11 @@ export class MaplibreAreaTransform implements IControl {
         let data = await geojsonSource.getData() as GeoJSON.FeatureCollection;
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
         geojsonSource.setData(data);
+        const imageSource = this._map?.getSource<ImageSource>(IMAGE_SOURCE_PREFIX + featureId);
+        if (imageSource) {
+            this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
+            this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
+        }
     }
 
     public on(event: string, listener: (...args: any[]) => void): void {
