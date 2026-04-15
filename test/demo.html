@@ -37,7 +37,9 @@
         });
         map.on('load', () => {
             const image = new MaplibreAreaTransform({
-                showAddPolygonButton: false
+                showAddPolygonButton: false,
+                areaBackgroundColor: 'blue',
+                areaOpacity: 0.5
             });
             map.addControl(image);
         });

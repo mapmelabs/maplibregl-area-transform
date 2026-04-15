@@ -29,6 +29,21 @@ export type MaplibreAreaTransformOptions = {
      * @default true
      */
     showDeleteButton?: boolean;
+    /**
+     * The ratio of the rectangle width to height
+     * @default 0.5
+     */
+    rectangleSizeFactor?: number;
+    /**
+     * The background color of the area
+     * @default 'orange'
+     */
+    areaBackgroundColor?: string;
+    /**
+     * The opacity of the area
+     * @default 0.1
+     */
+    areaOpacity?: number;
 }
 
 type MaplibreAreaTransformState = "rotating" | "scaling" | "resizeing" | "adding-ploygon" | "moving" | "deleting" | "";
@@ -37,13 +52,17 @@ type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[];
     featureId: string;
     isSelected: boolean;
+    color: string;
 }
 
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
     showAddRectangleButton: true,
     showAddPolygonButton: true,
-    showDeleteButton: true
+    showDeleteButton: true,
+    rectangleSizeFactor: 0.5,
+    areaBackgroundColor: 'orange',
+    areaOpacity: 0.1
 }
 
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
@@ -189,7 +208,11 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
-                'icon-rotate': ['get', 'heading']
+                'icon-rotate': ['get', 'heading'],
+                'icon-size': 0.4
+            },
+            paint: {
+                'icon-color': this.options.areaBackgroundColor!
             },
             filter: [
                 'all',
@@ -202,7 +225,7 @@ export class MaplibreAreaTransform implements IControl {
             type: 'circle',
             source: GEOJSON_SOURCE,
             paint: {
-                'circle-color': 'orange',
+                'circle-color': this.options.areaBackgroundColor!,
                 'circle-radius': 3,
                 'circle-stroke-color': 'white',
                 'circle-stroke-width': 2
@@ -215,8 +238,8 @@ export class MaplibreAreaTransform implements IControl {
             type: 'fill',
             source: GEOJSON_SOURCE,
             paint: {
-                'fill-color': 'orange',
-                'fill-opacity': 0.1
+                'fill-color': ['get', 'color'],
+                'fill-opacity': this.options.areaOpacity!
             },
             filter: ["==", "$type", "Polygon"]
         });
@@ -255,7 +278,7 @@ export class MaplibreAreaTransform implements IControl {
         }, HANDLE_LAYER);
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true })
+            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: "transparent" })
         }, true);
         await this.removeSelection();
         await this.setSelection(imageId);
@@ -272,10 +295,11 @@ export class MaplibreAreaTransform implements IControl {
             return Promise.reject("Cannot add rectangle while adding polygon");
         }
         const canvas = this._map!.getCanvas();
-        const startX = canvas.width / 3;
-        const startY = canvas.height / 3;
-        const width = canvas.width / 3;
-        const height = canvas.height / 3;
+        const startX = canvas.width * (1 - this.options.rectangleSizeFactor!) / 2;
+        const startY = canvas.height * (1 - this.options.rectangleSizeFactor!) / 2;
+        const width = canvas.width * this.options.rectangleSizeFactor!;
+        const height = canvas.height * this.options.rectangleSizeFactor!;
+        console.log(startX, startY, width, height);
         const corners: PxPoint[] = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
         return this.addPolygon(this.unprojectAll(corners), true);
     }
@@ -311,7 +335,7 @@ export class MaplibreAreaTransform implements IControl {
         const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true })
+            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true, color: this.options.areaBackgroundColor! })
         }, true);
         await this.removeSelection();
         await this.setSelection(polygonId);
@@ -377,11 +401,19 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private buildPolygonGeoJSONFeatures(buildOptions: BuildPolygonOptions): GeoJSON.Feature[] {
-        const { coordinates, featureId, isSelected } = buildOptions;
+        const { coordinates, featureId, isSelected, color } = buildOptions;
         const features: GeoJSON.Feature[] = [{
             type: 'Feature',
-            geometry: { type: 'Polygon', coordinates: [[...coordinates, coordinates[0]!]] },
-            properties: { id: "rect-" + featureId, featureId }
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[...coordinates, coordinates[0]!]]
+            },
+            properties: {
+                id: "rect-" + featureId,
+                featureId,
+                color
+
+            }
         }];
         for (let i = 0; i < coordinates.length; i++) {
             features.push({
@@ -672,9 +704,9 @@ export class MaplibreAreaTransform implements IControl {
 
     private async initImages() {
         const rotateImage = await this._map?.loadImage(rotate);
-        this._map?.addImage('rotate', rotateImage?.data!);
+        this._map?.addImage('rotate', rotateImage?.data!, { sdf: true });
         const scaleImage = await this._map?.loadImage(scale);
-        this._map?.addImage('scale', scaleImage?.data!);
+        this._map?.addImage('scale', scaleImage?.data!, { sdf: true });
     }
 
     private async removeSelection() {
@@ -713,8 +745,9 @@ export class MaplibreAreaTransform implements IControl {
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         const data = await source.getData() as GeoJSON.FeatureCollection;
+        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true }));
+        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
         data.features = data.features.filter(
             f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle"
         );
