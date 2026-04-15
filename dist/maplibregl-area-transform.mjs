@@ -899,7 +899,6 @@ class MaplibreAreaTransform {
         }
         else if (scaleOrResize) {
             const headingNormalized = (scaleOrResize.properties["heading"] + 180) % 180;
-            console.log(headingNormalized);
             let cursor = "ns-resize";
             if (headingNormalized > 157) {
                 cursor = "ns-resize";
