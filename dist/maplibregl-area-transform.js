@@ -834,7 +834,7 @@
 	                    type: 'scale-handle',
 	                    icon: 'scale',
 	                    isSelected,
-	                    heading: this.getScaleHandleHeading(coordinates, coordinates[i])
+	                    heading: this.getScaleHandleHeadingSnapped(coordinates, i)
 	                }
 	            });
 	        }
@@ -865,15 +865,26 @@
 	            }
 	        };
 	    }
-	    /** Heading in degrees for scale handle icon rotation — kept in geo-bearing for icon display */
-	    getScaleHandleHeading(coordinates, currentPoint) {
-	        // bearing() here is fine — it's only used for icon heading display, not geometry
+	    /** Heading in degrees for scale handle icon rotation */
+	    getScaleHandleHeadingSnapped(coordinates, currentPointIndex) {
 	        const px = this.projectAll(coordinates);
 	        const centerPx = pxCentroid(px);
-	        const currentPx = this.project(currentPoint);
-	        const angleDeg = Math.atan2(currentPx[1] - centerPx[1], currentPx[0] - centerPx[0]) * (180 / Math.PI);
-	        // Convert from canvas angle (east=0, clockwise) to map bearing (north=0, clockwise)
-	        return (angleDeg + 90 + 360) % 360;
+	        const centerToFirstPointAngle = pxAngle(centerPx, px[0]);
+	        const centerToFirstSecondAngle = pxAngle(centerPx, px[1]);
+	        const direction = ((((centerToFirstSecondAngle + centerToFirstPointAngle) / 2) * (180 / Math.PI) + 180) % 180);
+	        if (direction > 157) {
+	            return currentPointIndex % 2 === 0 ? 45 : 135;
+	        }
+	        if (direction > 112) {
+	            return currentPointIndex % 2 === 0 ? 0 : 90;
+	        }
+	        if (direction > 67) {
+	            return currentPointIndex % 2 === 0 ? 135 : 45;
+	        }
+	        if (direction > 22) {
+	            return currentPointIndex % 2 === 0 ? 90 : 0;
+	        }
+	        return currentPointIndex % 2 === 0 ? 45 : 135;
 	    }
 	    onMouseMoveForCursor = (e) => {
 	        if (this._selectedFeatureId == null || this._startPx != null) {
@@ -891,21 +902,23 @@
 	            this._map.getCanvas().style.cursor = 'crosshair';
 	        }
 	        else if (scaleOrResize) {
-	            const headingNormalized = (scaleOrResize.properties["heading"] + 180) % 180;
-	            let cursor = "ns-resize";
-	            if (headingNormalized > 157) {
-	                cursor = "ns-resize";
+	            switch (scaleOrResize.properties["heading"]) {
+	                case 0:
+	                    this._map.getCanvas().style.cursor = "ns-resize";
+	                    break;
+	                case 45:
+	                    this._map.getCanvas().style.cursor = "nesw-resize";
+	                    break;
+	                case 90:
+	                    this._map.getCanvas().style.cursor = "ew-resize";
+	                    break;
+	                case 135:
+	                    this._map.getCanvas().style.cursor = "nwse-resize";
+	                    break;
+	                case 180:
+	                    this._map.getCanvas().style.cursor = "ns-resize";
+	                    break;
 	            }
-	            else if (headingNormalized > 112) {
-	                cursor = "nwse-resize";
-	            }
-	            else if (headingNormalized > 67) {
-	                cursor = "ew-resize";
-	            }
-	            else if (headingNormalized > 22) {
-	                cursor = "nesw-resize";
-	            }
-	            this._map.getCanvas().style.cursor = cursor;
 	        }
 	        else if (drag) {
 	            this._map.getCanvas().style.cursor = 'move';

@@ -107,8 +107,8 @@ declare class MaplibreAreaTransform implements IControl {
     private initMapListeners;
     private buildPolygonGeoJSONFeatures;
     private getRotateHandlePoint;
-    /** Heading in degrees for scale handle icon rotation — kept in geo-bearing for icon display */
-    private getScaleHandleHeading;
+    /** Heading in degrees for scale handle icon rotation */
+    private getScaleHandleHeadingSnapped;
     private onMouseMoveForCursor;
     private onMouseDown;
     private setStateFromMouseDown;
