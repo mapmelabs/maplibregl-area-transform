@@ -1,5 +1,5 @@
 import EventEmitter from "eventemitter3";
-import { pxCentroid, pxDistance, pxMidpoint, pxResizeSide, pxRotatePolygon, pxScalePolygon, pxMovePoints, sortPoints, type PxPoint } from "./pixel-utils";
+import { pxCentroid, pxDistance, pxMidpoint, pxRotatePolygon, pxScalePolygon, pxMovePoints, sortPoints, type PxPoint, pxResizePolygon } from "./pixel-utils";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
@@ -466,32 +466,6 @@ export class MaplibreAreaTransform implements IControl {
         };
     }
 
-    private getResizeHandlePoints(coordinates: GeoJSON.Position[], featureId: string): GeoJSON.Feature[] {
-        const points: GeoJSON.Feature[] = [];
-        const pxCorners = this.projectAll(coordinates);
-        for (let i = 0; i < pxCorners.length; i++) {
-            const nextPx = pxCorners[(i + 1) % pxCorners.length]!;
-            const midPx = pxMidpoint(pxCorners[i]!, nextPx);
-            const coordinate = this.unproject(midPx);
-            points.push({
-                type: 'Feature' as const,
-                geometry: {
-                    type: 'Point' as const,
-                    coordinates: coordinate
-                },
-                properties: {
-                    id: "resize-" + i + "-" + featureId,
-                    featureId,
-                    type: 'resize-handle',
-                    icon: 'scale',
-                    isSelected: true,
-                    heading: this.getScaleHandleHeading(coordinates, coordinate)
-                }
-            });
-        }
-        return points;
-    }
-
     /** Heading in degrees for scale handle icon rotation — kept in geo-bearing for icon display */
     private getScaleHandleHeading(coordinates: GeoJSON.Position[], currentPoint: GeoJSON.Position): number {
         // bearing() here is fine — it's only used for icon heading display, not geometry
@@ -513,7 +487,7 @@ export class MaplibreAreaTransform implements IControl {
         }
         const features = this._map?.queryRenderedFeatures(e.point).filter(f => f.properties?.["featureId"] === this._selectedFeatureId);
         const rotate = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'rotate-handle');
-        const scaleOrResize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && (f.properties["type"] === 'scale-handle' || f.properties["type"] === 'resize-handle'));
+        const scaleOrResize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && (f.properties["type"] === 'scale-handle'));
         const drag = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
 
         if (rotate) {
@@ -582,10 +556,10 @@ export class MaplibreAreaTransform implements IControl {
         }
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates);
-        if (closestFeature.properties?.["type"] === "scale-handle") {
-            this.setState("scaling");
-        } else {
+        if (closestFeature.properties?.["type"] === "scale-handle" && this._selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
             this.setState("resizeing");
+        } else {
+            this.setState("scaling");
         }
     }
 
@@ -602,7 +576,7 @@ export class MaplibreAreaTransform implements IControl {
                 newCornersPx = pxScalePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
             case "resizeing":
-                newCornersPx = pxResizeSide(this._startCornersPx!, this._startPx, currentPx);
+                newCornersPx = pxResizePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
             default:
             case "moving": {
@@ -719,7 +693,7 @@ export class MaplibreAreaTransform implements IControl {
         for (const feature of data.features) {
             delete feature?.properties?.["isSelected"];
         }
-        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle");
+        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
         await source.setData(data, true);
     }
 
@@ -739,9 +713,6 @@ export class MaplibreAreaTransform implements IControl {
         corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
         const coords = corners.map(f => f.geometry.coordinates);
         data.features.push(this.getRotateHandlePoint(coords, featureId));
-        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-            data.features.push(...this.getResizeHandlePoints(coords, featureId));
-        }
         await source.setData(data, true);
     }
 
@@ -751,13 +722,8 @@ export class MaplibreAreaTransform implements IControl {
         const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
         data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
-        data.features = data.features.filter(
-            f => f.properties?.["type"] !== "rotate-handle" && f.properties?.["type"] !== "resize-handle"
-        );
+        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
         data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
-        if (featureId.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-            data.features.push(...this.getResizeHandlePoints(newCoordinates, featureId));
-        }
         await source.setData(data, true);
     }
     /** Project a lat/lng GeoJSON position to map pixel point */

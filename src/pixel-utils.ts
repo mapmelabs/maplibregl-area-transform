@@ -47,6 +47,32 @@ export function pxScalePolygon(cornersPx: PxPoint[], handlePx: PxPoint, currentP
     ] as PxPoint);
 }
 
+export function pxResizePolygon(cornersPx: PxPoint[], handlePx: PxPoint, currentPx: PxPoint): PxPoint[] {
+    const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
+    console.log(handleIdx);
+    const oppositeIdx = (handleIdx + 2) % 4;
+    const adj1Idx = (handleIdx + 1) % 4;
+    const adj2Idx = (handleIdx + 3) % 4;
+
+    const opposite = cornersPx[oppositeIdx]!;
+    const edge1 = [cornersPx[adj1Idx]![0] - opposite[0]!, cornersPx[adj1Idx]![1] - opposite[1]!];
+    const edge2 = [cornersPx[adj2Idx]![0] - opposite[0]!, cornersPx[adj2Idx]![1] - opposite[1]!];
+
+    const delta = [currentPx[0] - opposite[0]!, currentPx[1] - opposite[1]!];
+    const s = Math.max(0.1, (delta[0]! * edge1[0]! + delta[1]! * edge1[1]!) / (edge1[0]! ** 2 + edge1[1]! ** 2));
+    const t = Math.max(0.1, (delta[0]! * edge2[0]! + delta[1]! * edge2[1]!) / (edge2[0]! ** 2 + edge2[1]! ** 2));
+
+    const newCorners = [...cornersPx] as PxPoint[];
+    newCorners[adj1Idx] = [opposite[0] + s * edge1[0]!, opposite[1] + s * edge1[1]!] as PxPoint;
+    newCorners[adj2Idx] = [opposite[0] + t * edge2[0]!, opposite[1] + t * edge2[1]!] as PxPoint;
+    newCorners[handleIdx] = [
+        newCorners[adj1Idx]![0] + newCorners[adj2Idx]![0] - opposite[0]!,
+        newCorners[adj1Idx]![1] + newCorners[adj2Idx]![1] - opposite[1]!,
+    ] as PxPoint;
+
+    return newCorners;
+}
+
 export function pxGetOppositePoint(cornersPx: PxPoint[], handlePx: PxPoint): PxPoint {
     let maxDist = -Infinity;
     let opposite = cornersPx[0]!;
@@ -73,48 +99,11 @@ export function pxProjectOntoNormal(edgePx0: PxPoint, edgePx1: PxPoint, fromPx: 
     return drag[0] * normal[0] + drag[1] * normal[1];
 }
 
-export function pxResizeSide(cornersPx: PxPoint[], startPx: PxPoint, currentPx: PxPoint): PxPoint[] {
-    const edgeIndex = pxGetClosestEdgeIndex(cornersPx, startPx);
-    const i0 = edgeIndex;
-    const i1 = (edgeIndex + 1) % 4;
-
-    const displacement = pxProjectOntoNormal(
-        cornersPx[i0]!, cornersPx[i1]!, currentPx, startPx
-    );
-
-    // Clamp: can't push past 90% toward the opposite edge
-    const oppI0 = (edgeIndex + 2) % 4;
-    const oppI1 = (edgeIndex + 3) % 4;
-    const oppMid = pxMidpoint(cornersPx[oppI0]!, cornersPx[oppI1]!);
-    const maxDisp = pxProjectOntoNormal(
-        cornersPx[oppI0]!, cornersPx[oppI1]!, oppMid, startPx
-    );
-
-
-    const edgeVec = [cornersPx[i1]![0] - cornersPx[i0]![0], cornersPx[i1]![1] - cornersPx[i0]![1]];
-    const edgeLen = Math.sqrt(edgeVec[0]! ** 2 + edgeVec[1]! ** 2);
-    const normal: PxPoint = [-edgeVec[1]! / edgeLen, edgeVec[0]! / edgeLen];
-
-    const clampedDisp = Math.max(displacement, -(maxDisp * 0.9));
-
-    const newCorners = [...cornersPx] as PxPoint[];
-    newCorners[i0] = [
-        cornersPx[i0]![0] - normal[0] * clampedDisp,
-        cornersPx[i0]![1] - normal[1] * clampedDisp
-    ];
-    newCorners[i1] = [
-        cornersPx[i1]![0] - normal[0] * clampedDisp,
-        cornersPx[i1]![1] - normal[1] * clampedDisp
-    ];
-    return newCorners;
-}
-
-export function pxGetClosestEdgeIndex(cornersPx: PxPoint[], pointPx: PxPoint): number {
+function pxGetClosestPointIndex(cornersPx: PxPoint[], pointPx: PxPoint): number {
     let closest = 0;
     let minDist = Infinity;
     for (let i = 0; i < cornersPx.length; i++) {
-        const mid = pxMidpoint(cornersPx[i]!, cornersPx[(i + 1) % cornersPx.length]!);
-        const d = pxDistance(pointPx, mid);
+        const d = pxDistance(pointPx, cornersPx[i]!);
         if (d < minDist) {
             minDist = d;
             closest = i;
