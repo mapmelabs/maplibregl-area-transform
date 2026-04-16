@@ -248,8 +248,12 @@ export class MaplibreAreaTransform implements IControl {
     /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
-        this._map?.off('mousemove', this.onMouseMoveForCursor);
+        this._map?.off('touchstart', this.onMouseDown);
+        this._map?.off('touchmove', this.onMouseMove);
+        this._map?.off('touchend', this.onMouseUp);
+        this._map?.off('touchcancel', this.onMouseUp);
         this._map?.off('mousedown', this.onMouseDown);
+        this._map?.off('mousemove', this.onMouseMoveForCursor);
         this._map?.off('mousemove', this.onMouseMove);
         this._map?.off('mouseup', this.onMouseUp);
         this._map?.off('click', this.onClick);
@@ -396,8 +400,12 @@ export class MaplibreAreaTransform implements IControl {
     };
 
     private initMapListeners() {
-        this._map?.on('mousemove', this.onMouseMoveForCursor);
+        this._map?.on('touchstart', this.onMouseDown);
+        this._map?.on('touchmove', this.onMouseMove);
+        this._map?.on('touchend', this.onMouseUp);
+        this._map?.on('touchcancel', this.onMouseUp);
         this._map?.on('mousedown', this.onMouseDown);
+        this._map?.on('mousemove', this.onMouseMoveForCursor);
         this._map?.on('mousemove', this.onMouseMove);
         this._map?.on('mouseup', this.onMouseUp);
         this._map?.on('click', this.onClick);
