@@ -295,10 +295,14 @@ export class MaplibreAreaTransform implements IControl {
             return Promise.reject("Cannot add rectangle while adding polygon");
         }
         const canvas = this._map!.getCanvas();
-        const startX = canvas.width * (1 - this.options.rectangleSizeFactor!) / 2;
-        const startY = canvas.height * (1 - this.options.rectangleSizeFactor!) / 2;
-        const width = canvas.width * this.options.rectangleSizeFactor!;
-        const height = canvas.height * this.options.rectangleSizeFactor!;
+        const dpr = window.devicePixelRatio || 1;
+
+        const logicalWidth = canvas.width / dpr;
+        const logicalHeight = canvas.height / dpr;
+        const startX = logicalWidth * (1 - this.options.rectangleSizeFactor!) / 2;
+        const startY = logicalHeight * (1 - this.options.rectangleSizeFactor!) / 2;
+        const width = logicalWidth * this.options.rectangleSizeFactor!;
+        const height = logicalHeight * this.options.rectangleSizeFactor!;
         const corners: PxPoint[] = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
         return this.addPolygon(this.unprojectAll(corners), true);
     }
