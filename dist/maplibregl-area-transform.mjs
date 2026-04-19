@@ -557,10 +557,12 @@ const defaultOptions = {
     showDeleteButton: true,
     rectangleSizeFactor: 0.5,
     areaBackgroundColor: 'orange',
-    areaOpacity: 0.1
+    areaOpacity: 0.1,
+    borderWidth: 2
 };
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
-const AREA_LAYER = 'area-transform-layer-polygon-area-';
+const AREA_LAYER = 'area-transform-layer-polygon-area';
+const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border';
 const ID_PREFIX = 'area-transform-feature-';
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
@@ -722,7 +724,17 @@ class MaplibreAreaTransform {
             source: GEOJSON_SOURCE,
             paint: {
                 'fill-color': ['get', 'color'],
-                'fill-opacity': this.options.areaOpacity
+                'fill-opacity': this.options.areaOpacity,
+            },
+            filter: ["==", "$type", "Polygon"]
+        });
+        this._map?.addLayer({
+            id: AREA_BORDER_LAYER,
+            type: 'line',
+            source: GEOJSON_SOURCE,
+            paint: {
+                'line-color': ['get', 'color'],
+                'line-width': this.options.borderWidth,
             },
             filter: ["==", "$type", "Polygon"]
         });

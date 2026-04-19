@@ -35,6 +35,11 @@ type MaplibreAreaTransformOptions = {
      */
     areaBackgroundColor?: string;
     /**
+     * The border width of the area
+     * @default 2
+     */
+    borderWidth?: number;
+    /**
      * The opacity of the area
      * @default 0.1
      */
