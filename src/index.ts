@@ -1,5 +1,6 @@
 import EventEmitter from "eventemitter3";
 import { pxCentroid, pxDistance, pxMidpoint, pxRotatePolygon, pxScalePolygon, pxMovePoints, sortPoints, type PxPoint, pxResizePolygon, pxAngle } from "./pixel-utils";
+import { recolor } from "./image-recolor";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
@@ -208,8 +209,7 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-image': ['get', 'icon'],
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
-                'icon-rotate': ['get', 'heading'],
-                'icon-size': 0.4
+                'icon-rotate': ['get', 'heading']
             },
             paint: {
                 'icon-color': this.options.areaBackgroundColor!
@@ -706,9 +706,11 @@ export class MaplibreAreaTransform implements IControl {
 
     private async initImages() {
         const rotateImage = await this._map?.loadImage(rotate);
-        this._map?.addImage('rotate', rotateImage?.data!, { sdf: true });
         const scaleImage = await this._map?.loadImage(scale);
-        this._map?.addImage('scale', scaleImage?.data!, { sdf: true });
+        let recoloredRotateImage = await recolor(rotateImage?.data!, this.options.areaBackgroundColor!);
+        let recoloredScaleImage = await recolor(scaleImage?.data!, this.options.areaBackgroundColor!);
+        this._map?.addImage('rotate', recoloredRotateImage!);
+        this._map?.addImage('scale', recoloredScaleImage!);
     }
 
     private async removeSelection() {
