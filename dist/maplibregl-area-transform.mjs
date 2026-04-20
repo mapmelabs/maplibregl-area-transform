@@ -864,15 +864,31 @@ class MaplibreAreaTransform {
         const imageUrl = URL.createObjectURL(file);
         const img = new Image();
         img.onload = () => {
-            const aspect = img.naturalWidth / img.naturalHeight;
+            const imageAspect = img.naturalWidth / img.naturalHeight;
             const canvas = this._map.getCanvas();
-            const baseWidth = canvas.width / 4;
-            const baseHeight = baseWidth / aspect;
-            const startX = canvas.width / 4;
-            const startY = canvas.height / 4;
+            const dpr = window.devicePixelRatio || 1;
+            const logicalWidth = canvas.clientWidth / dpr;
+            const logicalHeight = canvas.clientHeight / dpr;
+            const canvasAspect = logicalWidth / logicalHeight;
+            let baseWidth;
+            let baseHeight;
+            if (imageAspect >= canvasAspect) {
+                // Landscape or square: constrain by width
+                baseWidth = logicalWidth / 2;
+                baseHeight = baseWidth / imageAspect;
+            }
+            else {
+                // Portrait: constrain by height
+                baseHeight = logicalHeight / 2;
+                baseWidth = baseHeight * imageAspect;
+            }
+            const startX = (logicalWidth - baseWidth) / 2;
+            const startY = (logicalHeight - baseHeight) / 2;
             const corners = [
-                [startX, startY], [startX + baseWidth, startY],
-                [startX + baseWidth, startY + baseHeight], [startX, startY + baseHeight]
+                [startX, startY],
+                [(startX + baseWidth), startY],
+                [(startX + baseWidth), (startY + baseHeight)],
+                [startX, (startY + baseHeight)]
             ];
             this.addImage(imageUrl, this.unprojectAll(corners));
             this._eventEmitter.emit('fileSelected', { file, imageUrl });
