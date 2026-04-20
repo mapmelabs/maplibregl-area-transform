@@ -36,12 +36,12 @@
             doubleClickZoom: false
         });
         map.on('load', () => {
-            const image = new MaplibreAreaTransform({
+            const areaTransformControl = new MaplibreAreaTransform({
                 showAddPolygonButton: false,
                 areaBackgroundColor: 'blue',
                 areaOpacity: 0.5
             });
-            map.addControl(image);
+            map.addControl(areaTransformControl);
         });
     </script>
 </body>
