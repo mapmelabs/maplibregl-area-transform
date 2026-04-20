@@ -694,37 +694,6 @@
 	            }
 	        });
 	        this._map?.addLayer({
-	            id: HANDLE_LAYER,
-	            type: 'symbol',
-	            source: GEOJSON_SOURCE,
-	            layout: {
-	                'icon-image': ['get', 'icon'],
-	                'icon-allow-overlap': true,
-	                'icon-ignore-placement': true,
-	                'icon-rotate': ['get', 'heading']
-	            },
-	            paint: {
-	                'icon-color': this.options.areaBackgroundColor
-	            },
-	            filter: [
-	                'all',
-	                ['==', '$type', 'Point'],
-	                ['==', 'isSelected', true]
-	            ]
-	        });
-	        this._map?.addLayer({
-	            id: HANDLE_LAYER + '-circle',
-	            type: 'circle',
-	            source: GEOJSON_SOURCE,
-	            paint: {
-	                'circle-color': this.options.areaBackgroundColor,
-	                'circle-radius': 3,
-	                'circle-stroke-color': 'white',
-	                'circle-stroke-width': 2
-	            },
-	            filter: ["==", "$type", "Point"]
-	        });
-	        this._map?.addLayer({
 	            id: AREA_LAYER,
 	            type: 'fill',
 	            source: GEOJSON_SOURCE,
@@ -743,6 +712,37 @@
 	                'line-width': this.options.borderWidth,
 	            },
 	            filter: ["==", "$type", "Polygon"]
+	        });
+	        this._map?.addLayer({
+	            id: HANDLE_LAYER + '-circle',
+	            type: 'circle',
+	            source: GEOJSON_SOURCE,
+	            paint: {
+	                'circle-color': this.options.areaBackgroundColor,
+	                'circle-radius': 3,
+	                'circle-stroke-color': 'white',
+	                'circle-stroke-width': 2
+	            },
+	            filter: ["==", "$type", "Point"]
+	        });
+	        this._map?.addLayer({
+	            id: HANDLE_LAYER,
+	            type: 'symbol',
+	            source: GEOJSON_SOURCE,
+	            layout: {
+	                'icon-image': ['get', 'icon'],
+	                'icon-allow-overlap': true,
+	                'icon-ignore-placement': true,
+	                'icon-rotate': ['get', 'heading']
+	            },
+	            paint: {
+	                'icon-color': this.options.areaBackgroundColor
+	            },
+	            filter: [
+	                'all',
+	                ['==', '$type', 'Point'],
+	                ['==', 'isSelected', true]
+	            ]
 	        });
 	    }
 	    /** @inheritdoc */
@@ -781,7 +781,7 @@
 	        }, HANDLE_LAYER);
 	        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
 	        await geojsonSource.updateData({
-	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: "transparent" })
+	            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor })
 	        }, true);
 	        await this.removeSelection();
 	        await this.setSelection(imageId);
