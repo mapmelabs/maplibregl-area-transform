@@ -49,7 +49,6 @@ export function pxScalePolygon(cornersPx: PxPoint[], handlePx: PxPoint, currentP
 
 export function pxResizePolygon(cornersPx: PxPoint[], handlePx: PxPoint, currentPx: PxPoint): PxPoint[] {
     const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
-    console.log(handleIdx);
     const oppositeIdx = (handleIdx + 2) % 4;
     const adj1Idx = (handleIdx + 1) % 4;
     const adj2Idx = (handleIdx + 3) % 4;

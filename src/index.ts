@@ -107,6 +107,7 @@ export class MaplibreAreaTransform implements IControl {
     private _polygonPoints: PxPoint[] = [];
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
+    private _colorCache: Set<string> = new Set<string>();
 
     constructor(private options: MaplibreAreaTransformOptions = defaultOptions) {
         this.options = { ...defaultOptions, ...options };
@@ -118,7 +119,7 @@ export class MaplibreAreaTransform implements IControl {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
         this.initMapListeners();
-        this.initImages();
+        this.addColoredImages(this.options.areaBackgroundColor!);
         this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
             this.initFileButton();
@@ -236,7 +237,7 @@ export class MaplibreAreaTransform implements IControl {
             type: 'circle',
             source: GEOJSON_SOURCE,
             paint: {
-                'circle-color': this.options.areaBackgroundColor!,
+                'circle-color': ['get', 'color'],
                 'circle-radius': 3,
                 'circle-stroke-color': 'white',
                 'circle-stroke-width': 2
@@ -253,9 +254,6 @@ export class MaplibreAreaTransform implements IControl {
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true,
                 'icon-rotate': ['get', 'heading']
-            },
-            paint: {
-                'icon-color': this.options.areaBackgroundColor!
             },
             filter: [
                 'all',
@@ -383,6 +381,11 @@ export class MaplibreAreaTransform implements IControl {
         }
     }
 
+    public async setAreaColor(color: string) {
+        this.options.areaBackgroundColor = color;
+        this.addColoredImages(color);
+    }
+
     public on(event: string, listener: (...args: any[]) => void): void {
         this._eventEmitter.on(event, listener);
     }
@@ -475,7 +478,8 @@ export class MaplibreAreaTransform implements IControl {
                     id: "scale-" + i + "-" + featureId,
                     featureId,
                     type: 'scale-handle',
-                    icon: 'scale',
+                    icon: 'scale-' + this.options.areaBackgroundColor!,
+                    color,
                     isSelected,
                     heading: this.getScaleHandleHeadingSnapped(coordinates, i)
                 }
@@ -484,7 +488,7 @@ export class MaplibreAreaTransform implements IControl {
         return features;
     }
 
-    private getRotateHandlePoint(coordinates: GeoJSON.Position[], featureId: string): GeoJSON.Feature {
+    private getRotateHandlePoint(coordinates: GeoJSON.Position[], featureId: string, color: string): GeoJSON.Feature {
         const pxCorners = this.projectAll(coordinates);
         const p0 = pxCorners[0]!;
         const p1 = pxCorners[1]!;
@@ -505,7 +509,8 @@ export class MaplibreAreaTransform implements IControl {
                 id: "rotate-" + featureId,
                 featureId,
                 type: 'rotate-handle',
-                icon: 'rotate',
+                icon: 'rotate-' + color,
+                color,
                 isSelected: true,
                 heading: 0
             }
@@ -742,13 +747,17 @@ export class MaplibreAreaTransform implements IControl {
         }, true);
     }
 
-    private async initImages() {
+    private async addColoredImages(color: string) {
+        if (this._colorCache.has(color)) {
+            return;
+        }
         const rotateImage = await this._map?.loadImage(rotate);
         const scaleImage = await this._map?.loadImage(scale);
-        let recoloredRotateImage = await recolor(rotateImage?.data!, this.options.areaBackgroundColor!);
-        let recoloredScaleImage = await recolor(scaleImage?.data!, this.options.areaBackgroundColor!);
-        this._map?.addImage('rotate', recoloredRotateImage!);
-        this._map?.addImage('scale', recoloredScaleImage!);
+        let recoloredRotateImage = await recolor(rotateImage?.data!, color);
+        let recoloredScaleImage = await recolor(scaleImage?.data!, color);
+        this._map?.addImage('rotate-' + color, recoloredRotateImage!);
+        this._map?.addImage('scale-' + color, recoloredScaleImage!);
+        this._colorCache.add(color);
     }
 
     private async removeSelection() {
@@ -776,8 +785,9 @@ export class MaplibreAreaTransform implements IControl {
             }
         }
         corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
+        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         const coords = corners.map(f => f.geometry.coordinates);
-        data.features.push(this.getRotateHandlePoint(coords, featureId));
+        data.features.push(this.getRotateHandlePoint(coords, featureId, color));
         await source.setData(data, true);
     }
 
@@ -788,7 +798,7 @@ export class MaplibreAreaTransform implements IControl {
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
         data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
         data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
+        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
         await source.setData(data, true);
     }
     /** Project a lat/lng GeoJSON position to map pixel point */
