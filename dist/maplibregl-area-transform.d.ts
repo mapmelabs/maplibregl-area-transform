@@ -68,6 +68,7 @@ declare class MaplibreAreaTransform implements IControl {
     private _polygonPoints;
     private _startPx;
     private _startCornersPx;
+    private _colorCache;
     constructor(options?: MaplibreAreaTransformOptions);
     /** @inheritdoc */
     onAdd(map: Map): HTMLElement;
@@ -106,6 +107,7 @@ declare class MaplibreAreaTransform implements IControl {
      */
     addPolygon(coordinates: GeoJSON.Position[], resizable: boolean): Promise<string>;
     deleteFeature(featureId: string): Promise<void>;
+    setAreaColor(color: string): Promise<void>;
     on(event: string, listener: (...args: any[]) => void): void;
     off(event: string, listener: (...args: any[]) => void): void;
     private onFileSelected;
@@ -121,7 +123,7 @@ declare class MaplibreAreaTransform implements IControl {
     private onMouseUp;
     private onClick;
     private onClickWhenInPolygonMode;
-    private initImages;
+    private addColoredImages;
     private removeSelection;
     private setSelection;
     private updateCoordinates;

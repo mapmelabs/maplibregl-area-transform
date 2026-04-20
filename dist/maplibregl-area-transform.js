@@ -402,7 +402,6 @@
 	}
 	function pxResizePolygon(cornersPx, handlePx, currentPx) {
 	    const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
-	    console.log(handleIdx);
 	    const oppositeIdx = (handleIdx + 2) % 4;
 	    const adj1Idx = (handleIdx + 1) % 4;
 	    const adj2Idx = (handleIdx + 3) % 4;
@@ -600,6 +599,7 @@
 	    _polygonPoints = [];
 	    _startPx = null;
 	    _startCornersPx = undefined; // corners at drag start
+	    _colorCache = new Set();
 	    constructor(options = defaultOptions) {
 	        this.options = options;
 	        this.options = { ...defaultOptions, ...options };
@@ -610,7 +610,7 @@
 	        this._container = document.createElement('div');
 	        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
 	        this.initMapListeners();
-	        this.initImages();
+	        this.addColoredImages(this.options.areaBackgroundColor);
 	        this.initGeojsonSourceAndLayers();
 	        if (this.options.showAddImageButton) {
 	            this.initFileButton();
@@ -718,7 +718,7 @@
 	            type: 'circle',
 	            source: GEOJSON_SOURCE,
 	            paint: {
-	                'circle-color': this.options.areaBackgroundColor,
+	                'circle-color': ['get', 'color'],
 	                'circle-radius': 3,
 	                'circle-stroke-color': 'white',
 	                'circle-stroke-width': 2
@@ -734,9 +734,6 @@
 	                'icon-allow-overlap': true,
 	                'icon-ignore-placement': true,
 	                'icon-rotate': ['get', 'heading']
-	            },
-	            paint: {
-	                'icon-color': this.options.areaBackgroundColor
 	            },
 	            filter: [
 	                'all',
@@ -856,6 +853,10 @@
 	            this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
 	        }
 	    }
+	    async setAreaColor(color) {
+	        this.options.areaBackgroundColor = color;
+	        this.addColoredImages(color);
+	    }
 	    on(event, listener) {
 	        this._eventEmitter.on(event, listener);
 	    }
@@ -938,7 +939,8 @@
 	                    id: "scale-" + i + "-" + featureId,
 	                    featureId,
 	                    type: 'scale-handle',
-	                    icon: 'scale',
+	                    icon: 'scale-' + this.options.areaBackgroundColor,
+	                    color,
 	                    isSelected,
 	                    heading: this.getScaleHandleHeadingSnapped(coordinates, i)
 	                }
@@ -946,7 +948,7 @@
 	        }
 	        return features;
 	    }
-	    getRotateHandlePoint(coordinates, featureId) {
+	    getRotateHandlePoint(coordinates, featureId, color) {
 	        const pxCorners = this.projectAll(coordinates);
 	        const p0 = pxCorners[0];
 	        const p1 = pxCorners[1];
@@ -965,7 +967,8 @@
 	                id: "rotate-" + featureId,
 	                featureId,
 	                type: 'rotate-handle',
-	                icon: 'rotate',
+	                icon: 'rotate-' + color,
+	                color,
 	                isSelected: true,
 	                heading: 0
 	            }
@@ -1188,13 +1191,17 @@
 	            update: [{ id: "temp-area", newGeometry: areaGeometry }]
 	        }, true);
 	    }
-	    async initImages() {
+	    async addColoredImages(color) {
+	        if (this._colorCache.has(color)) {
+	            return;
+	        }
 	        const rotateImage = await this._map?.loadImage(img$1);
 	        const scaleImage = await this._map?.loadImage(img);
-	        let recoloredRotateImage = await recolor(rotateImage?.data, this.options.areaBackgroundColor);
-	        let recoloredScaleImage = await recolor(scaleImage?.data, this.options.areaBackgroundColor);
-	        this._map?.addImage('rotate', recoloredRotateImage);
-	        this._map?.addImage('scale', recoloredScaleImage);
+	        let recoloredRotateImage = await recolor(rotateImage?.data, color);
+	        let recoloredScaleImage = await recolor(scaleImage?.data, color);
+	        this._map?.addImage('rotate-' + color, recoloredRotateImage);
+	        this._map?.addImage('scale-' + color, recoloredScaleImage);
+	        this._colorCache.add(color);
 	    }
 	    async removeSelection() {
 	        this._selectedFeatureId = null;
@@ -1220,8 +1227,9 @@
 	            }
 	        }
 	        corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
+	        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
 	        const coords = corners.map(f => f.geometry.coordinates);
-	        data.features.push(this.getRotateHandlePoint(coords, featureId));
+	        data.features.push(this.getRotateHandlePoint(coords, featureId, color));
 	        await source.setData(data, true);
 	    }
 	    async updateCoordinates(featureId, newCoordinates) {
@@ -1231,7 +1239,7 @@
 	        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
 	        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
 	        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-	        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId));
+	        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
 	        await source.setData(data, true);
 	    }
 	    /** Project a lat/lng GeoJSON position to map pixel point */
