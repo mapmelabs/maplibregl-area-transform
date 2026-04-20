@@ -867,24 +867,23 @@ class MaplibreAreaTransform {
         img.onload = () => {
             const imageAspect = img.naturalWidth / img.naturalHeight;
             const canvas = this._map.getCanvas();
-            const dpr = window.devicePixelRatio || 1;
-            const logicalWidth = canvas.clientWidth / dpr;
-            const logicalHeight = canvas.clientHeight / dpr;
-            const canvasAspect = logicalWidth / logicalHeight;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const canvasAspect = width / height;
             let baseWidth;
             let baseHeight;
             if (imageAspect >= canvasAspect) {
                 // Landscape or square: constrain by width
-                baseWidth = logicalWidth / 2;
+                baseWidth = width / 2;
                 baseHeight = baseWidth / imageAspect;
             }
             else {
                 // Portrait: constrain by height
-                baseHeight = logicalHeight / 2;
+                baseHeight = height / 2;
                 baseWidth = baseHeight * imageAspect;
             }
-            const startX = (logicalWidth - baseWidth) / 2;
-            const startY = (logicalHeight - baseHeight) / 2;
+            const startX = (width - baseWidth) / 2;
+            const startY = (height - baseHeight) / 2;
             const corners = [
                 [startX, startY],
                 [(startX + baseWidth), startY],
