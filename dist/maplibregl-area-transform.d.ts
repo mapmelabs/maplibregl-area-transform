@@ -88,7 +88,7 @@ declare class MaplibreAreaTransform implements IControl {
     private initGeojsonSourceAndLayers;
     /** @inheritdoc */
     onRemove(): void;
-    addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string>;
+    addImage(imageUrl: string, coordinates?: GeoJSON.Position[], img?: HTMLImageElement): Promise<string>;
     /**
      * This adds a rectangle to the middle of the screen
      * @returns a pomise that resolves to the newly added rectangle ID

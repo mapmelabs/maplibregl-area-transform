@@ -87,7 +87,7 @@ let maxFeatureId = 0;
 
 /**
  * Maplibre area transform control
- * 
+ *
  * @example
  * ```typescript
  * const map = new Map({
@@ -278,9 +278,43 @@ export class MaplibreAreaTransform implements IControl {
         this._map = null;
     }
 
-    public async addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
+    public async addImage(imageUrl: string, coordinates?: GeoJSON.Position[], img?: HTMLImageElement): Promise<string> {
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
+        }
+        if (!coordinates) {
+            if (!img) {
+                return Promise.reject("Image element is required when coordinates are not provided");
+            }
+            const imageAspect = img.naturalWidth / img.naturalHeight;
+
+            const canvas = this._map!.getCanvas();
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const canvasAspect = width / height;
+
+            let baseWidth: number;
+            let baseHeight: number;
+
+            if (imageAspect >= canvasAspect) {
+                // Landscape or square: constrain by width
+                baseWidth = width / 2;
+                baseHeight = baseWidth / imageAspect;
+            } else {
+                // Portrait: constrain by height
+                baseHeight = height / 2;
+                baseWidth = baseHeight * imageAspect;
+            }
+            const startX = (width - baseWidth) / 2;
+            const startY = (height - baseHeight) / 2;
+
+            const corners: PxPoint[] = [
+                [startX, startY],
+                [(startX + baseWidth), startY],
+                [(startX + baseWidth), (startY + baseHeight)],
+                [startX, (startY + baseHeight)]
+            ];
+            coordinates = this.unprojectAll(corners);
         }
         const imageId = `${ID_PREFIX}${maxFeatureId++}`;
         const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
@@ -403,35 +437,7 @@ export class MaplibreAreaTransform implements IControl {
         const img = new Image();
 
         img.onload = () => {
-            const imageAspect = img.naturalWidth / img.naturalHeight;
-
-            const canvas = this._map!.getCanvas();
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-            const canvasAspect = width / height;
-
-            let baseWidth: number;
-            let baseHeight: number;
-
-            if (imageAspect >= canvasAspect) {
-                // Landscape or square: constrain by width
-                baseWidth = width / 2;
-                baseHeight = baseWidth / imageAspect;
-            } else {
-                // Portrait: constrain by height
-                baseHeight = height / 2;
-                baseWidth = baseHeight * imageAspect;
-            }
-            const startX = (width - baseWidth) / 2;
-            const startY = (height - baseHeight) / 2;
-
-            const corners: PxPoint[] = [
-                [startX, startY],
-                [(startX + baseWidth), startY],
-                [(startX + baseWidth), (startY + baseHeight)],
-                [startX, (startY + baseHeight)]
-            ];
-            this.addImage(imageUrl, this.unprojectAll(corners));
+            this.addImage(imageUrl, undefined, img);
             this._eventEmitter.emit('fileSelected', { file, imageUrl });
         };
         img.src = imageUrl;
