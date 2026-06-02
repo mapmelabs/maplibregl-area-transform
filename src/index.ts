@@ -278,6 +278,49 @@ export class MaplibreAreaTransform implements IControl {
         this._map = null;
     }
 
+    /**
+     * Create the coordinates for an image in mercator projection (centered on the map)
+     * @param img The image.
+     * @returns The coordinates of the image in GeoJSON format.
+     */
+    public createCoordinatesForLoadedImage(img: HTMLImageElement): GeoJSON.Position[] {
+
+        const imageAspect = img.naturalWidth / img.naturalHeight;
+
+        const canvas = this._map!.getCanvas();
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const canvasAspect = width / height;
+
+        let baseWidth: number;
+        let baseHeight: number;
+
+        if (imageAspect >= canvasAspect) {
+            // Landscape or square: constrain by width
+            baseWidth = width / 2;
+            baseHeight = baseWidth / imageAspect;
+        } else {
+            // Portrait: constrain by height
+            baseHeight = height / 2;
+            baseWidth = baseHeight * imageAspect;
+        }
+        const startX = (width - baseWidth) / 2;
+        const startY = (height - baseHeight) / 2;
+
+        return [
+            [startX, startY],
+            [(startX + baseWidth), startY],
+            [(startX + baseWidth), (startY + baseHeight)],
+            [startX, (startY + baseHeight)]
+        ];
+    }
+
+    /**
+     * Adds an image to the map.
+     * @param imageUrl The URL of the image.
+     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+     * @returns The ID of the added image.
+     */
     public async addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
@@ -394,48 +437,19 @@ export class MaplibreAreaTransform implements IControl {
         this._eventEmitter.off(event, listener);
     }
 
-    private onFileSelected = (e: Event) => {
+    private onFileSelected = async (e: Event) => {
         const target = e.target as HTMLInputElement;
         const file = target.files?.[0];
         if (!file) return;
 
         const imageUrl = URL.createObjectURL(file);
         const img = new Image();
-
-        img.onload = () => {
-            const imageAspect = img.naturalWidth / img.naturalHeight;
-
-            const canvas = this._map!.getCanvas();
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-            const canvasAspect = width / height;
-
-            let baseWidth: number;
-            let baseHeight: number;
-
-            if (imageAspect >= canvasAspect) {
-                // Landscape or square: constrain by width
-                baseWidth = width / 2;
-                baseHeight = baseWidth / imageAspect;
-            } else {
-                // Portrait: constrain by height
-                baseHeight = height / 2;
-                baseWidth = baseHeight * imageAspect;
-            }
-            const startX = (width - baseWidth) / 2;
-            const startY = (height - baseHeight) / 2;
-
-            const corners: PxPoint[] = [
-                [startX, startY],
-                [(startX + baseWidth), startY],
-                [(startX + baseWidth), (startY + baseHeight)],
-                [startX, (startY + baseHeight)]
-            ];
-            this.addImage(imageUrl, this.unprojectAll(corners));
-            this._eventEmitter.emit('fileSelected', { file, imageUrl });
-        };
+        img.onload = async () => {
+            const coordinates = this.createCoordinatesForLoadedImage(img);
+            await this.addImage(imageUrl, coordinates);
+            target.value = '';
+        }
         img.src = imageUrl;
-        target.value = '';
     };
 
     private initMapListeners() {
