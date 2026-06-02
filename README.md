@@ -108,3 +108,29 @@ tool.on('change', (coords) => {
 	•	Coordinates are returned in [lng, lat] format.
 	•	Designed to work alongside existing MapLibre controls.
 
+---
+
+## Releasing a new version
+
+Releases are produced by the [Release workflow](.github/workflows/release.yaml). You don't bump the version by hand — the workflow does it for you:
+
+1. Go to the repo's **Actions** tab → **Release** → **Run workflow**.
+2. Pick the **Version bump** from the dropdown — `patch`, `minor`, or `major` (defaults to `patch`).
+3. Run it. The workflow then:
+   - builds the package,
+   - runs `npm version <bump>`, which updates the `version` in `package.json`, commits it, and creates a matching `vX.Y.Z` git tag,
+   - pushes the commit and tag back to the branch,
+   - packs the package with `npm pack` and publishes a **GitHub Release** for the tag with the `.tgz` attached.
+
+Choose the bump according to [semver](https://semver.org/): `patch` for bug fixes, `minor` for backwards-compatible features, `major` for breaking changes.
+
+### Consuming a release without npm
+
+Since the package isn't published to npm, install it directly from the release asset URL:
+
+```bash
+npm install https://github.com/mapmelabs/maplibregl-area-transform/releases/download/v1.0.1/maplibregl-area-transform-1.0.1.tgz
+```
+
+Replace the version in the URL with the release you want. Every release on the [Releases page](https://github.com/mapmelabs/maplibregl-area-transform/releases) has its own permalink.
+
