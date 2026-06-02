@@ -19,9 +19,16 @@
   },
   "author": "Harel Mazor",
   "type": "commonjs",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/maplibregl-area-transform.js",
+  "module": "dist/maplibregl-area-transform.mjs",
+  "types": "dist/maplibregl-area-transform.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/maplibregl-area-transform.mjs",
+      "require": "./dist/maplibregl-area-transform.js",
+      "types": "./dist/maplibregl-area-transform.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
