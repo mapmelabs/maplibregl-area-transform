@@ -756,6 +756,44 @@
 	        this._map?.off('click', this.onClick);
 	        this._map = null;
 	    }
+	    /**
+	     * Create the coordinates for an image in mercator projection (centered on the map)
+	     * @param img The image.
+	     * @returns The coordinates of the image in GeoJSON format.
+	     */
+	    createCoordinatesForLoadedImage(img) {
+	        const imageAspect = img.naturalWidth / img.naturalHeight;
+	        const canvas = this._map.getCanvas();
+	        const width = canvas.clientWidth;
+	        const height = canvas.clientHeight;
+	        const canvasAspect = width / height;
+	        let baseWidth;
+	        let baseHeight;
+	        if (imageAspect >= canvasAspect) {
+	            // Landscape or square: constrain by width
+	            baseWidth = width / 2;
+	            baseHeight = baseWidth / imageAspect;
+	        }
+	        else {
+	            // Portrait: constrain by height
+	            baseHeight = height / 2;
+	            baseWidth = baseHeight * imageAspect;
+	        }
+	        const startX = (width - baseWidth) / 2;
+	        const startY = (height - baseHeight) / 2;
+	        return [
+	            [startX, startY],
+	            [(startX + baseWidth), startY],
+	            [(startX + baseWidth), (startY + baseHeight)],
+	            [startX, (startY + baseHeight)]
+	        ];
+	    }
+	    /**
+	     * Adds an image to the map.
+	     * @param imageUrl The URL of the image.
+	     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+	     * @returns The ID of the added image.
+	     */
 	    async addImage(imageUrl, coordinates) {
 	        if (this._state === "adding-ploygon") {
 	            return Promise.reject("Cannot add image while adding polygon");
@@ -863,44 +901,19 @@
 	    off(event, listener) {
 	        this._eventEmitter.off(event, listener);
 	    }
-	    onFileSelected = (e) => {
+	    onFileSelected = async (e) => {
 	        const target = e.target;
 	        const file = target.files?.[0];
 	        if (!file)
 	            return;
 	        const imageUrl = URL.createObjectURL(file);
 	        const img = new Image();
-	        img.onload = () => {
-	            const imageAspect = img.naturalWidth / img.naturalHeight;
-	            const canvas = this._map.getCanvas();
-	            const width = canvas.clientWidth;
-	            const height = canvas.clientHeight;
-	            const canvasAspect = width / height;
-	            let baseWidth;
-	            let baseHeight;
-	            if (imageAspect >= canvasAspect) {
-	                // Landscape or square: constrain by width
-	                baseWidth = width / 2;
-	                baseHeight = baseWidth / imageAspect;
-	            }
-	            else {
-	                // Portrait: constrain by height
-	                baseHeight = height / 2;
-	                baseWidth = baseHeight * imageAspect;
-	            }
-	            const startX = (width - baseWidth) / 2;
-	            const startY = (height - baseHeight) / 2;
-	            const corners = [
-	                [startX, startY],
-	                [(startX + baseWidth), startY],
-	                [(startX + baseWidth), (startY + baseHeight)],
-	                [startX, (startY + baseHeight)]
-	            ];
-	            this.addImage(imageUrl, this.unprojectAll(corners));
-	            this._eventEmitter.emit('fileSelected', { file, imageUrl });
+	        img.onload = async () => {
+	            const coordinates = this.createCoordinatesForLoadedImage(img);
+	            await this.addImage(imageUrl, coordinates);
+	            target.value = '';
 	        };
 	        img.src = imageUrl;
-	        target.value = '';
 	    };
 	    initMapListeners() {
 	        this._map?.on('touchstart', this.onMouseDown);

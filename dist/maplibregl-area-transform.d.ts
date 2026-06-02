@@ -88,6 +88,18 @@ declare class MaplibreAreaTransform implements IControl {
     private initGeojsonSourceAndLayers;
     /** @inheritdoc */
     onRemove(): void;
+    /**
+     * Create the coordinates for an image in mercator projection (centered on the map)
+     * @param img The image.
+     * @returns The coordinates of the image in GeoJSON format.
+     */
+    createCoordinatesForLoadedImage(img: HTMLImageElement): GeoJSON.Position[];
+    /**
+     * Adds an image to the map.
+     * @param imageUrl The URL of the image.
+     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+     * @returns The ID of the added image.
+     */
     addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string>;
     /**
      * This adds a rectangle to the middle of the screen
