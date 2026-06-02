@@ -1,1277 +1,1123 @@
-function getDefaultExportFromCjs (x) {
-	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-}
-
-var eventemitter3 = {exports: {}};
-
-var hasRequiredEventemitter3;
-
-function requireEventemitter3 () {
-	if (hasRequiredEventemitter3) return eventemitter3.exports;
-	hasRequiredEventemitter3 = 1;
-	(function (module) {
-
-		var has = Object.prototype.hasOwnProperty
-		  , prefix = '~';
-
-		/**
-		 * Constructor to create a storage for our `EE` objects.
-		 * An `Events` instance is a plain object whose properties are event names.
-		 *
-		 * @constructor
-		 * @private
-		 */
-		function Events() {}
-
-		//
-		// We try to not inherit from `Object.prototype`. In some engines creating an
-		// instance in this way is faster than calling `Object.create(null)` directly.
-		// If `Object.create(null)` is not supported we prefix the event names with a
-		// character to make sure that the built-in object properties are not
-		// overridden or used as an attack vector.
-		//
-		if (Object.create) {
-		  Events.prototype = Object.create(null);
-
-		  //
-		  // This hack is needed because the `__proto__` property is still inherited in
-		  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
-		  //
-		  if (!new Events().__proto__) prefix = false;
+//#region \0rolldown/runtime.js
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+var eventemitter3_default = (/* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports, module) => {
+	var has = Object.prototype.hasOwnProperty, prefix = "~";
+	/**
+	* Constructor to create a storage for our `EE` objects.
+	* An `Events` instance is a plain object whose properties are event names.
+	*
+	* @constructor
+	* @private
+	*/
+	function Events() {}
+	if (Object.create) {
+		Events.prototype = Object.create(null);
+		if (!new Events().__proto__) prefix = false;
+	}
+	/**
+	* Representation of a single event listener.
+	*
+	* @param {Function} fn The listener function.
+	* @param {*} context The context to invoke the listener with.
+	* @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+	* @constructor
+	* @private
+	*/
+	function EE(fn, context, once) {
+		this.fn = fn;
+		this.context = context;
+		this.once = once || false;
+	}
+	/**
+	* Add a listener for a given event.
+	*
+	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} context The context to invoke the listener with.
+	* @param {Boolean} once Specify if the listener is a one-time listener.
+	* @returns {EventEmitter}
+	* @private
+	*/
+	function addListener(emitter, event, fn, context, once) {
+		if (typeof fn !== "function") throw new TypeError("The listener must be a function");
+		var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
+		if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
+		else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
+		else emitter._events[evt] = [emitter._events[evt], listener];
+		return emitter;
+	}
+	/**
+	* Clear event by name.
+	*
+	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+	* @param {(String|Symbol)} evt The Event name.
+	* @private
+	*/
+	function clearEvent(emitter, evt) {
+		if (--emitter._eventsCount === 0) emitter._events = new Events();
+		else delete emitter._events[evt];
+	}
+	/**
+	* Minimal `EventEmitter` interface that is molded against the Node.js
+	* `EventEmitter` interface.
+	*
+	* @constructor
+	* @public
+	*/
+	function EventEmitter() {
+		this._events = new Events();
+		this._eventsCount = 0;
+	}
+	/**
+	* Return an array listing the events for which the emitter has registered
+	* listeners.
+	*
+	* @returns {Array}
+	* @public
+	*/
+	EventEmitter.prototype.eventNames = function eventNames() {
+		var names = [], events, name;
+		if (this._eventsCount === 0) return names;
+		for (name in events = this._events) if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+		if (Object.getOwnPropertySymbols) return names.concat(Object.getOwnPropertySymbols(events));
+		return names;
+	};
+	/**
+	* Return the listeners registered for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Array} The registered listeners.
+	* @public
+	*/
+	EventEmitter.prototype.listeners = function listeners(event) {
+		var evt = prefix ? prefix + event : event, handlers = this._events[evt];
+		if (!handlers) return [];
+		if (handlers.fn) return [handlers.fn];
+		for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) ee[i] = handlers[i].fn;
+		return ee;
+	};
+	/**
+	* Return the number of listeners listening to a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Number} The number of listeners.
+	* @public
+	*/
+	EventEmitter.prototype.listenerCount = function listenerCount(event) {
+		var evt = prefix ? prefix + event : event, listeners = this._events[evt];
+		if (!listeners) return 0;
+		if (listeners.fn) return 1;
+		return listeners.length;
+	};
+	/**
+	* Calls each of the listeners registered for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Boolean} `true` if the event had listeners, else `false`.
+	* @public
+	*/
+	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+		var evt = prefix ? prefix + event : event;
+		if (!this._events[evt]) return false;
+		var listeners = this._events[evt], len = arguments.length, args, i;
+		if (listeners.fn) {
+			if (listeners.once) this.removeListener(event, listeners.fn, void 0, true);
+			switch (len) {
+				case 1: return listeners.fn.call(listeners.context), true;
+				case 2: return listeners.fn.call(listeners.context, a1), true;
+				case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+				case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+				case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+				case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+			}
+			for (i = 1, args = new Array(len - 1); i < len; i++) args[i - 1] = arguments[i];
+			listeners.fn.apply(listeners.context, args);
+		} else {
+			var length = listeners.length, j;
+			for (i = 0; i < length; i++) {
+				if (listeners[i].once) this.removeListener(event, listeners[i].fn, void 0, true);
+				switch (len) {
+					case 1:
+						listeners[i].fn.call(listeners[i].context);
+						break;
+					case 2:
+						listeners[i].fn.call(listeners[i].context, a1);
+						break;
+					case 3:
+						listeners[i].fn.call(listeners[i].context, a1, a2);
+						break;
+					case 4:
+						listeners[i].fn.call(listeners[i].context, a1, a2, a3);
+						break;
+					default:
+						if (!args) for (j = 1, args = new Array(len - 1); j < len; j++) args[j - 1] = arguments[j];
+						listeners[i].fn.apply(listeners[i].context, args);
+				}
+			}
 		}
-
-		/**
-		 * Representation of a single event listener.
-		 *
-		 * @param {Function} fn The listener function.
-		 * @param {*} context The context to invoke the listener with.
-		 * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
-		 * @constructor
-		 * @private
-		 */
-		function EE(fn, context, once) {
-		  this.fn = fn;
-		  this.context = context;
-		  this.once = once || false;
+		return true;
+	};
+	/**
+	* Add a listener for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} [context=this] The context to invoke the listener with.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.on = function on(event, fn, context) {
+		return addListener(this, event, fn, context, false);
+	};
+	/**
+	* Add a one-time listener for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} [context=this] The context to invoke the listener with.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.once = function once(event, fn, context) {
+		return addListener(this, event, fn, context, true);
+	};
+	/**
+	* Remove the listeners of a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn Only remove the listeners that match this function.
+	* @param {*} context Only remove the listeners that have this context.
+	* @param {Boolean} once Only remove one-time listeners.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+		var evt = prefix ? prefix + event : event;
+		if (!this._events[evt]) return this;
+		if (!fn) {
+			clearEvent(this, evt);
+			return this;
 		}
-
-		/**
-		 * Add a listener for a given event.
-		 *
-		 * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-		 * @param {(String|Symbol)} event The event name.
-		 * @param {Function} fn The listener function.
-		 * @param {*} context The context to invoke the listener with.
-		 * @param {Boolean} once Specify if the listener is a one-time listener.
-		 * @returns {EventEmitter}
-		 * @private
-		 */
-		function addListener(emitter, event, fn, context, once) {
-		  if (typeof fn !== 'function') {
-		    throw new TypeError('The listener must be a function');
-		  }
-
-		  var listener = new EE(fn, context || emitter, once)
-		    , evt = prefix ? prefix + event : event;
-
-		  if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
-		  else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
-		  else emitter._events[evt] = [emitter._events[evt], listener];
-
-		  return emitter;
+		var listeners = this._events[evt];
+		if (listeners.fn) {
+			if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) clearEvent(this, evt);
+		} else {
+			for (var i = 0, events = [], length = listeners.length; i < length; i++) if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) events.push(listeners[i]);
+			if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+			else clearEvent(this, evt);
 		}
-
-		/**
-		 * Clear event by name.
-		 *
-		 * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-		 * @param {(String|Symbol)} evt The Event name.
-		 * @private
-		 */
-		function clearEvent(emitter, evt) {
-		  if (--emitter._eventsCount === 0) emitter._events = new Events();
-		  else delete emitter._events[evt];
+		return this;
+	};
+	/**
+	* Remove all listeners, or those of the specified event.
+	*
+	* @param {(String|Symbol)} [event] The event name.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+		var evt;
+		if (event) {
+			evt = prefix ? prefix + event : event;
+			if (this._events[evt]) clearEvent(this, evt);
+		} else {
+			this._events = new Events();
+			this._eventsCount = 0;
 		}
-
-		/**
-		 * Minimal `EventEmitter` interface that is molded against the Node.js
-		 * `EventEmitter` interface.
-		 *
-		 * @constructor
-		 * @public
-		 */
-		function EventEmitter() {
-		  this._events = new Events();
-		  this._eventsCount = 0;
-		}
-
-		/**
-		 * Return an array listing the events for which the emitter has registered
-		 * listeners.
-		 *
-		 * @returns {Array}
-		 * @public
-		 */
-		EventEmitter.prototype.eventNames = function eventNames() {
-		  var names = []
-		    , events
-		    , name;
-
-		  if (this._eventsCount === 0) return names;
-
-		  for (name in (events = this._events)) {
-		    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-		  }
-
-		  if (Object.getOwnPropertySymbols) {
-		    return names.concat(Object.getOwnPropertySymbols(events));
-		  }
-
-		  return names;
-		};
-
-		/**
-		 * Return the listeners registered for a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @returns {Array} The registered listeners.
-		 * @public
-		 */
-		EventEmitter.prototype.listeners = function listeners(event) {
-		  var evt = prefix ? prefix + event : event
-		    , handlers = this._events[evt];
-
-		  if (!handlers) return [];
-		  if (handlers.fn) return [handlers.fn];
-
-		  for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
-		    ee[i] = handlers[i].fn;
-		  }
-
-		  return ee;
-		};
-
-		/**
-		 * Return the number of listeners listening to a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @returns {Number} The number of listeners.
-		 * @public
-		 */
-		EventEmitter.prototype.listenerCount = function listenerCount(event) {
-		  var evt = prefix ? prefix + event : event
-		    , listeners = this._events[evt];
-
-		  if (!listeners) return 0;
-		  if (listeners.fn) return 1;
-		  return listeners.length;
-		};
-
-		/**
-		 * Calls each of the listeners registered for a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @returns {Boolean} `true` if the event had listeners, else `false`.
-		 * @public
-		 */
-		EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-		  var evt = prefix ? prefix + event : event;
-
-		  if (!this._events[evt]) return false;
-
-		  var listeners = this._events[evt]
-		    , len = arguments.length
-		    , args
-		    , i;
-
-		  if (listeners.fn) {
-		    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-
-		    switch (len) {
-		      case 1: return listeners.fn.call(listeners.context), true;
-		      case 2: return listeners.fn.call(listeners.context, a1), true;
-		      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-		      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-		      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-		      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-		    }
-
-		    for (i = 1, args = new Array(len -1); i < len; i++) {
-		      args[i - 1] = arguments[i];
-		    }
-
-		    listeners.fn.apply(listeners.context, args);
-		  } else {
-		    var length = listeners.length
-		      , j;
-
-		    for (i = 0; i < length; i++) {
-		      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-
-		      switch (len) {
-		        case 1: listeners[i].fn.call(listeners[i].context); break;
-		        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-		        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-		        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
-		        default:
-		          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-		            args[j - 1] = arguments[j];
-		          }
-
-		          listeners[i].fn.apply(listeners[i].context, args);
-		      }
-		    }
-		  }
-
-		  return true;
-		};
-
-		/**
-		 * Add a listener for a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @param {Function} fn The listener function.
-		 * @param {*} [context=this] The context to invoke the listener with.
-		 * @returns {EventEmitter} `this`.
-		 * @public
-		 */
-		EventEmitter.prototype.on = function on(event, fn, context) {
-		  return addListener(this, event, fn, context, false);
-		};
-
-		/**
-		 * Add a one-time listener for a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @param {Function} fn The listener function.
-		 * @param {*} [context=this] The context to invoke the listener with.
-		 * @returns {EventEmitter} `this`.
-		 * @public
-		 */
-		EventEmitter.prototype.once = function once(event, fn, context) {
-		  return addListener(this, event, fn, context, true);
-		};
-
-		/**
-		 * Remove the listeners of a given event.
-		 *
-		 * @param {(String|Symbol)} event The event name.
-		 * @param {Function} fn Only remove the listeners that match this function.
-		 * @param {*} context Only remove the listeners that have this context.
-		 * @param {Boolean} once Only remove one-time listeners.
-		 * @returns {EventEmitter} `this`.
-		 * @public
-		 */
-		EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-		  var evt = prefix ? prefix + event : event;
-
-		  if (!this._events[evt]) return this;
-		  if (!fn) {
-		    clearEvent(this, evt);
-		    return this;
-		  }
-
-		  var listeners = this._events[evt];
-
-		  if (listeners.fn) {
-		    if (
-		      listeners.fn === fn &&
-		      (!once || listeners.once) &&
-		      (!context || listeners.context === context)
-		    ) {
-		      clearEvent(this, evt);
-		    }
-		  } else {
-		    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-		      if (
-		        listeners[i].fn !== fn ||
-		        (once && !listeners[i].once) ||
-		        (context && listeners[i].context !== context)
-		      ) {
-		        events.push(listeners[i]);
-		      }
-		    }
-
-		    //
-		    // Reset the array, or remove it completely if we have no more listeners.
-		    //
-		    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-		    else clearEvent(this, evt);
-		  }
-
-		  return this;
-		};
-
-		/**
-		 * Remove all listeners, or those of the specified event.
-		 *
-		 * @param {(String|Symbol)} [event] The event name.
-		 * @returns {EventEmitter} `this`.
-		 * @public
-		 */
-		EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-		  var evt;
-
-		  if (event) {
-		    evt = prefix ? prefix + event : event;
-		    if (this._events[evt]) clearEvent(this, evt);
-		  } else {
-		    this._events = new Events();
-		    this._eventsCount = 0;
-		  }
-
-		  return this;
-		};
-
-		//
-		// Alias methods names because people roll like that.
-		//
-		EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-		EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-
-		//
-		// Expose the prefix.
-		//
-		EventEmitter.prefixed = prefix;
-
-		//
-		// Allow `EventEmitter` to be imported as module namespace.
-		//
-		EventEmitter.EventEmitter = EventEmitter;
-
-		//
-		// Expose the module.
-		//
-		{
-		  module.exports = EventEmitter;
-		} 
-	} (eventemitter3));
-	return eventemitter3.exports;
-}
-
-var eventemitter3Exports = requireEventemitter3();
-var EventEmitter = /*@__PURE__*/getDefaultExportFromCjs(eventemitter3Exports);
-
+		return this;
+	};
+	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+	EventEmitter.prefixed = prefix;
+	EventEmitter.EventEmitter = EventEmitter;
+	if ("undefined" !== typeof module) module.exports = EventEmitter;
+})))(), 1)).default;
+//#endregion
+//#region src/pixel-utils.ts
 function pxCentroid(pts) {
-    const x = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-    const y = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-    return [x, y];
+	return [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
 }
 function pxDistance(a, b) {
-    return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
+	return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
 }
 /** Angle in radians from a to b */
 function pxAngle(from, to) {
-    return Math.atan2(to[1] - from[1], to[0] - from[0]);
+	return Math.atan2(to[1] - from[1], to[0] - from[0]);
 }
 /** Rotate a single point around a pivot by `angle` radians */
 function pxRotatePoint(pt, pivot, angle) {
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const dx = pt[0] - pivot[0];
-    const dy = pt[1] - pivot[1];
-    return [
-        pivot[0] + dx * cos - dy * sin,
-        pivot[1] + dx * sin + dy * cos
-    ];
+	const cos = Math.cos(angle);
+	const sin = Math.sin(angle);
+	const dx = pt[0] - pivot[0];
+	const dy = pt[1] - pivot[1];
+	return [pivot[0] + dx * cos - dy * sin, pivot[1] + dx * sin + dy * cos];
 }
 /** Rotate all corners around their centroid */
 function pxRotatePolygon(cornersPx, startPx, currentPx) {
-    const center = pxCentroid(cornersPx);
-    const angle = pxAngle(center, currentPx) - pxAngle(center, startPx);
-    return cornersPx.map(pt => pxRotatePoint(pt, center, angle));
+	const center = pxCentroid(cornersPx);
+	const angle = pxAngle(center, currentPx) - pxAngle(center, startPx);
+	return cornersPx.map((pt) => pxRotatePoint(pt, center, angle));
 }
 /** Scale corners from opposite anchor point */
 function pxScalePolygon(cornersPx, handlePx, currentPx) {
-    const oppositePx = pxGetOppositePoint(cornersPx, handlePx);
-    const distStart = pxDistance(handlePx, oppositePx);
-    const distCurrent = pxDistance(currentPx, oppositePx);
-    if (distStart === 0)
-        return cornersPx;
-    const scale = distCurrent / distStart;
-    return cornersPx.map(pt => [
-        oppositePx[0] + (pt[0] - oppositePx[0]) * scale,
-        oppositePx[1] + (pt[1] - oppositePx[1]) * scale
-    ]);
+	const oppositePx = pxGetOppositePoint(cornersPx, handlePx);
+	const distStart = pxDistance(handlePx, oppositePx);
+	const distCurrent = pxDistance(currentPx, oppositePx);
+	if (distStart === 0) return cornersPx;
+	const scale = distCurrent / distStart;
+	return cornersPx.map((pt) => [oppositePx[0] + (pt[0] - oppositePx[0]) * scale, oppositePx[1] + (pt[1] - oppositePx[1]) * scale]);
 }
 function pxResizePolygon(cornersPx, handlePx, currentPx) {
-    const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
-    const oppositeIdx = (handleIdx + 2) % 4;
-    const adj1Idx = (handleIdx + 1) % 4;
-    const adj2Idx = (handleIdx + 3) % 4;
-    const opposite = cornersPx[oppositeIdx];
-    const edge1 = [cornersPx[adj1Idx][0] - opposite[0], cornersPx[adj1Idx][1] - opposite[1]];
-    const edge2 = [cornersPx[adj2Idx][0] - opposite[0], cornersPx[adj2Idx][1] - opposite[1]];
-    const delta = [currentPx[0] - opposite[0], currentPx[1] - opposite[1]];
-    const s = Math.max(0.1, (delta[0] * edge1[0] + delta[1] * edge1[1]) / (edge1[0] ** 2 + edge1[1] ** 2));
-    const t = Math.max(0.1, (delta[0] * edge2[0] + delta[1] * edge2[1]) / (edge2[0] ** 2 + edge2[1] ** 2));
-    const newCorners = [...cornersPx];
-    newCorners[adj1Idx] = [opposite[0] + s * edge1[0], opposite[1] + s * edge1[1]];
-    newCorners[adj2Idx] = [opposite[0] + t * edge2[0], opposite[1] + t * edge2[1]];
-    newCorners[handleIdx] = [
-        newCorners[adj1Idx][0] + newCorners[adj2Idx][0] - opposite[0],
-        newCorners[adj1Idx][1] + newCorners[adj2Idx][1] - opposite[1],
-    ];
-    return newCorners;
+	const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
+	const oppositeIdx = (handleIdx + 2) % 4;
+	const adj1Idx = (handleIdx + 1) % 4;
+	const adj2Idx = (handleIdx + 3) % 4;
+	const opposite = cornersPx[oppositeIdx];
+	const edge1 = [cornersPx[adj1Idx][0] - opposite[0], cornersPx[adj1Idx][1] - opposite[1]];
+	const edge2 = [cornersPx[adj2Idx][0] - opposite[0], cornersPx[adj2Idx][1] - opposite[1]];
+	const delta = [currentPx[0] - opposite[0], currentPx[1] - opposite[1]];
+	const s = Math.max(.1, (delta[0] * edge1[0] + delta[1] * edge1[1]) / (edge1[0] ** 2 + edge1[1] ** 2));
+	const t = Math.max(.1, (delta[0] * edge2[0] + delta[1] * edge2[1]) / (edge2[0] ** 2 + edge2[1] ** 2));
+	const newCorners = [...cornersPx];
+	newCorners[adj1Idx] = [opposite[0] + s * edge1[0], opposite[1] + s * edge1[1]];
+	newCorners[adj2Idx] = [opposite[0] + t * edge2[0], opposite[1] + t * edge2[1]];
+	newCorners[handleIdx] = [newCorners[adj1Idx][0] + newCorners[adj2Idx][0] - opposite[0], newCorners[adj1Idx][1] + newCorners[adj2Idx][1] - opposite[1]];
+	return newCorners;
 }
 function pxGetOppositePoint(cornersPx, handlePx) {
-    let maxDist = -Infinity;
-    let opposite = cornersPx[0];
-    for (const pt of cornersPx) {
-        if (Math.abs(pt[0] - handlePx[0]) < 0.1 && Math.abs(pt[1] - handlePx[1]) < 0.1)
-            continue;
-        const d = pxDistance(pt, handlePx);
-        if (d > maxDist) {
-            maxDist = d;
-            opposite = pt;
-        }
-    }
-    return opposite;
+	let maxDist = -Infinity;
+	let opposite = cornersPx[0];
+	for (const pt of cornersPx) {
+		if (Math.abs(pt[0] - handlePx[0]) < .1 && Math.abs(pt[1] - handlePx[1]) < .1) continue;
+		const d = pxDistance(pt, handlePx);
+		if (d > maxDist) {
+			maxDist = d;
+			opposite = pt;
+		}
+	}
+	return opposite;
 }
 function pxMidpoint(a, b) {
-    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+	return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 }
 function pxGetClosestPointIndex(cornersPx, pointPx) {
-    let closest = 0;
-    let minDist = Infinity;
-    for (let i = 0; i < cornersPx.length; i++) {
-        const d = pxDistance(pointPx, cornersPx[i]);
-        if (d < minDist) {
-            minDist = d;
-            closest = i;
-        }
-    }
-    return closest;
+	let closest = 0;
+	let minDist = Infinity;
+	for (let i = 0; i < cornersPx.length; i++) {
+		const d = pxDistance(pointPx, cornersPx[i]);
+		if (d < minDist) {
+			minDist = d;
+			closest = i;
+		}
+	}
+	return closest;
 }
 function pxMovePoints(cornersPx, startPx, currentPx) {
-    const dx = currentPx[0] - startPx[0];
-    const dy = currentPx[1] - startPx[1];
-    return cornersPx.map(p => [p[0] + dx, p[1] + dy]);
+	const dx = currentPx[0] - startPx[0];
+	const dy = currentPx[1] - startPx[1];
+	return cornersPx.map((p) => [p[0] + dx, p[1] + dy]);
 }
 /**
- * Sort points in clockwise order starting from the top-left corner.
- * @param corners The corners of the rectangle.
- * @returns The sorted corners of the rectangle.
- */
+* Sort points in clockwise order starting from the top-left corner.
+* @param corners The corners of the rectangle.
+* @returns The sorted corners of the rectangle.
+*/
 function sortPoints(points) {
-    const centerPx = pxCentroid(points);
-    const indexed = points.map((px, i) => ({
-        px, i,
-        angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
-    }));
-    indexed.sort((a, b) => a.angle - b.angle);
-    // Find top-left (min x - y in pixel space)
-    let topLeftIndex = 0;
-    let minVal = Infinity;
-    indexed.forEach((item, i) => {
-        const val = item.px[0] - item.px[1];
-        if (val < minVal) {
-            minVal = val;
-            topLeftIndex = i;
-        }
-    });
-    const sorted = [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)];
-    return sorted.map(item => points[item.i]);
+	const centerPx = pxCentroid(points);
+	const indexed = points.map((px, i) => ({
+		px,
+		i,
+		angle: Math.atan2(px[1] - centerPx[1], px[0] - centerPx[0])
+	}));
+	indexed.sort((a, b) => a.angle - b.angle);
+	let topLeftIndex = 0;
+	let minVal = Infinity;
+	indexed.forEach((item, i) => {
+		const val = item.px[0] - item.px[1];
+		if (val < minVal) {
+			minVal = val;
+			topLeftIndex = i;
+		}
+	});
+	return [...indexed.slice(topLeftIndex), ...indexed.slice(0, topLeftIndex)].map((item) => points[item.i]);
 }
-
+//#endregion
+//#region src/image-recolor.ts
 async function getImageData(source) {
-    const canvas = document.createElement('canvas');
-    if (source instanceof HTMLImageElement) {
-        canvas.width = source.naturalWidth;
-        canvas.height = source.naturalHeight;
-    }
-    else {
-        // ImageBitmap
-        canvas.width = source.width;
-        canvas.height = source.height;
-    }
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(source, 0, 0);
-    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+	const canvas = document.createElement("canvas");
+	if (source instanceof HTMLImageElement) {
+		canvas.width = source.naturalWidth;
+		canvas.height = source.naturalHeight;
+	} else {
+		canvas.width = source.width;
+		canvas.height = source.height;
+	}
+	const ctx = canvas.getContext("2d");
+	ctx.drawImage(source, 0, 0);
+	return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 /**
- * Recolor an image to a target color
- * This assumes the original images as part of this project has a white halo and internal orange.
- * @param source The image to recolor
- * @param targetColor The target color
- * @returns The recolored image data
- */
+* Recolor an image to a target color
+* This assumes the original images as part of this project has a white halo and internal orange.
+* @param source The image to recolor
+* @param targetColor The target color
+* @returns The recolored image data
+*/
 async function recolor(source, targetColor) {
-    const imageData = await getImageData(source);
-    return applyRecolor(imageData, targetColor);
+	return applyRecolor(await getImageData(source), targetColor);
 }
 function parseColor(color) {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 1, 1);
-    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-    // If alpha is 0 and color wasn't 'transparent', parsing likely failed
-    if (a === 0 && color.trim().toLowerCase() !== 'transparent')
-        return null;
-    return [r, g, b];
+	const canvas = document.createElement("canvas");
+	canvas.width = canvas.height = 1;
+	const ctx = canvas.getContext("2d");
+	ctx.fillStyle = color;
+	ctx.fillRect(0, 0, 1, 1);
+	const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+	if (a === 0 && color.trim().toLowerCase() !== "transparent") return null;
+	return [
+		r,
+		g,
+		b
+	];
 }
 function applyRecolor(originalImageData, targetColor) {
-    const rgb = parseColor(targetColor.trim());
-    if (!rgb)
-        return null;
-    const src = originalImageData.data;
-    const out = new Uint8ClampedArray(src.length);
-    const [tr, tg, tb] = rgb;
-    for (let i = 0; i < src.length; i += 4) {
-        const r = src[i];
-        const g = src[i + 1];
-        const b = src[i + 2];
-        const a = src[i + 3];
-        // detect warm/orange-ish pixels (broad enough for AA)
-        const warm = r > g * 0.9 && r > b * 1.05;
-        if (warm) {
-            // distance from white (preserves anti-aliasing gradient)
-            const minC = Math.min(r, g, b);
-            const intensity = (255 - minC) / 255;
-            // rebuild: white -> target color
-            out[i] = Math.round((1 - intensity) * 255 + intensity * tr);
-            out[i + 1] = Math.round((1 - intensity) * 255 + intensity * tg);
-            out[i + 2] = Math.round((1 - intensity) * 255 + intensity * tb);
-        }
-        else {
-            out[i] = r;
-            out[i + 1] = g;
-            out[i + 2] = b;
-        }
-        out[i + 3] = a; // preserve alpha
-    }
-    return new ImageData(out, originalImageData.width, originalImageData.height);
+	const rgb = parseColor(targetColor.trim());
+	if (!rgb) return null;
+	const src = originalImageData.data;
+	const out = new Uint8ClampedArray(src.length);
+	const [tr, tg, tb] = rgb;
+	for (let i = 0; i < src.length; i += 4) {
+		const r = src[i];
+		const g = src[i + 1];
+		const b = src[i + 2];
+		const a = src[i + 3];
+		if (r > g * .9 && r > b * 1.05) {
+			const intensity = (255 - Math.min(r, g, b)) / 255;
+			out[i] = Math.round((1 - intensity) * 255 + intensity * tr);
+			out[i + 1] = Math.round((1 - intensity) * 255 + intensity * tg);
+			out[i + 2] = Math.round((1 - intensity) * 255 + intensity * tb);
+		} else {
+			out[i] = r;
+			out[i + 1] = g;
+			out[i + 2] = b;
+		}
+		out[i + 3] = a;
+	}
+	return new ImageData(out, originalImageData.width, originalImageData.height);
 }
-
-var img$1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
-
-var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAActJREFUeNpi/P//PwMJwAWIbYH4MBDvIUUjA8giIvGy/6igmQS9RFnEA7fk1+f/v6/NQbZsGbUsAllyDGbJz73x/3+ss/r/61A2mE+KZUwEQnY6EFv+/3ib4de+BAYQDQL/3pxn+HU4h4Hh9xcQNxKIiwlFESGLQBHP8PtEJcP/b89R4xZo6e+zrSjq8AEWAvKg1CXPJOcJNPgOAyO3JMPfOysZmCTtIK4UMUBWR1Gqc0GOeVBCAMURWoIAARNK4wiUV1yBuAlZkJGVB8YsAWJTID5DrXzkAkt5f1+fI8knpOQjbBn2GimWgDAjiUWQIBAbQCP/DykaSbWIbMDEQCdAjkUGtLYoGYiPAfF5KK1Di2oiGZbc/n24BWM+A2IRYlMdMT4ygZVlf4BlG6hw/ff8EIgrSUwZR2zQgSw5DcTxYN9DC9Z/H27D5NdBg5Fii+pBBKggBWE4+POV4c/1ubBqw5KYaoJQPvoAxPw/t7jD6h5UVwJLcVaLdhBzIxAHUOIjcPHPZjuFgQFRkEJcyK/KwKKZRLVqQgZWlYNS24/NbuBqAlSlI1Xlx6hVqKJY9ut4BcntBVJKb7hl5LSAyCm9i5EakL2kaAQIMAAP/aLE8VYEBwAAAABJRU5ErkJggg==";
-
+//#endregion
+//#region assets/rotate.png
+var rotate_default = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA1pJREFUeNrElk9IVFEUxs+89yYoDAumxUgkoYIDZfaXCqfA3GSBi8poEYWzjVrUJiqiJFoJZUEQEYYRBAaFpIsgq5F0UThYZJSLdKEtgpRSQd/M6zvXe8c743vznhs78GOGmXfPd+49551zQ47j0BKtGqyV31Pg95JWs6APO8AdMOC42wToBAlg+fkLaTuMgFMgDpLgLbgKDucEOPmdnLm/4rtRXEEULtL/HgLPwBWvDSpBFhsE0UVPwHl65CWlR7uF2CKDoBndR0ZpPRmRrerXbnAWDHsJNoPLmfF3cN5NVqyJQog+PfyU7K8PhWgQY0Fr+yUKrRJxz4Bd4LOb4Buwfy55hjK/BsgsP07OxDfxPfsgnBgl2EkENRNePX+84pkUcaD6jq2qc2RuqFeiVfpOXQVzIoKQiR1LB+6FNz1O9mBrjjDvVK7pA3uzp1DoiPhYV9S26dE+BkdBreQC6OWgwrtvChFl9uBtlfM9MmX+gsa6bWQjj3LhSvBIVmGPpEVWNQvPcGBZUeSdRaUdCCTIRZNG0aTHskcV93i0RRaIEOUaYOP0aLusFkftV3miWNZUkNZZvIyr8STosCqbyJkapxAKiNMi85jSO02z429jIBKgMz1xWZtQ/+sPsmjS5eEfoD2gmOI8eA7adLH81rYsZtAy238V3CSnhCM/6wL6WA86wYRcm09S+s6Zh+Vg2qVg6gIUSFeACv+iZqV6Dxu4k6RHu8j+eINMvEdWLMG/Xwf9wGtcbAQHuZfOvj7tOlXC8bs8RWKyafQYegfJjCXnOwy6i9Yh7hc4zmLVxgKPMPkplMzyxoW5239ROTkB3nvklLtHH3cTMR0qm1Rn8RXkLjvEA1T1QXFMGFfaTl/JwLjzX5O0gxIRLE8Ue8r9VqCZyqEt7yEd1mbcDGb/EOeTF7OoWdZIFgcSLqrBMzX5TrhJa+OocG/O6zRcKQ9EBJ9axbTIv0KEFu4tRNM/5ycCTiNnYJcdE+vZeJ7KY+aFKbfWlhUVkaNqdYeFjNPBk4KvGSpYmaLs1PfqpUdkrmJCGFcHruAMXxH1Y4Njvioa0TiZpYfyr4y67QQfCgmy8ep7clpHA3adXnALjGjDOqnE/AT1C3KDdLBFTW5pk/LVYKcvdMde9k+AAQDas8HyPpQD4AAAAABJRU5ErkJggg==";
+//#endregion
+//#region assets/scale.png
+var scale_default = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAActJREFUeNpi/P//PwMJwAWIbYH4MBDvIUUjA8giIvGy/6igmQS9RFnEA7fk1+f/v6/NQbZsGbUsAllyDGbJz73x/3+ss/r/61A2mE+KZUwEQnY6EFv+/3ib4de+BAYQDQL/3pxn+HU4h4Hh9xcQNxKIiwlFESGLQBHP8PtEJcP/b89R4xZo6e+zrSjq8AEWAvKg1CXPJOcJNPgOAyO3JMPfOysZmCTtIK4UMUBWR1Gqc0GOeVBCAMURWoIAARNK4wiUV1yBuAlZkJGVB8YsAWJTID5DrXzkAkt5f1+fI8knpOQjbBn2GimWgDAjiUWQIBAbQCP/DykaSbWIbMDEQCdAjkUGtLYoGYiPAfF5KK1Di2oiGZbc/n24BWM+A2IRYlMdMT4ygZVlf4BlG6hw/ff8EIgrSUwZR2zQgSw5DcTxYN9DC9Z/H27D5NdBg5Fii+pBBKggBWE4+POV4c/1ubBqw5KYaoJQPvoAxPw/t7jD6h5UVwJLcVaLdhBzIxAHUOIjcPHPZjuFgQFRkEJcyK/KwKKZRLVqQgZWlYNS24/NbuBqAlSlI1Xlx6hVqKJY9ut4BcntBVJKb7hl5LSAyCm9i5EakL2kaAQIMAAP/aLE8VYEBwAAAABJRU5ErkJggg==";
+//#endregion
+//#region src/index.ts
 const defaultOptions = {
-    showAddImageButton: true,
-    showAddRectangleButton: true,
-    showAddPolygonButton: true,
-    showDeleteButton: true,
-    rectangleSizeFactor: 0.5,
-    areaBackgroundColor: 'orange',
-    areaOpacity: 0.1,
-    borderWidth: 2
+	showAddImageButton: true,
+	showAddRectangleButton: true,
+	showAddPolygonButton: true,
+	showDeleteButton: true,
+	rectangleSizeFactor: .5,
+	areaBackgroundColor: "orange",
+	areaOpacity: .1,
+	borderWidth: 2
 };
-const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
-const AREA_LAYER = 'area-transform-layer-polygon-area';
-const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border';
-const ID_PREFIX = 'area-transform-feature-';
+const HANDLE_LAYER = "area-transform-layer-polygon-handle";
+const AREA_LAYER = "area-transform-layer-polygon-area";
+const AREA_BORDER_LAYER = "area-transform-layer-polygon-border";
+const ID_PREFIX = "area-transform-feature-";
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
-const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
-const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
-const GEOJSON_SOURCE = 'area-transform-geojson-source';
-const POLYGON_BUTTON_ID = 'area-transfrom-polygon';
-const DELETE_BUTTON_ID = 'area-transfrom-delete';
+const IMAGE_SOURCE_PREFIX = "area-transform-raster-";
+const IMAGE_LAYER_PREFIX = "area-transform-raster-layer-";
+const GEOJSON_SOURCE = "area-transform-geojson-source";
+const POLYGON_BUTTON_ID = "area-transfrom-polygon";
+const DELETE_BUTTON_ID = "area-transfrom-delete";
 let maxFeatureId = 0;
 /**
- * Maplibre area transform control
- *
- * @example
- * ```typescript
- * const map = new Map({
- *   container: 'map',
- *   style: 'https://demotiles.maplibre.org/style.json',
- * });
- * const areaTransform = new MaplibreAreaTransform();
- * map.addControl(areaTransform);
- * ```
- */
-class MaplibreAreaTransform {
-    options;
-    _map = null;
-    _container = null;
-    _eventEmitter = new EventEmitter();
-    _selectedFeatureId = null;
-    _state = "";
-    _polygonPoints = [];
-    _startPx = null;
-    _startCornersPx = undefined; // corners at drag start
-    _colorCache = new Set();
-    constructor(options = defaultOptions) {
-        this.options = options;
-        this.options = { ...defaultOptions, ...options };
-    }
-    /** @inheritdoc */
-    onAdd(map) {
-        this._map = map;
-        this._container = document.createElement('div');
-        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
-        this.initMapListeners();
-        this.addColoredImages(this.options.areaBackgroundColor);
-        this.initGeojsonSourceAndLayers();
-        if (this.options.showAddImageButton) {
-            this.initFileButton();
-        }
-        if (this.options.showAddRectangleButton) {
-            this.initRectangleButton();
-        }
-        if (this.options.showAddPolygonButton) {
-            this.initPolygonButton();
-        }
-        if (this.options.showDeleteButton) {
-            this.initDeleteButton();
-        }
-        this._eventEmitter.emit('init');
-        return this._container;
-    }
-    /**
-     * Initialize the file button
-     */
-    initFileButton() {
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.style.display = 'none';
-        fileInput.onchange = this.onFileSelected;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.setAttribute('aria-label', 'Add Image');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-image';
-        button.appendChild(icon);
-        button.onclick = () => fileInput.click();
-        this._container.appendChild(fileInput);
-        this._container.appendChild(button);
-    }
-    /**
-     * Initialize the polygon button
-     */
-    initPolygonButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = POLYGON_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Polygon');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-polygon';
-        button.appendChild(icon);
-        button.onclick = () => this.startAddPolygonSequence();
-        this._container.appendChild(button);
-    }
-    /**
-     * Initialize the rectangle button
-     */
-    initRectangleButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.setAttribute('aria-label', 'Add Rectangle');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-rectangle';
-        button.appendChild(icon);
-        button.onclick = () => this.addRectangle();
-        this._container.appendChild(button);
-    }
-    initDeleteButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = DELETE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Delete');
-        const icon = document.createElement('span');
-        icon.className = 'icon-delete';
-        button.appendChild(icon);
-        button.onclick = () => this.onDeleteButtonClick();
-        this._container.appendChild(button);
-    }
-    initGeojsonSourceAndLayers() {
-        this._map?.addSource(GEOJSON_SOURCE, {
-            type: 'geojson',
-            promoteId: 'id',
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
-        });
-        this._map?.addLayer({
-            id: AREA_LAYER,
-            type: 'fill',
-            source: GEOJSON_SOURCE,
-            paint: {
-                'fill-color': ['get', 'color'],
-                'fill-opacity': this.options.areaOpacity,
-            },
-            filter: ["==", "$type", "Polygon"]
-        });
-        this._map?.addLayer({
-            id: AREA_BORDER_LAYER,
-            type: 'line',
-            source: GEOJSON_SOURCE,
-            paint: {
-                'line-color': ['get', 'color'],
-                'line-width': this.options.borderWidth,
-            },
-            filter: ["==", "$type", "Polygon"]
-        });
-        this._map?.addLayer({
-            id: HANDLE_LAYER + '-circle',
-            type: 'circle',
-            source: GEOJSON_SOURCE,
-            paint: {
-                'circle-color': ['get', 'color'],
-                'circle-radius': 3,
-                'circle-stroke-color': 'white',
-                'circle-stroke-width': 2
-            },
-            filter: ["==", "$type", "Point"]
-        });
-        this._map?.addLayer({
-            id: HANDLE_LAYER,
-            type: 'symbol',
-            source: GEOJSON_SOURCE,
-            layout: {
-                'icon-image': ['get', 'icon'],
-                'icon-allow-overlap': true,
-                'icon-ignore-placement': true,
-                'icon-rotate': ['get', 'heading']
-            },
-            filter: [
-                'all',
-                ['==', '$type', 'Point'],
-                ['==', 'isSelected', true]
-            ]
-        });
-    }
-    /** @inheritdoc */
-    onRemove() {
-        this._container?.remove();
-        this._map?.off('touchstart', this.onMouseDown);
-        this._map?.off('touchmove', this.onMouseMove);
-        this._map?.off('touchend', this.onMouseUp);
-        this._map?.off('touchcancel', this.onMouseUp);
-        this._map?.off('mousedown', this.onMouseDown);
-        this._map?.off('mousemove', this.onMouseMoveForCursor);
-        this._map?.off('mousemove', this.onMouseMove);
-        this._map?.off('mouseup', this.onMouseUp);
-        this._map?.off('click', this.onClick);
-        this._map = null;
-    }
-    /**
-     * Create the coordinates for an image in mercator projection (centered on the map)
-     * @param img The image.
-     * @returns The coordinates of the image in GeoJSON format.
-     */
-    createCoordinatesForLoadedImage(img) {
-        const imageAspect = img.naturalWidth / img.naturalHeight;
-        const canvas = this._map.getCanvas();
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        const canvasAspect = width / height;
-        let baseWidth;
-        let baseHeight;
-        if (imageAspect >= canvasAspect) {
-            // Landscape or square: constrain by width
-            baseWidth = width / 2;
-            baseHeight = baseWidth / imageAspect;
-        }
-        else {
-            // Portrait: constrain by height
-            baseHeight = height / 2;
-            baseWidth = baseHeight * imageAspect;
-        }
-        const startX = (width - baseWidth) / 2;
-        const startY = (height - baseHeight) / 2;
-        return [
-            [startX, startY],
-            [(startX + baseWidth), startY],
-            [(startX + baseWidth), (startY + baseHeight)],
-            [startX, (startY + baseHeight)]
-        ];
-    }
-    /**
-     * Adds an image to the map.
-     * @param imageUrl The URL of the image.
-     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
-     * @returns The ID of the added image.
-     */
-    async addImage(imageUrl, coordinates) {
-        if (this._state === "adding-ploygon") {
-            return Promise.reject("Cannot add image while adding polygon");
-        }
-        const imageId = `${ID_PREFIX}${maxFeatureId++}`;
-        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
-        this._map?.addSource(imageSourceId, {
-            type: 'image',
-            url: imageUrl,
-            coordinates: coordinates
-        });
-        this._map?.addLayer({
-            id: IMAGE_LAYER_PREFIX + imageId,
-            type: 'raster',
-            source: imageSourceId,
-            paint: {
-                'raster-opacity': 0.9,
-                'raster-fade-duration': 0
-            }
-        }, HANDLE_LAYER);
-        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(imageId);
-        this.setState("");
-        return imageId;
-    }
-    /**
-     * This adds a rectangle to the middle of the screen
-     * @returns a pomise that resolves to the newly added rectangle ID
-     */
-    addRectangle() {
-        if (this._state === "adding-ploygon") {
-            return Promise.reject("Cannot add rectangle while adding polygon");
-        }
-        const canvas = this._map.getCanvas();
-        const dpr = window.devicePixelRatio || 1;
-        const logicalWidth = canvas.width / dpr;
-        const logicalHeight = canvas.height / dpr;
-        const startX = logicalWidth * (1 - this.options.rectangleSizeFactor) / 2;
-        const startY = logicalHeight * (1 - this.options.rectangleSizeFactor) / 2;
-        const width = logicalWidth * this.options.rectangleSizeFactor;
-        const height = logicalHeight * this.options.rectangleSizeFactor;
-        const corners = [[startX, startY], [startX + width, startY], [startX + width, startY + height], [startX, startY + height]];
-        return this.addPolygon(this.unprojectAll(corners), true);
-    }
-    /**
-     * Initiates the state of adding points in order to create a polygon on the screen
-     */
-    startAddPolygonSequence() {
-        this.removeSelection();
-        this.setState("adding-ploygon");
-        this._polygonPoints = [];
-    }
-    onDeleteButtonClick() {
-        if (this._state === "adding-ploygon") {
-            return;
-        }
-        this.removeSelection();
-        if (this._state === "deleting") {
-            this.setState("");
-        }
-        else {
-            this.setState("deleting");
-        }
-    }
-    /**
-     * Adds a polygon to the map
-     * @param coordinates - the polygon coordinates
-     * @param resizable - only relevant for rectangles
-     * @returns a promise with the polygon ID
-     */
-    async addPolygon(coordinates, resizable) {
-        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
-        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true, color: this.options.areaBackgroundColor })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(polygonId);
-        this.setState("");
-        return polygonId;
-    }
-    async deleteFeature(featureId) {
-        this.removeSelection();
-        const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
-        let data = await geojsonSource.getData();
-        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        geojsonSource.setData(data);
-        const imageSource = this._map?.getSource(IMAGE_SOURCE_PREFIX + featureId);
-        if (imageSource) {
-            this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-            this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
-        }
-    }
-    async setAreaColor(color) {
-        this.options.areaBackgroundColor = color;
-        this.addColoredImages(color);
-    }
-    on(event, listener) {
-        this._eventEmitter.on(event, listener);
-    }
-    off(event, listener) {
-        this._eventEmitter.off(event, listener);
-    }
-    onFileSelected = async (e) => {
-        const target = e.target;
-        const file = target.files?.[0];
-        if (!file)
-            return;
-        const imageUrl = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = async () => {
-            const coordinates = this.createCoordinatesForLoadedImage(img);
-            await this.addImage(imageUrl, coordinates);
-            target.value = '';
-        };
-        img.src = imageUrl;
-    };
-    initMapListeners() {
-        this._map?.on('touchstart', this.onMouseDown);
-        this._map?.on('touchmove', this.onMouseMove);
-        this._map?.on('touchend', this.onMouseUp);
-        this._map?.on('touchcancel', this.onMouseUp);
-        this._map?.on('mousedown', this.onMouseDown);
-        this._map?.on('mousemove', this.onMouseMoveForCursor);
-        this._map?.on('mousemove', this.onMouseMove);
-        this._map?.on('mouseup', this.onMouseUp);
-        this._map?.on('click', this.onClick);
-    }
-    buildPolygonGeoJSONFeatures(buildOptions) {
-        const { coordinates, featureId, isSelected, color } = buildOptions;
-        const features = [{
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[...coordinates, coordinates[0]]]
-                },
-                properties: {
-                    id: "rect-" + featureId,
-                    featureId,
-                    color
-                }
-            }];
-        for (let i = 0; i < coordinates.length; i++) {
-            features.push({
-                type: 'Feature',
-                geometry: {
-                    type: 'Point',
-                    coordinates: coordinates[i]
-                },
-                properties: {
-                    id: "scale-" + i + "-" + featureId,
-                    featureId,
-                    type: 'scale-handle',
-                    icon: 'scale-' + this.options.areaBackgroundColor,
-                    color,
-                    isSelected,
-                    heading: this.getScaleHandleHeadingSnapped(coordinates, i)
-                }
-            });
-        }
-        return features;
-    }
-    getRotateHandlePoint(coordinates, featureId, color) {
-        const pxCorners = this.projectAll(coordinates);
-        const p0 = pxCorners[0];
-        const p1 = pxCorners[1];
-        const midPx = pxMidpoint(p0, p1);
-        // Offset perpendicular to the first edge
-        const edgeVec = [p0[0] - p1[0], p0[1] - p1[1]];
-        const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
-        const normalPx = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
-        const offsetDist = edgeLen * 0.075;
-        const handlePx = [midPx[0] + normalPx[0] * offsetDist, midPx[1] + normalPx[1] * offsetDist];
-        const handleCoord = this.unproject(handlePx);
-        return {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: handleCoord },
-            properties: {
-                id: "rotate-" + featureId,
-                featureId,
-                type: 'rotate-handle',
-                icon: 'rotate-' + color,
-                color,
-                isSelected: true,
-                heading: 0
-            }
-        };
-    }
-    /** Heading in degrees for scale handle icon rotation */
-    getScaleHandleHeadingSnapped(coordinates, currentPointIndex) {
-        const px = this.projectAll(coordinates);
-        const centerPx = pxCentroid(px);
-        const centerToFirstPointAngle = pxAngle(centerPx, px[0]);
-        const centerToFirstSecondAngle = pxAngle(centerPx, px[1]);
-        const direction = ((((centerToFirstSecondAngle + centerToFirstPointAngle) / 2) * (180 / Math.PI) + 180) % 180);
-        if (direction > 157) {
-            return currentPointIndex % 2 === 0 ? 45 : 135;
-        }
-        if (direction > 112) {
-            return currentPointIndex % 2 === 0 ? 0 : 90;
-        }
-        if (direction > 67) {
-            return currentPointIndex % 2 === 0 ? 135 : 45;
-        }
-        if (direction > 22) {
-            return currentPointIndex % 2 === 0 ? 90 : 0;
-        }
-        return currentPointIndex % 2 === 0 ? 45 : 135;
-    }
-    onMouseMoveForCursor = (e) => {
-        if (this._selectedFeatureId == null || this._startPx != null) {
-            this._map.getCanvas().style.cursor = '';
-            return;
-        }
-        if (!this._selectedFeatureId) {
-            return;
-        }
-        const features = this._map?.queryRenderedFeatures(e.point).filter(f => f.properties?.["featureId"] === this._selectedFeatureId);
-        const rotate = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'rotate-handle');
-        const scaleOrResize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && (f.properties["type"] === 'scale-handle'));
-        const drag = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
-        if (rotate) {
-            this._map.getCanvas().style.cursor = 'crosshair';
-        }
-        else if (scaleOrResize) {
-            switch (scaleOrResize.properties["heading"]) {
-                case 0:
-                    this._map.getCanvas().style.cursor = "ns-resize";
-                    break;
-                case 45:
-                    this._map.getCanvas().style.cursor = "nesw-resize";
-                    break;
-                case 90:
-                    this._map.getCanvas().style.cursor = "ew-resize";
-                    break;
-                case 135:
-                    this._map.getCanvas().style.cursor = "nwse-resize";
-                    break;
-                case 180:
-                    this._map.getCanvas().style.cursor = "ns-resize";
-                    break;
-            }
-        }
-        else if (drag) {
-            this._map.getCanvas().style.cursor = 'move';
-        }
-        else {
-            this._map.getCanvas().style.cursor = '';
-        }
-    };
-    onMouseDown = (e) => {
-        if (this._selectedFeatureId == null) {
-            return;
-        }
-        let features = this._map?.queryRenderedFeatures(e.point);
-        features = features?.filter(f => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this._selectedFeatureId) ?? [];
-        if (features.length <= 0) {
-            return;
-        }
-        e.preventDefault();
-        const currentPx = [e.point.x, e.point.y];
-        this.setStateFromMouseDown(currentPx, features);
-    };
-    async setStateFromMouseDown(currentPx, queriedFeatures) {
-        const data = await this._map?.getSource(GEOJSON_SOURCE)?.getData();
-        const featurePoints = data.features.filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId);
-        this._startCornersPx = featurePoints
-            .filter(f => f.properties?.["type"] === "scale-handle")
-            .map(f => this.project(f.geometry.coordinates));
-        if (!queriedFeatures.some(f => f.layer.id.startsWith(HANDLE_LAYER))) {
-            this.setState("moving");
-            this._startPx = currentPx;
-            return;
-        }
-        if (queriedFeatures.some(f => f.properties["type"] === "rotate-handle")) {
-            this.setState("rotating");
-            this._startPx = currentPx;
-            return;
-        }
-        let closestFeature = featurePoints[0];
-        for (const feature of featurePoints) {
-            const fPx = this.project(feature.geometry.coordinates);
-            const bestPx = this.project(closestFeature.geometry.coordinates);
-            if (pxDistance(fPx, currentPx) < pxDistance(bestPx, currentPx)) {
-                closestFeature = feature;
-            }
-        }
-        this._startPx = this.project(closestFeature.geometry.coordinates);
-        if (closestFeature.properties?.["type"] === "scale-handle" && this._selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-            this.setState("resizeing");
-        }
-        else {
-            this.setState("scaling");
-        }
-    }
-    onMouseMove = (e) => {
-        if (!this._selectedFeatureId || this._startPx == null)
-            return;
-        const currentPx = [e.point.x, e.point.y];
-        let newCornersPx;
-        switch (this._state) {
-            case "rotating":
-                newCornersPx = pxRotatePolygon(this._startCornersPx, this._startPx, currentPx);
-                break;
-            case "scaling":
-                newCornersPx = pxScalePolygon(this._startCornersPx, this._startPx, currentPx);
-                break;
-            case "resizeing":
-                newCornersPx = pxResizePolygon(this._startCornersPx, this._startPx, currentPx);
-                break;
-            default:
-            case "moving": {
-                newCornersPx = pxMovePoints(this._startCornersPx, this._startPx, currentPx);
-                break;
-            }
-        }
-        const newCoordinates = this.unprojectAll(newCornersPx);
-        this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates);
-        this.updateCoordinates(this._selectedFeatureId, newCoordinates);
-    };
-    onMouseUp = () => {
-        this._startPx = null;
-        this._startCornersPx = undefined;
-        if (this._state === "moving" ||
-            this._state === "resizeing" ||
-            this._state === "rotating" ||
-            this._state === "scaling") {
-            this.setState("");
-        }
-    };
-    onClick = (e) => {
-        if (this._state === "adding-ploygon") {
-            this.onClickWhenInPolygonMode(e);
-            return;
-        }
-        const features = this._map?.queryRenderedFeatures(e.point);
-        const polygonFeature = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
-        this.removeSelection();
-        if (polygonFeature) {
-            if (this._state === "deleting") {
-                this.deleteFeature(polygonFeature.properties["featureId"]);
-                return;
-            }
-            this.setSelection(polygonFeature.properties["featureId"]);
-        }
-    };
-    async onClickWhenInPolygonMode(e) {
-        const coordinates = [e.lngLat.lng, e.lngLat.lat];
-        const source = this._map?.getSource(GEOJSON_SOURCE);
-        const pixelThreshold = 10;
-        if (this._polygonPoints.length > 0 &&
-            Math.abs(this._polygonPoints[0][0] - e.point.x) < pixelThreshold &&
-            Math.abs(this._polygonPoints[0][1] - e.point.y) < pixelThreshold) {
-            // last point is near the first one
-            const ids = this._polygonPoints.map((_, i) => "temp-point-" + (i + 1));
-            await source.updateData({ remove: [...ids, 'temp-area'] }, true);
-            const points = sortPoints(this._polygonPoints);
-            this.addPolygon(this.unprojectAll(points), false);
-            this._polygonPoints = [];
-            return;
-        }
-        // Adding the point
-        this._polygonPoints.push([e.point.x, e.point.y]);
-        const point = {
-            type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates
-            },
-            properties: {
-                id: "temp-point-" + this._polygonPoints.length,
-                temp: true,
-                isSelected: false
-            }
-        };
-        if (this._polygonPoints.length < 3) {
-            await source.updateData({
-                add: [point]
-            }, true);
-            return;
-        }
-        const areaGeometry = {
-            type: "Polygon",
-            coordinates: [[...this.unprojectAll(this._polygonPoints), this.unproject(this._polygonPoints[0])]]
-        };
-        if (this._polygonPoints.length === 3) {
-            const area = {
-                type: "Feature",
-                geometry: areaGeometry,
-                properties: {
-                    id: "temp-area",
-                    temp: true,
-                    isSelected: false
-                }
-            };
-            await source.updateData({
-                add: [point, area]
-            }, true);
-            return;
-        }
-        await source.updateData({
-            add: [point],
-            update: [{ id: "temp-area", newGeometry: areaGeometry }]
-        }, true);
-    }
-    async addColoredImages(color) {
-        if (this._colorCache.has(color)) {
-            return;
-        }
-        const rotateImage = await this._map?.loadImage(img$1);
-        const scaleImage = await this._map?.loadImage(img);
-        let recoloredRotateImage = await recolor(rotateImage?.data, color);
-        let recoloredScaleImage = await recolor(scaleImage?.data, color);
-        this._map?.addImage('rotate-' + color, recoloredRotateImage);
-        this._map?.addImage('scale-' + color, recoloredScaleImage);
-        this._colorCache.add(color);
-    }
-    async removeSelection() {
-        this._selectedFeatureId = null;
-        const source = this._map?.getSource(GEOJSON_SOURCE);
-        const data = await source.getData();
-        for (const feature of data.features) {
-            delete feature?.properties?.["isSelected"];
-        }
-        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-        await source.setData(data, true);
-    }
-    async setSelection(featureId) {
-        this._selectedFeatureId = featureId;
-        const source = this._map?.getSource(GEOJSON_SOURCE);
-        const data = await source.getData();
-        const corners = [];
-        for (const feature of data.features) {
-            if (feature.geometry.type === "Point" &&
-                feature.properties?.["featureId"] === featureId &&
-                feature.properties?.["type"] === "scale-handle") {
-                feature.properties["isSelected"] = true;
-                corners.push(feature);
-            }
-        }
-        corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
-        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
-        const coords = corners.map(f => f.geometry.coordinates);
-        data.features.push(this.getRotateHandlePoint(coords, featureId, color));
-        await source.setData(data, true);
-    }
-    async updateCoordinates(featureId, newCoordinates) {
-        const source = this._map?.getSource(GEOJSON_SOURCE);
-        const data = await source.getData();
-        const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
-        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
-        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-        data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
-        await source.setData(data, true);
-    }
-    /** Project a lat/lng GeoJSON position to map pixel point */
-    project(pos) {
-        const pt = this._map.project([pos[0], pos[1]]);
-        return [pt.x, pt.y];
-    }
-    /** Unproject a pixel point back to [lng, lat] */
-    unproject(px) {
-        const ll = this._map.unproject(px);
-        return [ll.lng, ll.lat];
-    }
-    /** Project an array of lat/lng positions to pixel points */
-    projectAll(coords) {
-        return coords.map(c => this.project(c));
-    }
-    /** Unproject pixel points back to lat/lng positions */
-    unprojectAll(pxPoints) {
-        return pxPoints.map(p => this.unproject(p));
-    }
-    setState(state) {
-        this._state = state;
-        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-ploygon");
-        document.getElementById(DELETE_BUTTON_ID)?.classList.toggle('active', this._state === "deleting");
-    }
-}
-
+* Maplibre area transform control
+* 
+* @example
+* ```typescript
+* const map = new Map({
+*   container: 'map',
+*   style: 'https://demotiles.maplibre.org/style.json',
+* });
+* const areaTransform = new MaplibreAreaTransform();
+* map.addControl(areaTransform);
+* ```
+*/
+var MaplibreAreaTransform = class {
+	options;
+	_map = null;
+	_container = null;
+	_eventEmitter = new eventemitter3_default();
+	_selectedFeatureId = null;
+	_state = "";
+	_polygonPoints = [];
+	_startPx = null;
+	_startCornersPx = void 0;
+	_colorCache = /* @__PURE__ */ new Set();
+	constructor(options = defaultOptions) {
+		this.options = options;
+		this.options = {
+			...defaultOptions,
+			...options
+		};
+	}
+	/** @inheritdoc */
+	onAdd(map) {
+		this._map = map;
+		this._container = document.createElement("div");
+		this._container.className = "maplibregl-ctrl maplibregl-ctrl-area-transform";
+		this.initMapListeners();
+		this.addColoredImages(this.options.areaBackgroundColor);
+		this.initGeojsonSourceAndLayers();
+		if (this.options.showAddImageButton) this.initFileButton();
+		if (this.options.showAddRectangleButton) this.initRectangleButton();
+		if (this.options.showAddPolygonButton) this.initPolygonButton();
+		if (this.options.showDeleteButton) this.initDeleteButton();
+		this._eventEmitter.emit("init");
+		return this._container;
+	}
+	/**
+	* Initialize the file button
+	*/
+	initFileButton() {
+		const fileInput = document.createElement("input");
+		fileInput.type = "file";
+		fileInput.accept = "image/*";
+		fileInput.style.display = "none";
+		fileInput.onchange = this.onFileSelected;
+		const button = document.createElement("button");
+		button.type = "button";
+		button.setAttribute("aria-label", "Add Image");
+		const icon = document.createElement("span");
+		icon.className = "icon-add-image";
+		button.appendChild(icon);
+		button.onclick = () => fileInput.click();
+		this._container.appendChild(fileInput);
+		this._container.appendChild(button);
+	}
+	/**
+	* Initialize the polygon button
+	*/
+	initPolygonButton() {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.id = POLYGON_BUTTON_ID;
+		button.setAttribute("aria-label", "Add Polygon");
+		const icon = document.createElement("span");
+		icon.className = "icon-add-polygon";
+		button.appendChild(icon);
+		button.onclick = () => this.startAddPolygonSequence();
+		this._container.appendChild(button);
+	}
+	/**
+	* Initialize the rectangle button
+	*/
+	initRectangleButton() {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.setAttribute("aria-label", "Add Rectangle");
+		const icon = document.createElement("span");
+		icon.className = "icon-add-rectangle";
+		button.appendChild(icon);
+		button.onclick = () => this.addRectangle();
+		this._container.appendChild(button);
+	}
+	initDeleteButton() {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.id = DELETE_BUTTON_ID;
+		button.setAttribute("aria-label", "Delete");
+		const icon = document.createElement("span");
+		icon.className = "icon-delete";
+		button.appendChild(icon);
+		button.onclick = () => this.onDeleteButtonClick();
+		this._container.appendChild(button);
+	}
+	initGeojsonSourceAndLayers() {
+		this._map?.addSource(GEOJSON_SOURCE, {
+			type: "geojson",
+			promoteId: "id",
+			data: {
+				type: "FeatureCollection",
+				features: []
+			}
+		});
+		this._map?.addLayer({
+			id: AREA_LAYER,
+			type: "fill",
+			source: GEOJSON_SOURCE,
+			paint: {
+				"fill-color": ["get", "color"],
+				"fill-opacity": this.options.areaOpacity
+			},
+			filter: [
+				"==",
+				"$type",
+				"Polygon"
+			]
+		});
+		this._map?.addLayer({
+			id: AREA_BORDER_LAYER,
+			type: "line",
+			source: GEOJSON_SOURCE,
+			paint: {
+				"line-color": ["get", "color"],
+				"line-width": this.options.borderWidth
+			},
+			filter: [
+				"==",
+				"$type",
+				"Polygon"
+			]
+		});
+		this._map?.addLayer({
+			id: "area-transform-layer-polygon-handle-circle",
+			type: "circle",
+			source: GEOJSON_SOURCE,
+			paint: {
+				"circle-color": ["get", "color"],
+				"circle-radius": 3,
+				"circle-stroke-color": "white",
+				"circle-stroke-width": 2
+			},
+			filter: [
+				"==",
+				"$type",
+				"Point"
+			]
+		});
+		this._map?.addLayer({
+			id: HANDLE_LAYER,
+			type: "symbol",
+			source: GEOJSON_SOURCE,
+			layout: {
+				"icon-image": ["get", "icon"],
+				"icon-allow-overlap": true,
+				"icon-ignore-placement": true,
+				"icon-rotate": ["get", "heading"]
+			},
+			filter: [
+				"all",
+				[
+					"==",
+					"$type",
+					"Point"
+				],
+				[
+					"==",
+					"isSelected",
+					true
+				]
+			]
+		});
+	}
+	/** @inheritdoc */
+	onRemove() {
+		this._container?.remove();
+		this._map?.off("touchstart", this.onMouseDown);
+		this._map?.off("touchmove", this.onMouseMove);
+		this._map?.off("touchend", this.onMouseUp);
+		this._map?.off("touchcancel", this.onMouseUp);
+		this._map?.off("mousedown", this.onMouseDown);
+		this._map?.off("mousemove", this.onMouseMoveForCursor);
+		this._map?.off("mousemove", this.onMouseMove);
+		this._map?.off("mouseup", this.onMouseUp);
+		this._map?.off("click", this.onClick);
+		this._map = null;
+	}
+	/**
+	* Create the coordinates for an image in mercator projection (centered on the map)
+	* @param img The image.
+	* @returns The coordinates of the image in GeoJSON format.
+	*/
+	createCoordinatesForLoadedImage(img) {
+		const imageAspect = img.naturalWidth / img.naturalHeight;
+		const canvas = this._map.getCanvas();
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
+		const canvasAspect = width / height;
+		let baseWidth;
+		let baseHeight;
+		if (imageAspect >= canvasAspect) {
+			baseWidth = width / 2;
+			baseHeight = baseWidth / imageAspect;
+		} else {
+			baseHeight = height / 2;
+			baseWidth = baseHeight * imageAspect;
+		}
+		const startX = (width - baseWidth) / 2;
+		const startY = (height - baseHeight) / 2;
+		return [
+			[startX, startY],
+			[startX + baseWidth, startY],
+			[startX + baseWidth, startY + baseHeight],
+			[startX, startY + baseHeight]
+		];
+	}
+	/**
+	* Adds an image to the map.
+	* @param imageUrl The URL of the image.
+	* @param coordinates The coordinates of the image (four points forming a quadrilateral).
+	* @returns The ID of the added image.
+	*/
+	async addImage(imageUrl, coordinates) {
+		if (this._state === "adding-ploygon") return Promise.reject("Cannot add image while adding polygon");
+		const imageId = `${ID_PREFIX}${maxFeatureId++}`;
+		const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
+		this._map?.addSource(imageSourceId, {
+			type: "image",
+			url: imageUrl,
+			coordinates
+		});
+		this._map?.addLayer({
+			id: IMAGE_LAYER_PREFIX + imageId,
+			type: "raster",
+			source: imageSourceId,
+			paint: {
+				"raster-opacity": .9,
+				"raster-fade-duration": 0
+			}
+		}, HANDLE_LAYER);
+		await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
+			coordinates,
+			featureId: imageId,
+			isSelected: true,
+			color: this.options.areaBackgroundColor
+		}) }, true);
+		await this.removeSelection();
+		await this.setSelection(imageId);
+		this.setState("");
+		return imageId;
+	}
+	/**
+	* This adds a rectangle to the middle of the screen
+	* @returns a pomise that resolves to the newly added rectangle ID
+	*/
+	addRectangle() {
+		if (this._state === "adding-ploygon") return Promise.reject("Cannot add rectangle while adding polygon");
+		const canvas = this._map.getCanvas();
+		const dpr = window.devicePixelRatio || 1;
+		const logicalWidth = canvas.width / dpr;
+		const logicalHeight = canvas.height / dpr;
+		const startX = logicalWidth * (1 - this.options.rectangleSizeFactor) / 2;
+		const startY = logicalHeight * (1 - this.options.rectangleSizeFactor) / 2;
+		const width = logicalWidth * this.options.rectangleSizeFactor;
+		const height = logicalHeight * this.options.rectangleSizeFactor;
+		const corners = [
+			[startX, startY],
+			[startX + width, startY],
+			[startX + width, startY + height],
+			[startX, startY + height]
+		];
+		return this.addPolygon(this.unprojectAll(corners), true);
+	}
+	/**
+	* Initiates the state of adding points in order to create a polygon on the screen
+	*/
+	startAddPolygonSequence() {
+		this.removeSelection();
+		this.setState("adding-ploygon");
+		this._polygonPoints = [];
+	}
+	onDeleteButtonClick() {
+		if (this._state === "adding-ploygon") return;
+		this.removeSelection();
+		if (this._state === "deleting") this.setState("");
+		else this.setState("deleting");
+	}
+	/**
+	* Adds a polygon to the map
+	* @param coordinates - the polygon coordinates
+	* @param resizable - only relevant for rectangles
+	* @returns a promise with the polygon ID
+	*/
+	async addPolygon(coordinates, resizable) {
+		const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
+		await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
+			coordinates,
+			featureId: polygonId,
+			isSelected: true,
+			color: this.options.areaBackgroundColor
+		}) }, true);
+		await this.removeSelection();
+		await this.setSelection(polygonId);
+		this.setState("");
+		return polygonId;
+	}
+	async deleteFeature(featureId) {
+		this.removeSelection();
+		const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
+		let data = await geojsonSource.getData();
+		data.features = data.features.filter((f) => f.properties?.["featureId"] !== featureId);
+		geojsonSource.setData(data);
+		if (this._map?.getSource(IMAGE_SOURCE_PREFIX + featureId)) {
+			this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
+			this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
+		}
+	}
+	async setAreaColor(color) {
+		this.options.areaBackgroundColor = color;
+		this.addColoredImages(color);
+	}
+	on(event, listener) {
+		this._eventEmitter.on(event, listener);
+	}
+	off(event, listener) {
+		this._eventEmitter.off(event, listener);
+	}
+	onFileSelected = async (e) => {
+		const target = e.target;
+		const file = target.files?.[0];
+		if (!file) return;
+		const imageUrl = URL.createObjectURL(file);
+		const img = new Image();
+		img.onload = async () => {
+			const coordinates = this.createCoordinatesForLoadedImage(img);
+			await this.addImage(imageUrl, coordinates);
+			target.value = "";
+		};
+		img.src = imageUrl;
+	};
+	initMapListeners() {
+		this._map?.on("touchstart", this.onMouseDown);
+		this._map?.on("touchmove", this.onMouseMove);
+		this._map?.on("touchend", this.onMouseUp);
+		this._map?.on("touchcancel", this.onMouseUp);
+		this._map?.on("mousedown", this.onMouseDown);
+		this._map?.on("mousemove", this.onMouseMoveForCursor);
+		this._map?.on("mousemove", this.onMouseMove);
+		this._map?.on("mouseup", this.onMouseUp);
+		this._map?.on("click", this.onClick);
+	}
+	buildPolygonGeoJSONFeatures(buildOptions) {
+		const { coordinates, featureId, isSelected, color } = buildOptions;
+		const features = [{
+			type: "Feature",
+			geometry: {
+				type: "Polygon",
+				coordinates: [[...coordinates, coordinates[0]]]
+			},
+			properties: {
+				id: "rect-" + featureId,
+				featureId,
+				color
+			}
+		}];
+		for (let i = 0; i < coordinates.length; i++) features.push({
+			type: "Feature",
+			geometry: {
+				type: "Point",
+				coordinates: coordinates[i]
+			},
+			properties: {
+				id: "scale-" + i + "-" + featureId,
+				featureId,
+				type: "scale-handle",
+				icon: "scale-" + this.options.areaBackgroundColor,
+				color,
+				isSelected,
+				heading: this.getScaleHandleHeadingSnapped(coordinates, i)
+			}
+		});
+		return features;
+	}
+	getRotateHandlePoint(coordinates, featureId, color) {
+		const pxCorners = this.projectAll(coordinates);
+		const p0 = pxCorners[0];
+		const p1 = pxCorners[1];
+		const midPx = pxMidpoint(p0, p1);
+		const edgeVec = [p0[0] - p1[0], p0[1] - p1[1]];
+		const edgeLen = Math.sqrt(edgeVec[0] ** 2 + edgeVec[1] ** 2);
+		const normalPx = [-edgeVec[1] / edgeLen, edgeVec[0] / edgeLen];
+		const offsetDist = edgeLen * .075;
+		const handlePx = [midPx[0] + normalPx[0] * offsetDist, midPx[1] + normalPx[1] * offsetDist];
+		return {
+			type: "Feature",
+			geometry: {
+				type: "Point",
+				coordinates: this.unproject(handlePx)
+			},
+			properties: {
+				id: "rotate-" + featureId,
+				featureId,
+				type: "rotate-handle",
+				icon: "rotate-" + color,
+				color,
+				isSelected: true,
+				heading: 0
+			}
+		};
+	}
+	/** Heading in degrees for scale handle icon rotation */
+	getScaleHandleHeadingSnapped(coordinates, currentPointIndex) {
+		const px = this.projectAll(coordinates);
+		const centerPx = pxCentroid(px);
+		const centerToFirstPointAngle = pxAngle(centerPx, px[0]);
+		const direction = ((pxAngle(centerPx, px[1]) + centerToFirstPointAngle) / 2 * (180 / Math.PI) + 180) % 180;
+		if (direction > 157) return currentPointIndex % 2 === 0 ? 45 : 135;
+		if (direction > 112) return currentPointIndex % 2 === 0 ? 0 : 90;
+		if (direction > 67) return currentPointIndex % 2 === 0 ? 135 : 45;
+		if (direction > 22) return currentPointIndex % 2 === 0 ? 90 : 0;
+		return currentPointIndex % 2 === 0 ? 45 : 135;
+	}
+	onMouseMoveForCursor = (e) => {
+		if (this._selectedFeatureId == null || this._startPx != null) {
+			this._map.getCanvas().style.cursor = "";
+			return;
+		}
+		if (!this._selectedFeatureId) return;
+		const features = this._map?.queryRenderedFeatures(e.point).filter((f) => f.properties?.["featureId"] === this._selectedFeatureId);
+		const rotate = features?.find((f) => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === "rotate-handle");
+		const scaleOrResize = features?.find((f) => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === "scale-handle");
+		const drag = features?.find((f) => f.layer.id.startsWith(AREA_LAYER));
+		if (rotate) this._map.getCanvas().style.cursor = "crosshair";
+		else if (scaleOrResize) switch (scaleOrResize.properties["heading"]) {
+			case 0:
+				this._map.getCanvas().style.cursor = "ns-resize";
+				break;
+			case 45:
+				this._map.getCanvas().style.cursor = "nesw-resize";
+				break;
+			case 90:
+				this._map.getCanvas().style.cursor = "ew-resize";
+				break;
+			case 135:
+				this._map.getCanvas().style.cursor = "nwse-resize";
+				break;
+			case 180:
+				this._map.getCanvas().style.cursor = "ns-resize";
+				break;
+		}
+		else if (drag) this._map.getCanvas().style.cursor = "move";
+		else this._map.getCanvas().style.cursor = "";
+	};
+	onMouseDown = (e) => {
+		if (this._selectedFeatureId == null) return;
+		let features = this._map?.queryRenderedFeatures(e.point);
+		features = features?.filter((f) => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this._selectedFeatureId) ?? [];
+		if (features.length <= 0) return;
+		e.preventDefault();
+		const currentPx = [e.point.x, e.point.y];
+		this.setStateFromMouseDown(currentPx, features);
+	};
+	async setStateFromMouseDown(currentPx, queriedFeatures) {
+		const featurePoints = (await this._map?.getSource(GEOJSON_SOURCE)?.getData()).features.filter((f) => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId);
+		this._startCornersPx = featurePoints.filter((f) => f.properties?.["type"] === "scale-handle").map((f) => this.project(f.geometry.coordinates));
+		if (!queriedFeatures.some((f) => f.layer.id.startsWith(HANDLE_LAYER))) {
+			this.setState("moving");
+			this._startPx = currentPx;
+			return;
+		}
+		if (queriedFeatures.some((f) => f.properties["type"] === "rotate-handle")) {
+			this.setState("rotating");
+			this._startPx = currentPx;
+			return;
+		}
+		let closestFeature = featurePoints[0];
+		for (const feature of featurePoints) {
+			const fPx = this.project(feature.geometry.coordinates);
+			const bestPx = this.project(closestFeature.geometry.coordinates);
+			if (pxDistance(fPx, currentPx) < pxDistance(bestPx, currentPx)) closestFeature = feature;
+		}
+		this._startPx = this.project(closestFeature.geometry.coordinates);
+		if (closestFeature.properties?.["type"] === "scale-handle" && this._selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) this.setState("resizeing");
+		else this.setState("scaling");
+	}
+	onMouseMove = (e) => {
+		if (!this._selectedFeatureId || this._startPx == null) return;
+		const currentPx = [e.point.x, e.point.y];
+		let newCornersPx;
+		switch (this._state) {
+			case "rotating":
+				newCornersPx = pxRotatePolygon(this._startCornersPx, this._startPx, currentPx);
+				break;
+			case "scaling":
+				newCornersPx = pxScalePolygon(this._startCornersPx, this._startPx, currentPx);
+				break;
+			case "resizeing":
+				newCornersPx = pxResizePolygon(this._startCornersPx, this._startPx, currentPx);
+				break;
+			default:
+			case "moving":
+				newCornersPx = pxMovePoints(this._startCornersPx, this._startPx, currentPx);
+				break;
+		}
+		const newCoordinates = this.unprojectAll(newCornersPx);
+		this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates);
+		this.updateCoordinates(this._selectedFeatureId, newCoordinates);
+	};
+	onMouseUp = () => {
+		this._startPx = null;
+		this._startCornersPx = void 0;
+		if (this._state === "moving" || this._state === "resizeing" || this._state === "rotating" || this._state === "scaling") this.setState("");
+	};
+	onClick = (e) => {
+		if (this._state === "adding-ploygon") {
+			this.onClickWhenInPolygonMode(e);
+			return;
+		}
+		const polygonFeature = (this._map?.queryRenderedFeatures(e.point))?.find((f) => f.layer.id.startsWith(AREA_LAYER));
+		this.removeSelection();
+		if (polygonFeature) {
+			if (this._state === "deleting") {
+				this.deleteFeature(polygonFeature.properties["featureId"]);
+				return;
+			}
+			this.setSelection(polygonFeature.properties["featureId"]);
+		}
+	};
+	async onClickWhenInPolygonMode(e) {
+		const coordinates = [e.lngLat.lng, e.lngLat.lat];
+		const source = this._map?.getSource(GEOJSON_SOURCE);
+		const pixelThreshold = 10;
+		if (this._polygonPoints.length > 0 && Math.abs(this._polygonPoints[0][0] - e.point.x) < pixelThreshold && Math.abs(this._polygonPoints[0][1] - e.point.y) < pixelThreshold) {
+			const ids = this._polygonPoints.map((_, i) => "temp-point-" + (i + 1));
+			await source.updateData({ remove: [...ids, "temp-area"] }, true);
+			const points = sortPoints(this._polygonPoints);
+			this.addPolygon(this.unprojectAll(points), false);
+			this._polygonPoints = [];
+			return;
+		}
+		this._polygonPoints.push([e.point.x, e.point.y]);
+		const point = {
+			type: "Feature",
+			geometry: {
+				type: "Point",
+				coordinates
+			},
+			properties: {
+				id: "temp-point-" + this._polygonPoints.length,
+				temp: true,
+				isSelected: false
+			}
+		};
+		if (this._polygonPoints.length < 3) {
+			await source.updateData({ add: [point] }, true);
+			return;
+		}
+		const areaGeometry = {
+			type: "Polygon",
+			coordinates: [[...this.unprojectAll(this._polygonPoints), this.unproject(this._polygonPoints[0])]]
+		};
+		if (this._polygonPoints.length === 3) {
+			const area = {
+				type: "Feature",
+				geometry: areaGeometry,
+				properties: {
+					id: "temp-area",
+					temp: true,
+					isSelected: false
+				}
+			};
+			await source.updateData({ add: [point, area] }, true);
+			return;
+		}
+		await source.updateData({
+			add: [point],
+			update: [{
+				id: "temp-area",
+				newGeometry: areaGeometry
+			}]
+		}, true);
+	}
+	async addColoredImages(color) {
+		if (this._colorCache.has(color)) return;
+		const rotateImage = await this._map?.loadImage(rotate_default);
+		const scaleImage = await this._map?.loadImage(scale_default);
+		let recoloredRotateImage = await recolor(rotateImage?.data, color);
+		let recoloredScaleImage = await recolor(scaleImage?.data, color);
+		this._map?.addImage("rotate-" + color, recoloredRotateImage);
+		this._map?.addImage("scale-" + color, recoloredScaleImage);
+		this._colorCache.add(color);
+	}
+	async removeSelection() {
+		this._selectedFeatureId = null;
+		const source = this._map?.getSource(GEOJSON_SOURCE);
+		const data = await source.getData();
+		for (const feature of data.features) delete feature?.properties?.["isSelected"];
+		data.features = data.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
+		await source.setData(data, true);
+	}
+	async setSelection(featureId) {
+		this._selectedFeatureId = featureId;
+		const source = this._map?.getSource(GEOJSON_SOURCE);
+		const data = await source.getData();
+		const corners = [];
+		for (const feature of data.features) if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId && feature.properties?.["type"] === "scale-handle") {
+			feature.properties["isSelected"] = true;
+			corners.push(feature);
+		}
+		corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
+		const color = data.features.find((f) => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
+		const coords = corners.map((f) => f.geometry.coordinates);
+		data.features.push(this.getRotateHandlePoint(coords, featureId, color));
+		await source.setData(data, true);
+	}
+	async updateCoordinates(featureId, newCoordinates) {
+		const source = this._map?.getSource(GEOJSON_SOURCE);
+		const data = await source.getData();
+		const color = data.features.find((f) => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
+		data.features = data.features.filter((f) => f.properties?.["featureId"] !== featureId);
+		data.features.push(...this.buildPolygonGeoJSONFeatures({
+			coordinates: newCoordinates,
+			featureId,
+			isSelected: true,
+			color
+		}));
+		data.features = data.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
+		data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
+		await source.setData(data, true);
+	}
+	/** Project a lat/lng GeoJSON position to map pixel point */
+	project(pos) {
+		const pt = this._map.project([pos[0], pos[1]]);
+		return [pt.x, pt.y];
+	}
+	/** Unproject a pixel point back to [lng, lat] */
+	unproject(px) {
+		const ll = this._map.unproject(px);
+		return [ll.lng, ll.lat];
+	}
+	/** Project an array of lat/lng positions to pixel points */
+	projectAll(coords) {
+		return coords.map((c) => this.project(c));
+	}
+	/** Unproject pixel points back to lat/lng positions */
+	unprojectAll(pxPoints) {
+		return pxPoints.map((p) => this.unproject(p));
+	}
+	setState(state) {
+		this._state = state;
+		document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle("active", this._state === "adding-ploygon");
+		document.getElementById(DELETE_BUTTON_ID)?.classList.toggle("active", this._state === "deleting");
+	}
+};
+//#endregion
 export { MaplibreAreaTransform };
+
 //# sourceMappingURL=maplibregl-area-transform.mjs.map
