@@ -15590,7 +15590,31 @@ type MaplibreAreaTransformOptions = {
   areaOpacity?: number;
 };
 /**
+ * The payload passed to listeners of the
+ * {@link MaplibreAreaTransformEventMap.create | create} and
+ * {@link MaplibreAreaTransformEventMap.change | change} events.
+ */
+type MaplibreAreaTransformFeatureEvent = {
+  /** The ID of the feature this event refers to. */id: string; /** The feature's corner coordinates in `[lng, lat]` format. */
+  coordinates: GeoJSON.Position[];
+};
+/**
+ * The events emitted by {@link MaplibreAreaTransform}, mapped to the arguments
+ * passed to their listeners. Use these names with
+ * {@link MaplibreAreaTransform.on | on} and {@link MaplibreAreaTransform.off | off}.
+ */
+type MaplibreAreaTransformEventMap = {
+  /** Fired once the control has been added to the map and fully initialized. */init: []; /** Fired when a new area is created (via an image, rectangle or polygon). */
+  create: [event: MaplibreAreaTransformFeatureEvent]; /** Fired whenever a feature's coordinates change (move, scale, resize or rotate). */
+  change: [event: MaplibreAreaTransformFeatureEvent]; /** Fired when a feature is deleted. The listener receives the deleted feature's ID. */
+  delete: [featureId: string];
+};
+/**
  * Maplibre area transform control
+ *
+ * A MapLibre GL JS {@link IControl} that lets users add images, rectangles and
+ * polygons to the map and then move, scale, resize and rotate them, capturing the
+ * resulting corner coordinates.
  *
  * @example
  * ```typescript
@@ -15600,6 +15624,10 @@ type MaplibreAreaTransformOptions = {
  * });
  * const areaTransform = new MaplibreAreaTransform();
  * map.addControl(areaTransform);
+ *
+ * areaTransform.on('change', ({ id, coordinates }) => {
+ *   console.log(id, coordinates);
+ * });
  * ```
  */
 declare class MaplibreAreaTransform implements IControl {
@@ -15613,6 +15641,9 @@ declare class MaplibreAreaTransform implements IControl {
   private _startPx;
   private _startCornersPx;
   private _colorCache;
+  /**
+   * @param options - control options; any omitted option falls back to its default
+   */
   constructor(options?: MaplibreAreaTransformOptions);
   /** @inheritdoc */
   onAdd(map: Map$1): HTMLElement;
@@ -15662,10 +15693,28 @@ declare class MaplibreAreaTransform implements IControl {
    * @returns a promise with the polygon ID
    */
   addPolygon(coordinates: GeoJSON.Position[], resizable: boolean): Promise<string>;
+  /**
+   * Deletes a feature
+   * @param featureId - the feature ID to delete
+   */
   deleteFeature(featureId: string): Promise<void>;
+  /**
+   * Sets the background and border color used for newly drawn and selected areas.
+   * @param color - any CSS color string
+   */
   setAreaColor(color: string): Promise<void>;
-  on(event: string, listener: (...args: any[]) => void): void;
-  off(event: string, listener: (...args: any[]) => void): void;
+  /**
+   * Subscribes to a control event.
+   * @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+   * @param listener - callback invoked with the event's payload
+   */
+  on<K extends keyof MaplibreAreaTransformEventMap>(event: K, listener: (...args: MaplibreAreaTransformEventMap[K]) => void): void;
+  /**
+   * Unsubscribes a previously registered event listener.
+   * @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+   * @param listener - the same callback reference that was passed to {@link MaplibreAreaTransform.on | on}
+   */
+  off<K extends keyof MaplibreAreaTransformEventMap>(event: K, listener: (...args: MaplibreAreaTransformEventMap[K]) => void): void;
   private onFileSelected;
   private initMapListeners;
   private buildPolygonGeoJSONFeatures;
@@ -15694,4 +15743,4 @@ declare class MaplibreAreaTransform implements IControl {
   private setState;
 }
 //#endregion
-export { MaplibreAreaTransform, MaplibreAreaTransformOptions };
+export { MaplibreAreaTransform, MaplibreAreaTransformEventMap, MaplibreAreaTransformFeatureEvent, MaplibreAreaTransformOptions };

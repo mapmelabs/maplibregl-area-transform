@@ -457,7 +457,11 @@ const DELETE_BUTTON_ID = "area-transfrom-delete";
 let maxFeatureId = 0;
 /**
 * Maplibre area transform control
-* 
+*
+* A MapLibre GL JS {@link IControl} that lets users add images, rectangles and
+* polygons to the map and then move, scale, resize and rotate them, capturing the
+* resulting corner coordinates.
+*
 * @example
 * ```typescript
 * const map = new Map({
@@ -466,6 +470,10 @@ let maxFeatureId = 0;
 * });
 * const areaTransform = new MaplibreAreaTransform();
 * map.addControl(areaTransform);
+*
+* areaTransform.on('change', ({ id, coordinates }) => {
+*   console.log(id, coordinates);
+* });
 * ```
 */
 var MaplibreAreaTransform = class {
@@ -479,6 +487,9 @@ var MaplibreAreaTransform = class {
 	_startPx = null;
 	_startCornersPx = void 0;
 	_colorCache = /* @__PURE__ */ new Set();
+	/**
+	* @param options - control options; any omitted option falls back to its default
+	*/
 	constructor(options = defaultOptions) {
 		this.options = options;
 		this.options = {
@@ -672,12 +683,13 @@ var MaplibreAreaTransform = class {
 		}
 		const startX = (width - baseWidth) / 2;
 		const startY = (height - baseHeight) / 2;
-		return [
+		const coordinates = [
 			[startX, startY],
 			[startX + baseWidth, startY],
 			[startX + baseWidth, startY + baseHeight],
 			[startX, startY + baseHeight]
 		];
+		return this.unprojectAll(coordinates);
 	}
 	/**
 	* Adds an image to the map.
@@ -712,6 +724,10 @@ var MaplibreAreaTransform = class {
 		await this.removeSelection();
 		await this.setSelection(imageId);
 		this.setState("");
+		this._eventEmitter.emit("create", {
+			id: imageId,
+			coordinates
+		});
 		return imageId;
 	}
 	/**
@@ -767,8 +783,16 @@ var MaplibreAreaTransform = class {
 		await this.removeSelection();
 		await this.setSelection(polygonId);
 		this.setState("");
+		this._eventEmitter.emit("create", {
+			id: polygonId,
+			coordinates
+		});
 		return polygonId;
 	}
+	/**
+	* Deletes a feature
+	* @param featureId - the feature ID to delete
+	*/
 	async deleteFeature(featureId) {
 		this.removeSelection();
 		const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
@@ -779,14 +803,29 @@ var MaplibreAreaTransform = class {
 			this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
 			this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
 		}
+		this._eventEmitter.emit("delete", featureId);
 	}
+	/**
+	* Sets the background and border color used for newly drawn and selected areas.
+	* @param color - any CSS color string
+	*/
 	async setAreaColor(color) {
 		this.options.areaBackgroundColor = color;
 		this.addColoredImages(color);
 	}
+	/**
+	* Subscribes to a control event.
+	* @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+	* @param listener - callback invoked with the event's payload
+	*/
 	on(event, listener) {
 		this._eventEmitter.on(event, listener);
 	}
+	/**
+	* Unsubscribes a previously registered event listener.
+	* @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+	* @param listener - the same callback reference that was passed to {@link MaplibreAreaTransform.on | on}
+	*/
 	off(event, listener) {
 		this._eventEmitter.off(event, listener);
 	}
@@ -1092,6 +1131,10 @@ var MaplibreAreaTransform = class {
 		data.features = data.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
 		data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
 		await source.setData(data, true);
+		this._eventEmitter.emit("change", {
+			id: featureId,
+			coordinates: newCoordinates
+		});
 	}
 	/** Project a lat/lng GeoJSON position to map pixel point */
 	project(pos) {

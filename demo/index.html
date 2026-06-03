@@ -42,6 +42,9 @@
                 areaOpacity: 0.5
             });
             map.addControl(areaTransformControl);
+            areaTransformControl.on('create', (e) => console.log('create', e))
+            areaTransformControl.on('change', (e) => console.log('change', e));
+            areaTransformControl.on('delete', (e) => console.log('delete', e))
         });
     </script>
 </body>
