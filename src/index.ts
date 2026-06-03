@@ -78,6 +78,12 @@ export type MaplibreAreaTransformEventMap = {
     change: [event: MaplibreAreaTransformFeatureEvent];
     /** Fired when a feature is deleted. The listener receives the deleted feature's ID. */
     delete: [featureId: string];
+    /**
+     * Fired when the selected feature changes — the listener receives the newly
+     * selected feature's ID, or `null` when the selection is cleared. Only fires
+     * on an actual change, never redundantly for the same selection.
+     */
+    selected: [featureId: string | null];
 };
 
 type MaplibreAreaTransformState = "rotating" | "scaling" | "resizeing" | "adding-ploygon" | "moving" | "deleting" | "";
@@ -755,13 +761,19 @@ export class MaplibreAreaTransform implements IControl {
         }
         const features = this._map?.queryRenderedFeatures(e.point);
         const polygonFeature = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
+        if (polygonFeature && this._state === "deleting") {
+            this.deleteFeature(polygonFeature.properties["featureId"]);
+            return;
+        }
+        const targetId: string | null = polygonFeature ? polygonFeature.properties["featureId"] : null;
+        if (targetId === this._selectedFeatureId) {
+            // Clicked the current selection, or empty space while nothing is selected:
+            // nothing changed, so don't rebuild state or emit a `selected` event.
+            return;
+        }
         this.removeSelection();
-        if (polygonFeature) {
-            if (this._state === "deleting") {
-                this.deleteFeature(polygonFeature.properties["featureId"])
-                return;
-            }
-            this.setSelection(polygonFeature.properties["featureId"]);
+        if (targetId) {
+            this.setSelection(targetId);
         }
     }
 
@@ -839,8 +851,17 @@ export class MaplibreAreaTransform implements IControl {
         this._colorCache.add(color);
     }
 
+    /** Updates the current selection, emitting `selected` only when it actually changes. */
+    private setSelectedFeatureId(featureId: string | null) {
+        if (this._selectedFeatureId === featureId) {
+            return;
+        }
+        this._selectedFeatureId = featureId;
+        this._eventEmitter.emit("selected", featureId);
+    }
+
     private async removeSelection() {
-        this._selectedFeatureId = null;
+        this.setSelectedFeatureId(null);
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         const data = await source.getData() as GeoJSON.FeatureCollection;
         for (const feature of data.features) {
@@ -851,7 +872,7 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async setSelection(featureId: string) {
-        this._selectedFeatureId = featureId;
+        this.setSelectedFeatureId(featureId);
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         const data = await source.getData() as GeoJSON.FeatureCollection;
         const corners: GeoJSON.Feature<GeoJSON.Point>[] = [];
