@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  unit-tests:
-    name: Unit tests
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -25,7 +25,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run unit tests with coverage
+      - name: Run tests with coverage
         run: |
           npm run test:coverage
 
