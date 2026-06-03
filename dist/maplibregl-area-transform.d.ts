@@ -15608,6 +15608,12 @@ type MaplibreAreaTransformEventMap = {
   create: [event: MaplibreAreaTransformFeatureEvent]; /** Fired whenever a feature's coordinates change (move, scale, resize or rotate). */
   change: [event: MaplibreAreaTransformFeatureEvent]; /** Fired when a feature is deleted. The listener receives the deleted feature's ID. */
   delete: [featureId: string];
+  /**
+   * Fired when the selected feature changes — the listener receives the newly
+   * selected feature's ID, or `null` when the selection is cleared. Only fires
+   * on an actual change, never redundantly for the same selection.
+   */
+  selected: [featureId: string | null];
 };
 /**
  * Maplibre area transform control
@@ -15729,6 +15735,8 @@ declare class MaplibreAreaTransform implements IControl {
   private onClick;
   private onClickWhenInPolygonMode;
   private addColoredImages;
+  /** Updates the current selection, emitting `selected` only when it actually changes. */
+  private setSelectedFeatureId;
   private removeSelection;
   private setSelection;
   private updateCoordinates;

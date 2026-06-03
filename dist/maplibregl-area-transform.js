@@ -474,6 +474,8 @@
 	const IMAGE_SOURCE_PREFIX = "area-transform-raster-";
 	const IMAGE_LAYER_PREFIX = "area-transform-raster-layer-";
 	const GEOJSON_SOURCE = "area-transform-geojson-source";
+	const IMAGE_BUTTON_ID = "area-transfrom-image";
+	const RECTANGLE_BUTTON_ID = "area-transfrom-rectangle";
 	const POLYGON_BUTTON_ID = "area-transfrom-polygon";
 	const DELETE_BUTTON_ID = "area-transfrom-delete";
 	let maxFeatureId = 0;
@@ -545,6 +547,7 @@
 			fileInput.onchange = this.onFileSelected;
 			const button = document.createElement("button");
 			button.type = "button";
+			button.id = IMAGE_BUTTON_ID;
 			button.setAttribute("aria-label", "Add Image");
 			const icon = document.createElement("span");
 			icon.className = "icon-add-image";
@@ -573,6 +576,7 @@
 		initRectangleButton() {
 			const button = document.createElement("button");
 			button.type = "button";
+			button.id = RECTANGLE_BUTTON_ID;
 			button.setAttribute("aria-label", "Add Rectangle");
 			const icon = document.createElement("span");
 			icon.className = "icon-add-rectangle";
@@ -1043,14 +1047,14 @@
 				return;
 			}
 			const polygonFeature = (this._map?.queryRenderedFeatures(e.point))?.find((f) => f.layer.id.startsWith(AREA_LAYER));
-			this.removeSelection();
-			if (polygonFeature) {
-				if (this._state === "deleting") {
-					this.deleteFeature(polygonFeature.properties["featureId"]);
-					return;
-				}
-				this.setSelection(polygonFeature.properties["featureId"]);
+			if (polygonFeature && this._state === "deleting") {
+				this.deleteFeature(polygonFeature.properties["featureId"]);
+				return;
 			}
+			const targetId = polygonFeature ? polygonFeature.properties["featureId"] : null;
+			if (targetId === this._selectedFeatureId) return;
+			this.removeSelection();
+			if (targetId) this.setSelection(targetId);
 		};
 		async onClickWhenInPolygonMode(e) {
 			const coordinates = [e.lngLat.lng, e.lngLat.lat];
@@ -1116,8 +1120,14 @@
 			this._map?.addImage("scale-" + color, recoloredScaleImage);
 			this._colorCache.add(color);
 		}
+		/** Updates the current selection, emitting `selected` only when it actually changes. */
+		setSelectedFeatureId(featureId) {
+			if (this._selectedFeatureId === featureId) return;
+			this._selectedFeatureId = featureId;
+			this._eventEmitter.emit("selected", featureId);
+		}
 		async removeSelection() {
-			this._selectedFeatureId = null;
+			this.setSelectedFeatureId(null);
 			const source = this._map?.getSource(GEOJSON_SOURCE);
 			const data = await source.getData();
 			for (const feature of data.features) delete feature?.properties?.["isSelected"];
@@ -1125,7 +1135,7 @@
 			await source.setData(data, true);
 		}
 		async setSelection(featureId) {
-			this._selectedFeatureId = featureId;
+			this.setSelectedFeatureId(featureId);
 			const source = this._map?.getSource(GEOJSON_SOURCE);
 			const data = await source.getData();
 			const corners = [];
