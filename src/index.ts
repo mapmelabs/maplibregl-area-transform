@@ -114,6 +114,8 @@ const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
 const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const IMAGE_BUTTON_ID = 'area-transfrom-image';
+const RECTANGLE_BUTTON_ID = 'area-transfrom-rectangle';
 const POLYGON_BUTTON_ID = 'area-transfrom-polygon'
 const DELETE_BUTTON_ID = 'area-transfrom-delete';
 
@@ -195,6 +197,7 @@ export class MaplibreAreaTransform implements IControl {
 
         const button = document.createElement('button');
         button.type = 'button';
+        button.id = IMAGE_BUTTON_ID;
         button.setAttribute('aria-label', 'Add Image');
         const icon = document.createElement('span');
         icon.className = 'icon-add-image';
@@ -225,6 +228,7 @@ export class MaplibreAreaTransform implements IControl {
     private initRectangleButton() {
         const button = document.createElement('button');
         button.type = 'button';
+        button.id = RECTANGLE_BUTTON_ID;
         button.setAttribute('aria-label', 'Add Rectangle');
         const icon = document.createElement('span');
         icon.className = 'icon-add-rectangle';

@@ -6,7 +6,7 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             // Print the report to the console (table + summary).
-            reporter: ['text', 'text-summary'],
+            reporter: ['text', 'text-summary', 'html'],
             // Report on all source files, not only those touched by a test.
             all: true,
             include: ['src/**/*.ts'],
