@@ -72,13 +72,38 @@ export function pxResizePolygon(cornersPx: PxPoint[], handlePx: PxPoint, current
     return newCorners;
 }
 
+/**
+ * Returns the corner opposite the handle by walking half-way around the shape's
+ * perimeter measured by arc length.
+ *
+ * Corners are assumed to be ordered around the perimeter (see {@link sortPoints}).
+ * The total perimeter is computed first, then the perimeter is walked from the
+ * handle corner; the corner whose accumulated edge length is closest to half the
+ * perimeter is returned. This stays correct when points are unevenly spaced
+ * (e.g. several points clustered on one side and none on the other).
+ */
 export function pxGetOppositePoint(cornersPx: PxPoint[], handlePx: PxPoint): PxPoint {
-    let maxDist = -Infinity;
-    let opposite = cornersPx[0]!;
-    for (const pt of cornersPx) {
-        if (Math.abs(pt[0] - handlePx[0]) < 0.1 && Math.abs(pt[1] - handlePx[1]) < 0.1) continue;
-        const d = pxDistance(pt, handlePx);
-        if (d > maxDist) { maxDist = d; opposite = pt; }
+    const n = cornersPx.length;
+    const handleIdx = pxGetClosestPointIndex(cornersPx, handlePx);
+
+    let perimeter = 0;
+    for (let i = 0; i < n; i++) {
+        perimeter += pxDistance(cornersPx[i]!, cornersPx[(i + 1) % n]!);
+    }
+    const half = perimeter / 2;
+
+    let walked = 0;
+    let opposite = cornersPx[handleIdx]!;
+    let bestDelta = Infinity;
+    for (let step = 1; step < n; step++) {
+        const prevIdx = (handleIdx + step - 1) % n;
+        const idx = (handleIdx + step) % n;
+        walked += pxDistance(cornersPx[prevIdx]!, cornersPx[idx]!);
+        const delta = Math.abs(walked - half);
+        if (delta < bestDelta) {
+            bestDelta = delta;
+            opposite = cornersPx[idx]!;
+        }
     }
     return opposite;
 }
