@@ -22,9 +22,9 @@ jobs:
           npm ci
           npm run build
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
-          npm run test
+          npm run test:coverage
 
   docs:
     name: Docs
