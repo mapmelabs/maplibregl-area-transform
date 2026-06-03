@@ -1,9 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as maplibregl from 'maplibre-gl';
 import { MaplibreAreaTransform, type MaplibreAreaTransformOptions } from './index';
+import { pxCentroid, pxRotatePoint, type PxPoint } from './pixel-utils';
 import rotateUrl from '../assets/rotate.png';
 
+type SetupResponse = {
+    container: HTMLElement;
+    map: maplibregl.Map;
+    control: MaplibreAreaTransform
+}
+
 const AREA_LAYER = 'area-transform-layer-polygon-area';
+const GEOJSON_SOURCE = 'area-transform-geojson-source';
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
     rectangle: 'area-transfrom-rectangle',
@@ -26,6 +34,22 @@ function clickAt(map: maplibregl.Map, lngLat: maplibregl.LngLat) {
     map.fire('click', { point, lngLat } as unknown as maplibregl.MapMouseEvent);
 }
 
+/** Projects a [lng, lat] coordinate to a pixel point. */
+function projectPx(map: maplibregl.Map, coord: number[]): PxPoint {
+    const p = map.project([coord[0]!, coord[1]!]);
+    return [p.x, p.y];
+}
+
+/** Fires a synthetic map pointer event (mousedown/mousemove/mouseup) at a pixel point. */
+function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouseup', px: PxPoint) {
+    map.fire(type, {
+        point: { x: px[0], y: px[1] },
+        lngLat: map.unproject([px[0], px[1]]),
+        preventDefault() { /* no-op */ },
+        originalEvent: {},
+    } as unknown as maplibregl.MapMouseEvent);
+}
+
 /** Polls until the predicate holds (a render has produced queryable features) or times out. */
 async function waitUntil(fn: () => boolean, timeoutMs = 3000) {
     const start = performance.now();
@@ -37,7 +61,7 @@ async function waitUntil(fn: () => boolean, timeoutMs = 3000) {
 }
 
 /** Creates a sized map with the control added, ready to drive. Caller must tear it down. */
-async function setup(options?: MaplibreAreaTransformOptions) {
+async function setup(options?: MaplibreAreaTransformOptions): Promise<SetupResponse> {
     const container = document.createElement('div');
     container.style.width = '400px';
     container.style.height = '400px';
@@ -205,5 +229,68 @@ describe('MaplibreAreaTransform event unsubscription', () => {
 
         expect(kept.length).toBe(1);  // the event really fired...
         expect(removed).toEqual([]);  // ...but the unsubscribed listener got nothing
+    });
+});
+
+describe('MaplibreAreaTransform rotation', () => {
+    let ctx: SetupResponse;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    it('rotates the feature when dragging the rotate handle', async () => {
+        const { map, control } = ctx;
+        const rectId = await control.addRectangle();
+
+        // Read the rectangle's corners and rotate handle from the source.
+        const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource;
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const points = data.features.filter(
+            (f) => f.geometry.type === 'Point' && f.properties?.['featureId'] === rectId,
+        ) as GeoJSON.Feature<GeoJSON.Point>[];
+        const cornerCoords = points
+            .filter((f) => f.properties?.['type'] === 'scale-handle')
+            .map((f) => f.geometry.coordinates);
+        const rotateCoord = points.find((f) => f.properties?.['type'] === 'rotate-handle')!.geometry.coordinates;
+
+        expect(cornerCoords.length).toBe(4);
+
+        const origCornersPx = cornerCoords.map((c) => projectPx(map, c));
+        const centroidPx = pxCentroid(origCornersPx);
+        const startPx = projectPx(map, rotateCoord);
+        const angle = Math.PI / 2; // rotate a quarter turn
+        const currentPx = pxRotatePoint(startPx, centroidPx, angle);
+
+        // Wait until the rotate handle is actually rendered and queryable.
+        await waitUntil(() => map.queryRenderedFeatures([startPx[0], startPx[1]])
+            .some((f) => f.properties?.['type'] === 'rotate-handle' && f.properties?.['featureId'] === rectId));
+
+        let lastChange: { id: string; coordinates: number[][] } | null = null;
+        control.on('change', (e) => { lastChange = e as typeof lastChange; });
+
+        // Grab the rotate handle, then drag it a quarter-turn around the centroid.
+        fireMouse(map, 'mousedown', startPx);
+        // setStateFromMouseDown is async; keep nudging until the rotation engages.
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', currentPx);
+            return lastChange !== null;
+        });
+        fireMouse(map, 'mouseup', currentPx);
+
+        expect(lastChange).not.toBeNull();
+        const rotated = lastChange!.coordinates;
+        expect(rotated.length).toBe(4);
+
+        // Each corner is the original rotated ~90° about the centroid (compared in pixels).
+        rotated.forEach((c, i) => {
+            const actual = projectPx(map, c);
+            const expected = pxRotatePoint(origCornersPx[i]!, centroidPx, angle);
+            expect(Math.abs(actual[0] - expected[0])).toBeLessThan(1.5);
+            expect(Math.abs(actual[1] - expected[1])).toBeLessThan(1.5);
+        });
+
+        // Sanity: the rotation actually moved the corners.
+        const movedPx = projectPx(map, rotated[0]!);
+        expect(Math.hypot(movedPx[0] - origCornersPx[0]![0], movedPx[1] - origCornersPx[0]![1])).toBeGreaterThan(5);
     });
 });
