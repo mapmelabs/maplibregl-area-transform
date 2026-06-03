@@ -52,6 +52,34 @@ export type MaplibreAreaTransformOptions = {
     areaOpacity?: number;
 }
 
+/**
+ * The payload passed to listeners of the
+ * {@link MaplibreAreaTransformEventMap.create | create} and
+ * {@link MaplibreAreaTransformEventMap.change | change} events.
+ */
+export type MaplibreAreaTransformFeatureEvent = {
+    /** The ID of the feature this event refers to. */
+    id: string;
+    /** The feature's corner coordinates in `[lng, lat]` format. */
+    coordinates: GeoJSON.Position[];
+};
+
+/**
+ * The events emitted by {@link MaplibreAreaTransform}, mapped to the arguments
+ * passed to their listeners. Use these names with
+ * {@link MaplibreAreaTransform.on | on} and {@link MaplibreAreaTransform.off | off}.
+ */
+export type MaplibreAreaTransformEventMap = {
+    /** Fired once the control has been added to the map and fully initialized. */
+    init: [];
+    /** Fired when a new area is created (via an image, rectangle or polygon). */
+    create: [event: MaplibreAreaTransformFeatureEvent];
+    /** Fired whenever a feature's coordinates change (move, scale, resize or rotate). */
+    change: [event: MaplibreAreaTransformFeatureEvent];
+    /** Fired when a feature is deleted. The listener receives the deleted feature's ID. */
+    delete: [featureId: string];
+};
+
 type MaplibreAreaTransformState = "rotating" | "scaling" | "resizeing" | "adding-ploygon" | "moving" | "deleting" | "";
 
 type BuildPolygonOptions = {
@@ -87,7 +115,11 @@ let maxFeatureId = 0;
 
 /**
  * Maplibre area transform control
- * 
+ *
+ * A MapLibre GL JS {@link IControl} that lets users add images, rectangles and
+ * polygons to the map and then move, scale, resize and rotate them, capturing the
+ * resulting corner coordinates.
+ *
  * @example
  * ```typescript
  * const map = new Map({
@@ -96,12 +128,16 @@ let maxFeatureId = 0;
  * });
  * const areaTransform = new MaplibreAreaTransform();
  * map.addControl(areaTransform);
+ *
+ * areaTransform.on('change', ({ id, coordinates }) => {
+ *   console.log(id, coordinates);
+ * });
  * ```
  */
 export class MaplibreAreaTransform implements IControl {
     private _map: Map | null = null;
     private _container: HTMLElement | null = null;
-    private _eventEmitter: EventEmitter = new EventEmitter();
+    private _eventEmitter: EventEmitter<MaplibreAreaTransformEventMap> = new EventEmitter<MaplibreAreaTransformEventMap>();
     private _selectedFeatureId: string | null = null;
     private _state: MaplibreAreaTransformState = "";
     private _polygonPoints: PxPoint[] = [];
@@ -109,6 +145,9 @@ export class MaplibreAreaTransform implements IControl {
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
     private _colorCache: Set<string> = new Set<string>();
 
+    /**
+     * @param options - control options; any omitted option falls back to its default
+     */
     constructor(private options: MaplibreAreaTransformOptions = defaultOptions) {
         this.options = { ...defaultOptions, ...options };
     }
@@ -307,12 +346,13 @@ export class MaplibreAreaTransform implements IControl {
         const startX = (width - baseWidth) / 2;
         const startY = (height - baseHeight) / 2;
 
-        return [
+        const coordinates: PxPoint[] = [
             [startX, startY],
             [(startX + baseWidth), startY],
             [(startX + baseWidth), (startY + baseHeight)],
             [startX, (startY + baseHeight)]
         ];
+        return this.unprojectAll(coordinates);
     }
 
     /**
@@ -348,6 +388,7 @@ export class MaplibreAreaTransform implements IControl {
         await this.removeSelection();
         await this.setSelection(imageId);
         this.setState("");
+        this._eventEmitter.emit("create", { id: imageId, coordinates });
         return imageId;
     }
 
@@ -408,9 +449,14 @@ export class MaplibreAreaTransform implements IControl {
         await this.removeSelection();
         await this.setSelection(polygonId);
         this.setState("");
+        this._eventEmitter.emit('create', { id: polygonId, coordinates })
         return polygonId;
     }
 
+    /**
+     * Deletes a feature
+     * @param featureId - the feature ID to delete
+     */
     public async deleteFeature(featureId: string) {
         this.removeSelection();
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
@@ -422,18 +468,39 @@ export class MaplibreAreaTransform implements IControl {
             this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
             this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
         }
+        this._eventEmitter.emit("delete", featureId);
     }
 
+    /**
+     * Sets the background and border color used for newly drawn and selected areas.
+     * @param color - any CSS color string
+     */
     public async setAreaColor(color: string) {
         this.options.areaBackgroundColor = color;
         this.addColoredImages(color);
     }
 
-    public on(event: string, listener: (...args: any[]) => void): void {
+    /**
+     * Subscribes to a control event.
+     * @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+     * @param listener - callback invoked with the event's payload
+     */
+    public on<K extends keyof MaplibreAreaTransformEventMap>(
+        event: K,
+        listener: (...args: MaplibreAreaTransformEventMap[K]) => void
+    ): void {
         this._eventEmitter.on(event, listener);
     }
 
-    public off(event: string, listener: (...args: any[]) => void): void {
+    /**
+     * Unsubscribes a previously registered event listener.
+     * @param event - the event name, see {@link MaplibreAreaTransformEventMap}
+     * @param listener - the same callback reference that was passed to {@link MaplibreAreaTransform.on | on}
+     */
+    public off<K extends keyof MaplibreAreaTransformEventMap>(
+        event: K,
+        listener: (...args: MaplibreAreaTransformEventMap[K]) => void
+    ): void {
         this._eventEmitter.off(event, listener);
     }
 
@@ -812,6 +879,7 @@ export class MaplibreAreaTransform implements IControl {
         data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
         data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
         await source.setData(data, true);
+        this._eventEmitter.emit("change", { id: featureId, coordinates: newCoordinates });
     }
     /** Project a lat/lng GeoJSON position to map pixel point */
     private project(pos: GeoJSON.Position): PxPoint {
