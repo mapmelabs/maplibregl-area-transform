@@ -4,7 +4,7 @@ import { recolor } from "./image-recolor";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, MapMouseEvent, MapGeoJSONFeature, Coordinates } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates } from "maplibre-gl";
 
 /**
  * Options for the maplibre area transform control
@@ -109,6 +109,7 @@ const defaultOptions: MaplibreAreaTransformOptions = {
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
 const AREA_LAYER = 'area-transform-layer-polygon-area';
 const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border';
+const HANDLE_CIRCLE_LAYER = HANDLE_LAYER + '-circle';
 const ID_PREFIX = 'area-transform-feature-';
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
@@ -152,6 +153,9 @@ export class MaplibreAreaTransform implements IControl {
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
     private _colorCache: Set<string> = new Set<string>();
+    private _addedImageIds: Set<string> = new Set<string>();
+    private _addedLayerIds: Set<string> = new Set<string>();
+    private _addedSourceIds: Set<string> = new Set<string>();
 
     /**
      * @param options - control options; any omitted option falls back to its default
@@ -258,8 +262,9 @@ export class MaplibreAreaTransform implements IControl {
                 features: []
             }
         });
+        this._addedSourceIds.add(GEOJSON_SOURCE);
 
-        this._map?.addLayer({
+        this.addTrackedLayer({
             id: AREA_LAYER,
             type: 'fill',
             source: GEOJSON_SOURCE,
@@ -270,7 +275,7 @@ export class MaplibreAreaTransform implements IControl {
             filter: ["==", "$type", "Polygon"]
         });
 
-        this._map?.addLayer({
+        this.addTrackedLayer({
             id: AREA_BORDER_LAYER,
             type: 'line',
             source: GEOJSON_SOURCE,
@@ -281,8 +286,8 @@ export class MaplibreAreaTransform implements IControl {
             filter: ["==", "$type", "Polygon"]
         });
 
-        this._map?.addLayer({
-            id: HANDLE_LAYER + '-circle',
+        this.addTrackedLayer({
+            id: HANDLE_CIRCLE_LAYER,
             type: 'circle',
             source: GEOJSON_SOURCE,
             paint: {
@@ -294,7 +299,7 @@ export class MaplibreAreaTransform implements IControl {
             filter: ["==", "$type", "Point"]
         });
 
-        this._map?.addLayer({
+        this.addTrackedLayer({
             id: HANDLE_LAYER,
             type: 'symbol',
             source: GEOJSON_SOURCE,
@@ -324,6 +329,25 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.off('mousemove', this.onMouseMove);
         this._map?.off('mouseup', this.onMouseUp);
         this._map?.off('click', this.onClick);
+        for (const layerId of [...this._addedLayerIds].reverse()) {
+            this.removeLayer(layerId);
+        }
+        for (const sourceId of [...this._addedSourceIds].reverse()) {
+            this.removeSource(sourceId);
+        }
+        for (const imageId of [...this._addedImageIds].reverse()) {
+            this.removeImage(imageId);
+        }
+        this._container = null;
+        this._selectedFeatureId = null;
+        this._state = '';
+        this._polygonPoints = [];
+        this._startPx = null;
+        this._startCornersPx = undefined;
+        this._colorCache.clear();
+        this._addedImageIds.clear();
+        this._addedLayerIds.clear();
+        this._addedSourceIds.clear();
         this._map = null;
     }
 
@@ -382,8 +406,10 @@ export class MaplibreAreaTransform implements IControl {
             url: imageUrl,
             coordinates: coordinates as [[number, number], [number, number], [number, number], [number, number]]
         });
+        this._addedSourceIds.add(imageSourceId);
+        const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
         this._map?.addLayer({
-            id: IMAGE_LAYER_PREFIX + imageId,
+            id: imageLayerId,
             type: 'raster',
             source: imageSourceId,
             paint: {
@@ -391,6 +417,7 @@ export class MaplibreAreaTransform implements IControl {
                 'raster-fade-duration': 0
             }
         }, HANDLE_LAYER);
+        this._addedLayerIds.add(imageLayerId);
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         await geojsonSource.updateData({
             add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
@@ -475,8 +502,8 @@ export class MaplibreAreaTransform implements IControl {
         geojsonSource.setData(data);
         const imageSource = this._map?.getSource<ImageSource>(IMAGE_SOURCE_PREFIX + featureId);
         if (imageSource) {
-            this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-            this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
+            this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
+            this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
         }
         this._eventEmitter.emit("delete", featureId);
     }
@@ -539,6 +566,11 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.on('mousemove', this.onMouseMove);
         this._map?.on('mouseup', this.onMouseUp);
         this._map?.on('click', this.onClick);
+    }
+
+    private addTrackedLayer(layer: LayerSpecification, beforeId?: string): void {
+        this._map?.addLayer(layer, beforeId);
+        this._addedLayerIds.add(layer.id);
     }
 
     private buildPolygonGeoJSONFeatures(buildOptions: BuildPolygonOptions): GeoJSON.Feature[] {
@@ -846,13 +878,45 @@ export class MaplibreAreaTransform implements IControl {
         if (this._colorCache.has(color)) {
             return;
         }
-        const rotateImage = await this._map?.loadImage(rotate);
-        const scaleImage = await this._map?.loadImage(scale);
-        let recoloredRotateImage = await recolor(rotateImage?.data!, color);
-        let recoloredScaleImage = await recolor(scaleImage?.data!, color);
-        this._map?.addImage('rotate-' + color, recoloredRotateImage!);
-        this._map?.addImage('scale-' + color, recoloredScaleImage!);
-        this._colorCache.add(color);
+        const map = this._map;
+        if (!map) {
+            return;
+        }
+        return Promise.all([
+            map.loadImage(rotate).then(rotateImage =>
+                recolor(rotateImage?.data!, color).then(recoloredRotateImage => {
+                    const rotateImageId = 'rotate-' + color;
+                    if (!map.hasImage(rotateImageId)) {
+                        map.addImage(rotateImageId, recoloredRotateImage!);
+                        this._addedImageIds.add(rotateImageId);
+                    }
+                }),
+            ),
+            map.loadImage(scale).then(scaleImage =>
+                recolor(scaleImage?.data!, color).then(recoloredScaleImage => {
+                    const scaleImageId = 'scale-' + color;
+                    if (!map.hasImage(scaleImageId)) {
+                        map.addImage(scaleImageId, recoloredScaleImage!);
+                        this._addedImageIds.add(scaleImageId);
+                    }
+                }),
+            ),
+        ]).then(() => this._colorCache.add(color));
+    }
+
+    private removeLayer(layerId: string): void {
+        this._map?.removeLayer(layerId);
+        this._addedLayerIds.delete(layerId);
+    }
+
+    private removeSource(sourceId: string): void {
+        this._map?.removeSource(sourceId);
+        this._addedSourceIds.delete(sourceId);
+    }
+
+    private removeImage(imageId: string): void {
+        this._map?.removeImage(imageId);
+        this._addedImageIds.delete(imageId);
     }
 
     /** Updates the current selection, emitting `selected` only when it actually changes. */
