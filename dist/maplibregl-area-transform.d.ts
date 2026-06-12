@@ -15647,6 +15647,9 @@ declare class MaplibreAreaTransform implements IControl {
   private _startPx;
   private _startCornersPx;
   private _colorCache;
+  private _addedImageIds;
+  private _addedLayerIds;
+  private _addedSourceIds;
   /**
    * @param options - control options; any omitted option falls back to its default
    */
@@ -15723,6 +15726,7 @@ declare class MaplibreAreaTransform implements IControl {
   off<K extends keyof MaplibreAreaTransformEventMap>(event: K, listener: (...args: MaplibreAreaTransformEventMap[K]) => void): void;
   private onFileSelected;
   private initMapListeners;
+  private addTrackedLayer;
   private buildPolygonGeoJSONFeatures;
   private getRotateHandlePoint;
   /** Heading in degrees for scale handle icon rotation */
@@ -15735,6 +15739,9 @@ declare class MaplibreAreaTransform implements IControl {
   private onClick;
   private onClickWhenInPolygonMode;
   private addColoredImages;
+  private removeLayer;
+  private removeSource;
+  private removeImage;
   /** Updates the current selection, emitting `selected` only when it actually changes. */
   private setSelectedFeatureId;
   private removeSelection;

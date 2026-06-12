@@ -465,6 +465,7 @@ const defaultOptions = {
 const HANDLE_LAYER = "area-transform-layer-polygon-handle";
 const AREA_LAYER = "area-transform-layer-polygon-area";
 const AREA_BORDER_LAYER = "area-transform-layer-polygon-border";
+const HANDLE_CIRCLE_LAYER = "area-transform-layer-polygon-handle-circle";
 const ID_PREFIX = "area-transform-feature-";
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`;
 const IMAGE_SOURCE_PREFIX = "area-transform-raster-";
@@ -507,6 +508,9 @@ var MaplibreAreaTransform = class {
 	_startPx = null;
 	_startCornersPx = void 0;
 	_colorCache = /* @__PURE__ */ new Set();
+	_addedImageIds = /* @__PURE__ */ new Set();
+	_addedLayerIds = /* @__PURE__ */ new Set();
+	_addedSourceIds = /* @__PURE__ */ new Set();
 	/**
 	* @param options - control options; any omitted option falls back to its default
 	*/
@@ -600,7 +604,8 @@ var MaplibreAreaTransform = class {
 				features: []
 			}
 		});
-		this._map?.addLayer({
+		this._addedSourceIds.add(GEOJSON_SOURCE);
+		this.addTrackedLayer({
 			id: AREA_LAYER,
 			type: "fill",
 			source: GEOJSON_SOURCE,
@@ -614,7 +619,7 @@ var MaplibreAreaTransform = class {
 				"Polygon"
 			]
 		});
-		this._map?.addLayer({
+		this.addTrackedLayer({
 			id: AREA_BORDER_LAYER,
 			type: "line",
 			source: GEOJSON_SOURCE,
@@ -628,8 +633,8 @@ var MaplibreAreaTransform = class {
 				"Polygon"
 			]
 		});
-		this._map?.addLayer({
-			id: "area-transform-layer-polygon-handle-circle",
+		this.addTrackedLayer({
+			id: HANDLE_CIRCLE_LAYER,
 			type: "circle",
 			source: GEOJSON_SOURCE,
 			paint: {
@@ -644,7 +649,7 @@ var MaplibreAreaTransform = class {
 				"Point"
 			]
 		});
-		this._map?.addLayer({
+		this.addTrackedLayer({
 			id: HANDLE_LAYER,
 			type: "symbol",
 			source: GEOJSON_SOURCE,
@@ -681,6 +686,19 @@ var MaplibreAreaTransform = class {
 		this._map?.off("mousemove", this.onMouseMove);
 		this._map?.off("mouseup", this.onMouseUp);
 		this._map?.off("click", this.onClick);
+		for (const layerId of [...this._addedLayerIds].reverse()) this.removeLayer(layerId);
+		for (const sourceId of [...this._addedSourceIds].reverse()) this.removeSource(sourceId);
+		for (const imageId of [...this._addedImageIds].reverse()) this.removeImage(imageId);
+		this._container = null;
+		this._selectedFeatureId = null;
+		this._state = "";
+		this._polygonPoints = [];
+		this._startPx = null;
+		this._startCornersPx = void 0;
+		this._colorCache.clear();
+		this._addedImageIds.clear();
+		this._addedLayerIds.clear();
+		this._addedSourceIds.clear();
 		this._map = null;
 	}
 	/**
@@ -728,8 +746,10 @@ var MaplibreAreaTransform = class {
 			url: imageUrl,
 			coordinates
 		});
+		this._addedSourceIds.add(imageSourceId);
+		const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
 		this._map?.addLayer({
-			id: IMAGE_LAYER_PREFIX + imageId,
+			id: imageLayerId,
 			type: "raster",
 			source: imageSourceId,
 			paint: {
@@ -737,6 +757,7 @@ var MaplibreAreaTransform = class {
 				"raster-fade-duration": 0
 			}
 		}, HANDLE_LAYER);
+		this._addedLayerIds.add(imageLayerId);
 		await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
 			coordinates,
 			featureId: imageId,
@@ -822,8 +843,8 @@ var MaplibreAreaTransform = class {
 		data.features = data.features.filter((f) => f.properties?.["featureId"] !== featureId);
 		geojsonSource.setData(data);
 		if (this._map?.getSource(IMAGE_SOURCE_PREFIX + featureId)) {
-			this._map?.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-			this._map?.removeSource(IMAGE_SOURCE_PREFIX + featureId);
+			this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
+			this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
 		}
 		this._eventEmitter.emit("delete", featureId);
 	}
@@ -874,6 +895,10 @@ var MaplibreAreaTransform = class {
 		this._map?.on("mousemove", this.onMouseMove);
 		this._map?.on("mouseup", this.onMouseUp);
 		this._map?.on("click", this.onClick);
+	}
+	addTrackedLayer(layer, beforeId) {
+		this._map?.addLayer(layer, beforeId);
+		this._addedLayerIds.add(layer.id);
 	}
 	buildPolygonGeoJSONFeatures(buildOptions) {
 		const { coordinates, featureId, isSelected, color } = buildOptions;
@@ -1108,13 +1133,33 @@ var MaplibreAreaTransform = class {
 	}
 	async addColoredImages(color) {
 		if (this._colorCache.has(color)) return;
-		const rotateImage = await this._map?.loadImage(rotate_default);
-		const scaleImage = await this._map?.loadImage(scale_default);
-		let recoloredRotateImage = await recolor(rotateImage?.data, color);
-		let recoloredScaleImage = await recolor(scaleImage?.data, color);
-		this._map?.addImage("rotate-" + color, recoloredRotateImage);
-		this._map?.addImage("scale-" + color, recoloredScaleImage);
-		this._colorCache.add(color);
+		const map = this._map;
+		if (!map) return;
+		return Promise.all([map.loadImage(rotate_default).then((rotateImage) => recolor(rotateImage?.data, color).then((recoloredRotateImage) => {
+			const rotateImageId = "rotate-" + color;
+			if (!map.hasImage(rotateImageId)) {
+				map.addImage(rotateImageId, recoloredRotateImage);
+				this._addedImageIds.add(rotateImageId);
+			}
+		})), map.loadImage(scale_default).then((scaleImage) => recolor(scaleImage?.data, color).then((recoloredScaleImage) => {
+			const scaleImageId = "scale-" + color;
+			if (!map.hasImage(scaleImageId)) {
+				map.addImage(scaleImageId, recoloredScaleImage);
+				this._addedImageIds.add(scaleImageId);
+			}
+		}))]).then(() => this._colorCache.add(color));
+	}
+	removeLayer(layerId) {
+		this._map?.removeLayer(layerId);
+		this._addedLayerIds.delete(layerId);
+	}
+	removeSource(sourceId) {
+		this._map?.removeSource(sourceId);
+		this._addedSourceIds.delete(sourceId);
+	}
+	removeImage(imageId) {
+		this._map?.removeImage(imageId);
+		this._addedImageIds.delete(imageId);
 	}
 	/** Updates the current selection, emitting `selected` only when it actually changes. */
 	setSelectedFeatureId(featureId) {
