@@ -3,6 +3,7 @@ import * as maplibregl from 'maplibre-gl';
 import { MaplibreAreaTransform, type MaplibreAreaTransformOptions } from './index';
 import { pxCentroid, pxRotatePoint, type PxPoint } from './pixel-utils';
 import rotateUrl from '../assets/rotate.png';
+import scaleUrl from '../assets/scale.png';
 
 type SetupResponse = {
     container: HTMLElement;
@@ -12,6 +13,7 @@ type SetupResponse = {
 
 const AREA_LAYER = 'area-transform-layer-polygon-area';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
     rectangle: 'area-transfrom-rectangle',
@@ -48,6 +50,22 @@ function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouse
         preventDefault() { /* no-op */ },
         originalEvent: {},
     } as unknown as maplibregl.MapMouseEvent);
+}
+
+/**
+ * Draws a quadrilateral in polygon mode: four corner clicks, then a fifth back on the first corner to
+ * close it. Each click is awaited, since the control writes to its source between them.
+ * Resolves once the polygon has been created, which also leaves polygon mode.
+ */
+async function drawPolygon(map: maplibregl.Map, control: MaplibreAreaTransform): Promise<string> {
+    const corners: PxPoint[] = [[120, 120], [280, 120], [280, 280], [120, 280]];
+    const created = new Promise<string>((resolve) => control.on('create', (e) => resolve(e.id)));
+    control.startAddPolygonSequence();
+    for (const px of [...corners, corners[0]!]) {
+        clickAt(map, map.unproject(px));
+        await map.once('idle');
+    }
+    return created;
 }
 
 /** Polls until the predicate holds (a render has produced queryable features) or times out. */
@@ -184,6 +202,119 @@ describe('MaplibreAreaTransform rectangle + delete button', () => {
 
         await waitUntil(() => !hasArea());
         expect(hasArea()).toBe(false);
+    });
+});
+
+describe('MaplibreAreaTransform image URL queue', () => {
+    let ctx: SetupResponse;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    /** The raster layers currently on the map, one per added image. */
+    const rasterLayers = (map: maplibregl.Map) =>
+        map.getStyle().layers.filter((l) => l.id.startsWith(IMAGE_LAYER_PREFIX));
+
+    /** Shifts coordinates east, so the same image can be requested for a different place. */
+    const shifted = (coordinates: GeoJSON.Position[]) =>
+        coordinates.map((c) => [c[0]! + 1, c[1]!] as GeoJSON.Position);
+
+    it('shares one promise between concurrent calls with the same URL and coordinates', async () => {
+        const { map, control } = ctx;
+        const created: string[] = [];
+        control.on('create', (e) => created.push(e.id));
+
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        // Both calls go out before either resolves - the second must join the first.
+        const [first, second] = await Promise.all([
+            control.addImage(rotateUrl, coordinates),
+            control.addImage(rotateUrl, coordinates),
+        ]);
+
+        expect(second).toBe(first);
+        expect(created).toEqual([first]);         // the image was only really added once...
+        expect(rasterLayers(map).length).toBe(1); // ...and only one raster layer exists
+    });
+
+    it('does not dedupe the same URL requested at different coordinates', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        // Same image, two different places: the coordinates are part of the key, so both are added.
+        const [here, there] = await Promise.all([
+            control.addImage(rotateUrl, coordinates),
+            control.addImage(rotateUrl, shifted(coordinates)),
+        ]);
+
+        expect(there).not.toBe(here);
+        expect(rasterLayers(map).length).toBe(2);
+    });
+
+    it('adds a second copy when the same request is repeated after the first settles', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        const first = await control.addImage(rotateUrl, coordinates);
+        const second = await control.addImage(rotateUrl, coordinates);
+
+        // The key is released once its request settles, so this is a genuine new image.
+        expect(second).not.toBe(first);
+        expect(rasterLayers(map).length).toBe(2);
+    });
+
+    it('queues concurrent requests for different URLs instead of interleaving them', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+        const selected: (string | null)[] = [];
+        control.on('selected', (id) => selected.push(id));
+
+        // Run concurrently: without the queue these interleave and corrupt the selection.
+        const [rotateId, scaleId] = await Promise.all([
+            control.addImage(rotateUrl, coordinates),
+            control.addImage(scaleUrl, shifted(coordinates)),
+        ]);
+
+        expect(scaleId).not.toBe(rotateId);
+        expect(rasterLayers(map).length).toBe(2);
+        // Each request ran to completion in turn: select the first, deselect it, select the second.
+        expect(selected).toEqual([rotateId, null, scaleId]);
+    });
+
+    it('releases the key after a failed request, so it can be retried', async () => {
+        const { control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        // addImage rejects while a polygon is being drawn.
+        control.startAddPolygonSequence();
+        const first = control.addImage(rotateUrl, coordinates);
+        await expect(first).rejects.toBeTruthy();
+
+        // A rejected request must not leave its key stuck in the queue: a retry is a fresh request,
+        // not the earlier (already rejected) promise handed back forever.
+        const retry = control.addImage(rotateUrl, coordinates);
+        expect(retry).not.toBe(first);
+        await expect(retry).rejects.toBeTruthy();
+    });
+
+    it('does not let a failed request block the queue', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        // A request that rejects because a polygon is being drawn...
+        control.startAddPolygonSequence();
+        await expect(control.addImage(rotateUrl, coordinates)).rejects.toBeTruthy();
+
+        // ...must not poison the queue for the requests that come after it.
+        await drawPolygon(map, control); // leaves polygon mode
+        await expect(control.addImage(rotateUrl, coordinates)).resolves.toBeTruthy();
+        expect(rasterLayers(map).length).toBe(1);
     });
 });
 
