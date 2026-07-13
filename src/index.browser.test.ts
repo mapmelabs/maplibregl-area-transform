@@ -12,6 +12,8 @@ type SetupResponse = {
 
 const AREA_LAYER = 'area-transform-layer-polygon-area';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
+const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
     rectangle: 'area-transfrom-rectangle',
@@ -205,6 +207,98 @@ describe('MaplibreAreaTransform button visibility', () => {
             map.remove();
             container.remove();
         }
+    });
+});
+
+describe('MaplibreAreaTransform image opacity and reuse', () => {
+    let ctx: Awaited<ReturnType<typeof setup>>;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    it('applies initial opacity when adding an image', async () => {
+        const { map, control } = ctx;
+        const coordinates: GeoJSON.Position[] = [[-1, 1], [1, 1], [1, -1], [-1, -1]];
+
+        const imageId = await control.addImage(rotateUrl, coordinates, { opacity: 0.35 });
+
+        expect(control.currentImageId).toBe(imageId);
+        expect(map.getPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity')).toBe(0.35);
+    });
+
+    it('updates the current image opacity via setImageOpacity', async () => {
+        const { map, control } = ctx;
+        const coordinates: GeoJSON.Position[] = [[-1, 1], [1, 1], [1, -1], [-1, -1]];
+
+        const imageId = await control.addImage(rotateUrl, coordinates, { opacity: 0.35 });
+        control.setImageOpacity(0.7);
+
+        expect(map.getPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity')).toBe(0.7);
+    });
+
+    it('reuses the current image for matching imageUrl and coordinates', async () => {
+        const { map, control } = ctx;
+        const coordinates: GeoJSON.Position[] = [[-1, 1], [1, 1], [1, -1], [-1, -1]];
+        const created: string[] = [];
+        control.on('create', (event) => created.push(event.id));
+
+        const firstImageId = await control.addImage(rotateUrl, coordinates);
+        const secondImageId = await control.addImage(rotateUrl, coordinates.map(c => [...c]));
+
+        expect(secondImageId).toBe(firstImageId);
+        expect(created).toEqual([firstImageId]);
+        expect(map.getLayer(`${IMAGE_LAYER_PREFIX}${firstImageId}`)).toBeDefined();
+        expect(map.getSource(`${IMAGE_SOURCE_PREFIX}${firstImageId}`)).toBeDefined();
+    });
+
+    it('returns the in-flight promise for matching imageUrl and coordinates', () => {
+        const { control } = ctx;
+        const coordinates: GeoJSON.Position[] = [[-1, 1], [1, 1], [1, -1], [-1, -1]];
+
+        const firstPromise = control.addImage(rotateUrl, coordinates);
+        const secondPromise = control.addImage(rotateUrl, coordinates.map(c => [...c]));
+
+        expect(secondPromise).toBe(firstPromise);
+        return firstPromise;
+    });
+
+    it('cleans up a stale in-flight image when a newer request supersedes it', async () => {
+        const { map, control } = ctx;
+        const geojsonSource = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource;
+        const originalUpdateData = geojsonSource.updateData.bind(geojsonSource);
+        let releaseFirstUpdate!: () => void;
+        let updateCallCount = 0;
+
+        geojsonSource.updateData = ((diff: Parameters<typeof geojsonSource.updateData>[0], overwrite?: boolean) => {
+            updateCallCount++;
+            if (updateCallCount === 1) {
+                return new Promise<void>((resolve, reject) => {
+                    releaseFirstUpdate = () => {
+                        originalUpdateData(diff, overwrite).then(resolve, reject);
+                    };
+                });
+            }
+            return originalUpdateData(diff, overwrite);
+        }) as typeof geojsonSource.updateData;
+
+        const firstCoordinates: GeoJSON.Position[] = [[-2, 2], [0, 2], [0, 0], [-2, 0]];
+        const secondCoordinates: GeoJSON.Position[] = [[1, 1], [2, 1], [2, 0], [1, 0]];
+        const firstPromise = control.addImage(rotateUrl, firstCoordinates);
+        await waitUntil(() => updateCallCount === 1);
+        const firstLayerId = Array.from(map.getStyle().layers)
+            .map(layer => layer.id)
+            .find(id => id.startsWith(IMAGE_LAYER_PREFIX))!;
+        const firstSourceId = firstLayerId.replace(IMAGE_LAYER_PREFIX, IMAGE_SOURCE_PREFIX);
+
+        const secondImageId = await control.addImage(`${rotateUrl}?next`, secondCoordinates);
+        releaseFirstUpdate();
+
+        await expect(firstPromise).rejects.toThrow('Stale addImage request superseded');
+        await waitUntil(() => !map.getLayer(firstLayerId));
+
+        expect(control.currentImageId).toBe(secondImageId);
+        expect(map.getLayer(`${IMAGE_LAYER_PREFIX}${secondImageId}`)).toBeDefined();
+        expect(map.getSource(firstSourceId)).toBeUndefined();
     });
 });
 

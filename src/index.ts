@@ -53,6 +53,17 @@ export type MaplibreAreaTransformOptions = {
 }
 
 /**
+ * Options for adding an image overlay to the map.
+ */
+export type MaplibreAreaTransformAddImageOptions = {
+    /**
+     * The raster layer opacity for the image overlay, from 0 to 1.
+     * @default 0.9
+     */
+    opacity?: number;
+}
+
+/**
  * The payload passed to listeners of the
  * {@link MaplibreAreaTransformEventMap.create | create} and
  * {@link MaplibreAreaTransformEventMap.change | change} events.
@@ -93,6 +104,12 @@ type BuildPolygonOptions = {
     featureId: string;
     isSelected: boolean;
     color: string;
+}
+
+type AddImageRequest = {
+    key: string;
+    requestId: number;
+    promise: Promise<string>;
 }
 
 const defaultOptions: MaplibreAreaTransformOptions = {
@@ -156,6 +173,10 @@ export class MaplibreAreaTransform implements IControl {
     private _addedImageIds: Set<string> = new Set<string>();
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
+    private _currentImageId: string | undefined = undefined;
+    private _currentImageKey: string | undefined = undefined;
+    private _addImageRequest: AddImageRequest | undefined = undefined;
+    private _lastAddImageRequestId = 0;
 
     /**
      * @param options - control options; any omitted option falls back to its default
@@ -348,7 +369,20 @@ export class MaplibreAreaTransform implements IControl {
         this._addedImageIds.clear();
         this._addedLayerIds.clear();
         this._addedSourceIds.clear();
+        this._currentImageId = undefined;
+        this._currentImageKey = undefined;
+        this._addImageRequest = undefined;
         this._map = null;
+    }
+
+    /**
+     * The ID of the currently-managed image, if one has been added and still exists.
+     */
+    public get currentImageId(): string | undefined {
+        if (!this._currentImageId || !this.hasImageOverlay(this._currentImageId)) {
+            return undefined;
+        }
+        return this._currentImageId;
     }
 
     /**
@@ -393,12 +427,61 @@ export class MaplibreAreaTransform implements IControl {
      * Adds an image to the map.
      * @param imageUrl The URL of the image.
      * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+     * @param options Options for the image overlay.
      * @returns The ID of the added image.
      */
-    public async addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
+    public addImage(imageUrl: string, coordinates: GeoJSON.Position[], options: MaplibreAreaTransformAddImageOptions = {}): Promise<string> {
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
+        this.assertValidOpacity(options.opacity);
+
+        const key = this.getImageRequestKey(imageUrl, coordinates);
+        if (this._currentImageId && this._currentImageKey === key && this.hasImageOverlay(this._currentImageId)) {
+            if (options.opacity !== undefined) {
+                this.setImageOpacity(options.opacity);
+            }
+            return Promise.resolve(this._currentImageId);
+        }
+        if (this._addImageRequest?.key === key) {
+            return this._addImageRequest.promise;
+        }
+
+        const requestId = ++this._lastAddImageRequestId;
+        const promise = this.addImageInternal(imageUrl, coordinates, options, key, requestId);
+        this._addImageRequest = { key, requestId, promise };
+        promise.then(() => {
+            if (this._addImageRequest?.requestId === requestId) {
+                this._addImageRequest = undefined;
+            }
+        }, () => {
+            if (this._addImageRequest?.requestId === requestId) {
+                this._addImageRequest = undefined;
+            }
+        });
+        return promise;
+    }
+
+    /**
+     * Sets the opacity of the currently-managed image layer.
+     * @param opacity - raster opacity from 0 to 1
+     */
+    public setImageOpacity(opacity: number): void {
+        this.assertValidOpacity(opacity);
+        const imageId = this.currentImageId;
+        if (!imageId) {
+            return;
+        }
+        this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity', opacity);
+    }
+
+    private async addImageInternal(
+        imageUrl: string,
+        coordinates: GeoJSON.Position[],
+        options: MaplibreAreaTransformAddImageOptions,
+        key: string,
+        requestId: number
+    ): Promise<string> {
         const imageId = `${ID_PREFIX}${maxFeatureId++}`;
         const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
         this._map?.addSource(imageSourceId, {
@@ -413,7 +496,7 @@ export class MaplibreAreaTransform implements IControl {
             type: 'raster',
             source: imageSourceId,
             paint: {
-                'raster-opacity': 0.9,
+                'raster-opacity': options.opacity ?? 0.9,
                 'raster-fade-duration': 0
             }
         }, HANDLE_LAYER);
@@ -422,9 +505,16 @@ export class MaplibreAreaTransform implements IControl {
         await geojsonSource.updateData({
             add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
         }, true);
+        if (this._addImageRequest?.requestId !== requestId) {
+            await this.removeFeatureData(imageId);
+            this.removeRasterImage(imageId);
+            throw new Error("Stale addImage request superseded");
+        }
         await this.removeSelection();
         await this.setSelection(imageId);
         this.setState("");
+        this._currentImageId = imageId;
+        this._currentImageKey = key;
         this._eventEmitter.emit("create", { id: imageId, coordinates });
         return imageId;
     }
@@ -504,6 +594,10 @@ export class MaplibreAreaTransform implements IControl {
         if (imageSource) {
             this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
             this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
+        }
+        if (this._currentImageId === featureId) {
+            this._currentImageId = undefined;
+            this._currentImageKey = undefined;
         }
         this._eventEmitter.emit("delete", featureId);
     }
@@ -917,6 +1011,49 @@ export class MaplibreAreaTransform implements IControl {
     private removeImage(imageId: string): void {
         this._map?.removeImage(imageId);
         this._addedImageIds.delete(imageId);
+    }
+
+    private hasImageOverlay(imageId: string): boolean {
+        return this._map?.getLayer(`${IMAGE_LAYER_PREFIX}${imageId}`) !== undefined &&
+            this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${imageId}`) !== undefined;
+    }
+
+    private removeRasterImage(imageId: string): void {
+        const layerId = `${IMAGE_LAYER_PREFIX}${imageId}`;
+        const sourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
+        if (this._map?.getLayer(layerId)) {
+            this.removeLayer(layerId);
+        }
+        if (this._map?.getSource(sourceId)) {
+            this.removeSource(sourceId);
+        }
+        if (this._currentImageId === imageId) {
+            this._currentImageId = undefined;
+            this._currentImageKey = undefined;
+        }
+    }
+
+    private async removeFeatureData(featureId: string): Promise<void> {
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE);
+        if (!source) {
+            return;
+        }
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
+        await source.setData(data, true);
+    }
+
+    private getImageRequestKey(imageUrl: string, coordinates: GeoJSON.Position[]): string {
+        return JSON.stringify({ imageUrl, coordinates });
+    }
+
+    private assertValidOpacity(opacity: number | undefined): void {
+        if (opacity === undefined) {
+            return;
+        }
+        if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
+            throw new RangeError("Image opacity must be a number between 0 and 1");
+        }
     }
 
     /** Updates the current selection, emitting `selected` only when it actually changes. */

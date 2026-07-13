@@ -51,6 +51,39 @@ tool.on('change', (coords) => {
 })
 ```
 
+## Image overlays
+
+Add an image overlay with optional initial opacity:
+
+```js
+const imageId = await tool.addImage(imageUrl, coordinates, {
+  opacity: 0.5
+})
+```
+
+`addImage(imageUrl, coordinates, options?)` returns the plugin-generated image ID. The raster source and layer use these IDs:
+
+```txt
+source: area-transform-raster-${imageId}
+layer:  area-transform-raster-layer-${imageId}
+```
+
+If the same `imageUrl` and deep-equal `coordinates` are already managed by the control, `addImage` resolves with the existing image ID instead of adding another raster layer. If the same request is already in progress, the existing promise is returned.
+
+Update the current image opacity without tracking layer IDs:
+
+```js
+tool.setImageOpacity(0.75)
+```
+
+`setImageOpacity(opacity)` accepts a value from `0` to `1` and is a no-op when no image is currently managed. The current image ID is also available synchronously:
+
+```js
+if (tool.currentImageId) {
+  tool.setImageOpacity(0.75)
+}
+```
+
 ## Releasing a new version
 
 Releases are produced by the [Release workflow](.github/workflows/release.yaml). You don't bump the version by hand — the workflow does it for you:
@@ -74,4 +107,3 @@ npm install https://github.com/mapmelabs/maplibregl-area-transform/releases/down
 ```
 
 Replace the version in the URL with the release you want. Every release on the [Releases page](https://github.com/mapmelabs/maplibregl-area-transform/releases) has its own permalink.
-
