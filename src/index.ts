@@ -419,10 +419,8 @@ export class MaplibreAreaTransform implements IControl {
      * @returns The ID of the added image.
      */
     private addImageToQueue(key: string, imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
-        // The last request in the queue, if any, is the one this one has to wait for.
         const previous = [...this._imageQueue.values()].pop() ?? Promise.resolve();
         const promise = previous
-            // A failed request must not fail the ones queued behind it; its own caller sees the error.
             .catch(() => { /* ignored on purpose */ })
             .then(() => this.addImageInternal(imageUrl, coordinates))
             .finally(() => this._imageQueue.delete(key));

@@ -52,6 +52,16 @@ function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouse
     } as unknown as maplibregl.MapMouseEvent);
 }
 
+/** The raster layers currently on the map, one per added image. */
+function rasterLayers(map: maplibregl.Map) {
+    return map.getStyle().layers.filter((l) => l.id.startsWith(IMAGE_LAYER_PREFIX));
+}
+
+/** Shifts coordinates east, so the same image can be requested for a different place. */
+function shifted(coordinates: GeoJSON.Position[]) {
+    return coordinates.map((c) => [c[0]! + 1, c[1]!] as GeoJSON.Position);
+}
+
 /**
  * Draws a quadrilateral in polygon mode: four corner clicks, then a fifth back on the first corner to
  * close it. Each click is awaited, since the control writes to its source between them.
@@ -211,14 +221,6 @@ describe('MaplibreAreaTransform image URL queue', () => {
     beforeEach(async () => { ctx = await setup(); });
     afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
 
-    /** The raster layers currently on the map, one per added image. */
-    const rasterLayers = (map: maplibregl.Map) =>
-        map.getStyle().layers.filter((l) => l.id.startsWith(IMAGE_LAYER_PREFIX));
-
-    /** Shifts coordinates east, so the same image can be requested for a different place. */
-    const shifted = (coordinates: GeoJSON.Position[]) =>
-        coordinates.map((c) => [c[0]! + 1, c[1]!] as GeoJSON.Position);
-
     it('shares one promise between concurrent calls with the same URL and coordinates', async () => {
         const { map, control } = ctx;
         const created: string[] = [];
@@ -227,15 +229,14 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
-        // Both calls go out before either resolves - the second must join the first.
         const [first, second] = await Promise.all([
             control.addImage(rotateUrl, coordinates),
             control.addImage(rotateUrl, coordinates),
         ]);
 
         expect(second).toBe(first);
-        expect(created).toEqual([first]);         // the image was only really added once...
-        expect(rasterLayers(map).length).toBe(1); // ...and only one raster layer exists
+        expect(created).toEqual([first]);
+        expect(rasterLayers(map).length).toBe(1);
     });
 
     it('does not dedupe the same URL requested at different coordinates', async () => {
@@ -243,7 +244,6 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
-        // Same image, two different places: the coordinates are part of the key, so both are added.
         const [here, there] = await Promise.all([
             control.addImage(rotateUrl, coordinates),
             control.addImage(rotateUrl, shifted(coordinates)),
@@ -261,7 +261,6 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const first = await control.addImage(rotateUrl, coordinates);
         const second = await control.addImage(rotateUrl, coordinates);
 
-        // The key is released once its request settles, so this is a genuine new image.
         expect(second).not.toBe(first);
         expect(rasterLayers(map).length).toBe(2);
     });
@@ -273,7 +272,6 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const selected: (string | null)[] = [];
         control.on('selected', (id) => selected.push(id));
 
-        // Run concurrently: without the queue these interleave and corrupt the selection.
         const [rotateId, scaleId] = await Promise.all([
             control.addImage(rotateUrl, coordinates),
             control.addImage(scaleUrl, shifted(coordinates)),
@@ -281,7 +279,6 @@ describe('MaplibreAreaTransform image URL queue', () => {
 
         expect(scaleId).not.toBe(rotateId);
         expect(rasterLayers(map).length).toBe(2);
-        // Each request ran to completion in turn: select the first, deselect it, select the second.
         expect(selected).toEqual([rotateId, null, scaleId]);
     });
 
@@ -290,13 +287,10 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
-        // addImage rejects while a polygon is being drawn.
         control.startAddPolygonSequence();
         const first = control.addImage(rotateUrl, coordinates);
         await expect(first).rejects.toBeTruthy();
 
-        // A rejected request must not leave its key stuck in the queue: a retry is a fresh request,
-        // not the earlier (already rejected) promise handed back forever.
         const retry = control.addImage(rotateUrl, coordinates);
         expect(retry).not.toBe(first);
         await expect(retry).rejects.toBeTruthy();
@@ -307,12 +301,9 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
-        // A request that rejects because a polygon is being drawn...
         control.startAddPolygonSequence();
         await expect(control.addImage(rotateUrl, coordinates)).rejects.toBeTruthy();
-
-        // ...must not poison the queue for the requests that come after it.
-        await drawPolygon(map, control); // leaves polygon mode
+        await drawPolygon(map, control);
         await expect(control.addImage(rotateUrl, coordinates)).resolves.toBeTruthy();
         expect(rasterLayers(map).length).toBe(1);
     });
@@ -355,11 +346,10 @@ describe('MaplibreAreaTransform event unsubscription', () => {
         control.on('selected', (id) => kept.push(id));
         control.off('selected', listener);
 
-        // Adding a rectangle selects it, which emits a `selected` event.
         await control.addRectangle();
 
-        expect(kept.length).toBe(1);  // the event really fired...
-        expect(removed).toEqual([]);  // ...but the unsubscribed listener got nothing
+        expect(kept.length).toBe(1);
+        expect(removed).toEqual([]);
     });
 });
 
@@ -373,7 +363,6 @@ describe('MaplibreAreaTransform rotation', () => {
         const { map, control } = ctx;
         const rectId = await control.addRectangle();
 
-        // Read the rectangle's corners and rotate handle from the source.
         const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource;
         const data = await source.getData() as GeoJSON.FeatureCollection;
         const points = data.features.filter(
@@ -392,7 +381,6 @@ describe('MaplibreAreaTransform rotation', () => {
         const angle = Math.PI / 2; // rotate a quarter turn
         const currentPx = pxRotatePoint(startPx, centroidPx, angle);
 
-        // Wait until the rotate handle is actually rendered and queryable.
         await waitUntil(() => map.queryRenderedFeatures([startPx[0], startPx[1]])
             .some((f) => f.properties?.['type'] === 'rotate-handle' && f.properties?.['featureId'] === rectId));
 
