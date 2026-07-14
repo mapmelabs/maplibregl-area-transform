@@ -12,6 +12,7 @@ type SetupResponse = {
 
 const AREA_LAYER = 'area-transform-layer-polygon-area';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
     rectangle: 'area-transfrom-rectangle',
@@ -126,7 +127,7 @@ describe('MaplibreAreaTransform', () => {
         expect(cx).toBeCloseTo(map.getCenter().lng, 4);
         expect(cy).toBeCloseTo(map.getCenter().lat, 4);
 
-        const imageId = await control.addImage(rotateUrl, coordinates);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates });
 
         // Opening selects the new image.
         expect(selected).toEqual([imageId]);
@@ -229,6 +230,46 @@ describe('MaplibreAreaTransform event unsubscription', () => {
 
         expect(kept.length).toBe(1);  // the event really fired...
         expect(removed).toEqual([]);  // ...but the unsubscribed listener got nothing
+    });
+});
+
+describe('MaplibreAreaTransform image opacity', () => {
+    let ctx: SetupResponse;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    const imageOpacity = (map: maplibregl.Map, imageId: string) =>
+        map.getPaintProperty(IMAGE_LAYER_PREFIX + imageId, 'raster-opacity');
+
+    it('uses the default opacity when none is given', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates: control.createCoordinatesForLoadedImage(img) });
+
+        expect(imageOpacity(map, imageId)).toBe(0.9);
+    });
+
+    it('applies the opacity given to addImage', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates: control.createCoordinatesForLoadedImage(img), opacity: 0.25 });
+
+        expect(imageOpacity(map, imageId)).toBe(0.25);
+    });
+
+    it('updates the opacity of an existing image via setImageOpacity', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates: control.createCoordinatesForLoadedImage(img) });
+
+        await control.setImageOpacity(imageId, 0.5);
+        expect(imageOpacity(map, imageId)).toBe(0.5);
+
+        // A fully transparent image is still a valid value, not a removal.
+        await control.setImageOpacity(imageId, 0);
+        expect(imageOpacity(map, imageId)).toBe(0);
+        expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined();
     });
 });
 
