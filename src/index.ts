@@ -62,8 +62,8 @@ export type AddImageOptions = {
      */
     coordinates: GeoJSON.Position[];
     /**
-     * The opacity of the image
-     * @default 1
+     * The opacity of the image, should be between 0 and 1
+     * @default 0.9
      */
     opacity?: number;
 }
