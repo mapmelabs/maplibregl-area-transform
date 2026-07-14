@@ -229,11 +229,14 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
+        const firstPromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        const secondPromise = control.addImage({ imageUrl: rotateUrl, coordinates });
         const [first, second] = await Promise.all([
-            control.addImage({ imageUrl: rotateUrl, coordinates }),
-            control.addImage({ imageUrl: rotateUrl, coordinates }),
+            firstPromise,
+            secondPromise,
         ]);
 
+        expect(firstPromise).toBe(secondPromise);
         expect(second).toBe(first);
         expect(created).toEqual([first]);
         expect(rasterLayers(map).length).toBe(1);
