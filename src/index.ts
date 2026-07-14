@@ -172,6 +172,7 @@ export class MaplibreAreaTransform implements IControl {
     private _addedImageIds: Set<string> = new Set<string>();
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
+    private _imageQueue = new globalThis.Map<string, Promise<string>>();
 
     /**
      * @param options - control options; any omitted option falls back to its default
@@ -364,6 +365,7 @@ export class MaplibreAreaTransform implements IControl {
         this._addedImageIds.clear();
         this._addedLayerIds.clear();
         this._addedSourceIds.clear();
+        this._imageQueue.clear();
         this._map = null;
     }
 
@@ -407,10 +409,45 @@ export class MaplibreAreaTransform implements IControl {
 
     /**
      * Adds an image to the map.
+     *
+     * Requests are keyed by URL and coordinates: a call made while an earlier call with the same URL and
+     * coordinates is still in flight does not add the image a second time - it shares the earlier call's
+     * promise, and so resolves to the same ID. The key is released once that promise settles, so adding
+     * the same image at the same place again afterwards creates a new one.
+     *
+     * Requests that are not duplicates are queued and run one after another, since adding two images at
+     * once leaves the selection and the GeoJSON source in an inconsistent state.
      * @param options - The options for adding the image.
      * @returns The ID of the added image.
      */
-    public async addImage(options: AddImageOptions): Promise<string> {
+    public addImage(options: AddImageOptions): Promise<string> {
+        const key = this.getImageRequestKey(options.imageUrl, options.coordinates);
+        return this._imageQueue.get(key) ?? this.addImageToQueue(key, options);
+    }
+
+    /**
+     * Queues an image addition behind the requests already in the queue, and keeps it there until it
+     * settles, so that a duplicate request made meanwhile can be answered with the same promise.
+     * @param key The request's key, see {@link getImageRequestKey}.
+     * @param options The options for adding the image.
+     * @returns The ID of the added image.
+     */
+    private addImageToQueue(key: string, options: AddImageOptions): Promise<string> {
+        const previous = [...this._imageQueue.values()].pop() ?? Promise.resolve();
+        const promise = previous
+            .catch(() => { /* ignored on purpose */ })
+            .then(() => this.addImageInternal(options))
+            .finally(() => this._imageQueue.delete(key));
+        this._imageQueue.set(key, promise);
+        return promise;
+    }
+
+    /** The key an image request is queued under: same URL at the same place means the same request. */
+    private getImageRequestKey(imageUrl: string, coordinates: GeoJSON.Position[]): string {
+        return JSON.stringify([imageUrl, coordinates]);
+    }
+
+    private async addImageInternal(options: AddImageOptions): Promise<string> {
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
