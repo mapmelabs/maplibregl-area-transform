@@ -15665,6 +15665,7 @@ declare class MaplibreAreaTransform implements IControl {
   private _addedImageIds;
   private _addedLayerIds;
   private _addedSourceIds;
+  private _imageQueue;
   /**
    * @param options - control options; any omitted option falls back to its default
    */
@@ -15695,10 +15696,29 @@ declare class MaplibreAreaTransform implements IControl {
   createCoordinatesForLoadedImage(img: HTMLImageElement): GeoJSON.Position[];
   /**
    * Adds an image to the map.
+   *
+   * Requests are keyed by URL and coordinates: a call made while an earlier call with the same URL and
+   * coordinates is still in flight does not add the image a second time - it shares the earlier call's
+   * promise, and so resolves to the same ID. The key is released once that promise settles, so adding
+   * the same image at the same place again afterwards creates a new one.
+   *
+   * Requests that are not duplicates are queued and run one after another, since adding two images at
+   * once leaves the selection and the GeoJSON source in an inconsistent state.
    * @param options - The options for adding the image.
    * @returns The ID of the added image.
    */
   addImage(options: AddImageOptions): Promise<string>;
+  /**
+   * Queues an image addition behind the requests already in the queue, and keeps it there until it
+   * settles, so that a duplicate request made meanwhile can be answered with the same promise.
+   * @param key The request's key, see {@link getImageRequestKey}.
+   * @param options The options for adding the image.
+   * @returns The ID of the added image.
+   */
+  private addImageToQueue;
+  /** The key an image request is queued under: same URL at the same place means the same request. */
+  private getImageRequestKey;
+  private addImageInternal;
   setImageOpacity(imageId: string, opacity: number): Promise<void>;
   /**
    * This adds a rectangle to the middle of the screen

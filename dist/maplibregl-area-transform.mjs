@@ -511,6 +511,7 @@ var MaplibreAreaTransform = class {
 	_addedImageIds = /* @__PURE__ */ new Set();
 	_addedLayerIds = /* @__PURE__ */ new Set();
 	_addedSourceIds = /* @__PURE__ */ new Set();
+	_imageQueue = new globalThis.Map();
 	/**
 	* @param options - control options; any omitted option falls back to its default
 	*/
@@ -699,6 +700,7 @@ var MaplibreAreaTransform = class {
 		this._addedImageIds.clear();
 		this._addedLayerIds.clear();
 		this._addedSourceIds.clear();
+		this._imageQueue.clear();
 		this._map = null;
 	}
 	/**
@@ -733,10 +735,38 @@ var MaplibreAreaTransform = class {
 	}
 	/**
 	* Adds an image to the map.
+	*
+	* Requests are keyed by URL and coordinates: a call made while an earlier call with the same URL and
+	* coordinates is still in flight does not add the image a second time - it shares the earlier call's
+	* promise, and so resolves to the same ID. The key is released once that promise settles, so adding
+	* the same image at the same place again afterwards creates a new one.
+	*
+	* Requests that are not duplicates are queued and run one after another, since adding two images at
+	* once leaves the selection and the GeoJSON source in an inconsistent state.
 	* @param options - The options for adding the image.
 	* @returns The ID of the added image.
 	*/
-	async addImage(options) {
+	addImage(options) {
+		const key = this.getImageRequestKey(options.imageUrl, options.coordinates);
+		return this._imageQueue.get(key) ?? this.addImageToQueue(key, options);
+	}
+	/**
+	* Queues an image addition behind the requests already in the queue, and keeps it there until it
+	* settles, so that a duplicate request made meanwhile can be answered with the same promise.
+	* @param key The request's key, see {@link getImageRequestKey}.
+	* @param options The options for adding the image.
+	* @returns The ID of the added image.
+	*/
+	addImageToQueue(key, options) {
+		const promise = ([...this._imageQueue.values()].pop() ?? Promise.resolve()).catch(() => {}).then(() => this.addImageInternal(options)).finally(() => this._imageQueue.delete(key));
+		this._imageQueue.set(key, promise);
+		return promise;
+	}
+	/** The key an image request is queued under: same URL at the same place means the same request. */
+	getImageRequestKey(imageUrl, coordinates) {
+		return JSON.stringify([imageUrl, coordinates]);
+	}
+	async addImageInternal(options) {
 		if (this._state === "adding-ploygon") return Promise.reject("Cannot add image while adding polygon");
 		const imageId = `${ID_PREFIX}${maxFeatureId++}`;
 		const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
