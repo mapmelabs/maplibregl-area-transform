@@ -15589,6 +15589,21 @@ type MaplibreAreaTransformOptions = {
    */
   areaOpacity?: number;
 };
+type AddImageOptions = {
+  /**
+   * The URL of the image to add
+   */
+  imageUrl: string;
+  /**
+   * The coordinates of the image
+   */
+  coordinates: GeoJSON.Position[];
+  /**
+   * The opacity of the image, should be between 0 and 1
+   * @default 0.9
+   */
+  opacity?: number;
+};
 /**
  * The payload passed to listeners of the
  * {@link MaplibreAreaTransformEventMap.create | create} and
@@ -15680,11 +15695,11 @@ declare class MaplibreAreaTransform implements IControl {
   createCoordinatesForLoadedImage(img: HTMLImageElement): GeoJSON.Position[];
   /**
    * Adds an image to the map.
-   * @param imageUrl The URL of the image.
-   * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+   * @param options - The options for adding the image.
    * @returns The ID of the added image.
    */
-  addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string>;
+  addImage(options: AddImageOptions): Promise<string>;
+  setImageOpacity(imageId: string, opacity: number): Promise<void>;
   /**
    * This adds a rectangle to the middle of the screen
    * @returns a pomise that resolves to the newly added rectangle ID
@@ -15758,4 +15773,4 @@ declare class MaplibreAreaTransform implements IControl {
   private setState;
 }
 //#endregion
-export { MaplibreAreaTransform, MaplibreAreaTransformEventMap, MaplibreAreaTransformFeatureEvent, MaplibreAreaTransformOptions };
+export { AddImageOptions, MaplibreAreaTransform, MaplibreAreaTransformEventMap, MaplibreAreaTransformFeatureEvent, MaplibreAreaTransformOptions };

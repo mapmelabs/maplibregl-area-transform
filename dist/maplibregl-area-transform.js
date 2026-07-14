@@ -737,18 +737,17 @@
 		}
 		/**
 		* Adds an image to the map.
-		* @param imageUrl The URL of the image.
-		* @param coordinates The coordinates of the image (four points forming a quadrilateral).
+		* @param options - The options for adding the image.
 		* @returns The ID of the added image.
 		*/
-		async addImage(imageUrl, coordinates) {
+		async addImage(options) {
 			if (this._state === "adding-ploygon") return Promise.reject("Cannot add image while adding polygon");
 			const imageId = `${ID_PREFIX}${maxFeatureId++}`;
 			const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
 			this._map?.addSource(imageSourceId, {
 				type: "image",
-				url: imageUrl,
-				coordinates
+				url: options.imageUrl,
+				coordinates: options.coordinates
 			});
 			this._addedSourceIds.add(imageSourceId);
 			const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
@@ -757,13 +756,13 @@
 				type: "raster",
 				source: imageSourceId,
 				paint: {
-					"raster-opacity": .9,
+					"raster-opacity": options.opacity ?? .9,
 					"raster-fade-duration": 0
 				}
 			}, HANDLE_LAYER);
 			this._addedLayerIds.add(imageLayerId);
 			await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
-				coordinates,
+				coordinates: options.coordinates,
 				featureId: imageId,
 				isSelected: true,
 				color: this.options.areaBackgroundColor
@@ -773,9 +772,12 @@
 			this.setState("");
 			this._eventEmitter.emit("create", {
 				id: imageId,
-				coordinates
+				coordinates: options.coordinates
 			});
 			return imageId;
+		}
+		async setImageOpacity(imageId, opacity) {
+			this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, "raster-opacity", opacity);
 		}
 		/**
 		* This adds a rectangle to the middle of the screen
@@ -884,7 +886,10 @@
 			const img = new Image();
 			img.onload = async () => {
 				const coordinates = this.createCoordinatesForLoadedImage(img);
-				await this.addImage(imageUrl, coordinates);
+				await this.addImage({
+					imageUrl,
+					coordinates
+				});
 				target.value = "";
 			};
 			img.src = imageUrl;
