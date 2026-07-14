@@ -230,8 +230,8 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
         const [first, second] = await Promise.all([
-            control.addImage(rotateUrl, coordinates),
-            control.addImage(rotateUrl, coordinates),
+            control.addImage({ imageUrl: rotateUrl, coordinates }),
+            control.addImage({ imageUrl: rotateUrl, coordinates }),
         ]);
 
         expect(second).toBe(first);
@@ -245,8 +245,8 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
         const [here, there] = await Promise.all([
-            control.addImage(rotateUrl, coordinates),
-            control.addImage(rotateUrl, shifted(coordinates)),
+            control.addImage({ imageUrl: rotateUrl, coordinates }),
+            control.addImage({ imageUrl: rotateUrl, coordinates: shifted(coordinates) }),
         ]);
 
         expect(there).not.toBe(here);
@@ -258,8 +258,8 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const img = await loadImage(rotateUrl);
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
-        const first = await control.addImage(rotateUrl, coordinates);
-        const second = await control.addImage(rotateUrl, coordinates);
+        const first = await control.addImage({ imageUrl: rotateUrl, coordinates });
+        const second = await control.addImage({ imageUrl: rotateUrl, coordinates });
 
         expect(second).not.toBe(first);
         expect(rasterLayers(map).length).toBe(2);
@@ -273,8 +273,8 @@ describe('MaplibreAreaTransform image URL queue', () => {
         control.on('selected', (id) => selected.push(id));
 
         const [rotateId, scaleId] = await Promise.all([
-            control.addImage(rotateUrl, coordinates),
-            control.addImage(scaleUrl, shifted(coordinates)),
+            control.addImage({ imageUrl: rotateUrl, coordinates }),
+            control.addImage({ imageUrl: scaleUrl, coordinates: shifted(coordinates) }),
         ]);
 
         expect(scaleId).not.toBe(rotateId);
@@ -288,10 +288,10 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
         control.startAddPolygonSequence();
-        const first = control.addImage(rotateUrl, coordinates);
+        const first = control.addImage({ imageUrl: rotateUrl, coordinates });
         await expect(first).rejects.toBeTruthy();
 
-        const retry = control.addImage(rotateUrl, coordinates);
+        const retry = control.addImage({ imageUrl: rotateUrl, coordinates });
         expect(retry).not.toBe(first);
         await expect(retry).rejects.toBeTruthy();
     });
@@ -302,9 +302,9 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const coordinates = control.createCoordinatesForLoadedImage(img);
 
         control.startAddPolygonSequence();
-        await expect(control.addImage(rotateUrl, coordinates)).rejects.toBeTruthy();
+        await expect(control.addImage({ imageUrl: rotateUrl, coordinates })).rejects.toBeTruthy();
         await drawPolygon(map, control);
-        await expect(control.addImage(rotateUrl, coordinates)).resolves.toBeTruthy();
+        await expect(control.addImage({ imageUrl: rotateUrl, coordinates })).resolves.toBeTruthy();
         expect(rasterLayers(map).length).toBe(1);
     });
 });
