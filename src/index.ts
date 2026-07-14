@@ -52,6 +52,22 @@ export type MaplibreAreaTransformOptions = {
     areaOpacity?: number;
 }
 
+export type AddImageOptions = {
+    /**
+     * The URL of the image to add
+     */
+    imageUrl: string;
+    /**
+     * The coordinates of the image
+     */
+    coordinates: GeoJSON.Position[];
+    /**
+     * The opacity of the image, should be between 0 and 1
+     * @default 0.9
+     */
+    opacity?: number;
+}
+
 /**
  * The payload passed to listeners of the
  * {@link MaplibreAreaTransformEventMap.create | create} and
@@ -401,28 +417,26 @@ export class MaplibreAreaTransform implements IControl {
      *
      * Requests that are not duplicates are queued and run one after another, since adding two images at
      * once leaves the selection and the GeoJSON source in an inconsistent state.
-     * @param imageUrl The URL of the image.
-     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+     * @param options - The options for adding the image.
      * @returns The ID of the added image.
      */
-    public addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
-        const key = this.getImageRequestKey(imageUrl, coordinates);
-        return this._imageQueue.get(key) ?? this.addImageToQueue(key, imageUrl, coordinates);
+    public addImage(options: AddImageOptions): Promise<string> {
+        const key = this.getImageRequestKey(options.imageUrl, options.coordinates);
+        return this._imageQueue.get(key) ?? this.addImageToQueue(key, options);
     }
 
     /**
      * Queues an image addition behind the requests already in the queue, and keeps it there until it
      * settles, so that a duplicate request made meanwhile can be answered with the same promise.
      * @param key The request's key, see {@link getImageRequestKey}.
-     * @param imageUrl The URL of the image.
-     * @param coordinates The coordinates of the image (four points forming a quadrilateral).
+     * @param options The options for adding the image.
      * @returns The ID of the added image.
      */
-    private addImageToQueue(key: string, imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
+    private addImageToQueue(key: string, options: AddImageOptions): Promise<string> {
         const previous = [...this._imageQueue.values()].pop() ?? Promise.resolve();
         const promise = previous
             .catch(() => { /* ignored on purpose */ })
-            .then(() => this.addImageInternal(imageUrl, coordinates))
+            .then(() => this.addImageInternal(options))
             .finally(() => this._imageQueue.delete(key));
         this._imageQueue.set(key, promise);
         return promise;
@@ -433,7 +447,7 @@ export class MaplibreAreaTransform implements IControl {
         return JSON.stringify([imageUrl, coordinates]);
     }
 
-    private async addImageInternal(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string> {
+    private async addImageInternal(options: AddImageOptions): Promise<string> {
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
@@ -441,8 +455,8 @@ export class MaplibreAreaTransform implements IControl {
         const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
         this._map?.addSource(imageSourceId, {
             type: 'image',
-            url: imageUrl,
-            coordinates: coordinates as [[number, number], [number, number], [number, number], [number, number]]
+            url: options.imageUrl,
+            coordinates: options.coordinates as [[number, number], [number, number], [number, number], [number, number]]
         });
         this._addedSourceIds.add(imageSourceId);
         const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
@@ -451,20 +465,24 @@ export class MaplibreAreaTransform implements IControl {
             type: 'raster',
             source: imageSourceId,
             paint: {
-                'raster-opacity': 0.9,
+                'raster-opacity': options.opacity ?? 0.9,
                 'raster-fade-duration': 0
             }
         }, HANDLE_LAYER);
         this._addedLayerIds.add(imageLayerId);
         const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
         await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
+            add: this.buildPolygonGeoJSONFeatures({ coordinates: options.coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
         }, true);
         await this.removeSelection();
         await this.setSelection(imageId);
         this.setState("");
-        this._eventEmitter.emit("create", { id: imageId, coordinates });
+        this._eventEmitter.emit("create", { id: imageId, coordinates: options.coordinates });
         return imageId;
+    }
+
+    public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
+        this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity', opacity);
     }
 
     /**
@@ -588,7 +606,7 @@ export class MaplibreAreaTransform implements IControl {
         const img = new Image();
         img.onload = async () => {
             const coordinates = this.createCoordinatesForLoadedImage(img);
-            await this.addImage(imageUrl, coordinates);
+            await this.addImage({ imageUrl, coordinates });
             target.value = '';
         }
         img.src = imageUrl;
