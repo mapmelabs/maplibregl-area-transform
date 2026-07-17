@@ -499,8 +499,12 @@ describe('MaplibreAreaTransform style replacement', () => {
         const loaded = map.once('style.load');
         map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
         await loaded;
-        await waitUntil(() => map.hasImage('rotate-orange') && map.hasImage('scale-orange'));
-
+        await waitUntil(() =>
+            map.hasImage('rotate-orange') &&
+            map.hasImage('scale-orange') &&
+            map.hasImage('rotate-blue') &&
+            map.hasImage('scale-blue')
+        );
         expect(map.hasImage('rotate-blue')).toBe(true);
         expect(map.hasImage('scale-blue')).toBe(true);
     });
