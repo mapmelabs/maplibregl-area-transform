@@ -4,7 +4,7 @@ import { recolor } from "./image-recolor";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style, MapStyleImageMissingEvent } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style, MapStyleImageMissingEvent, MapEventType, Listener } from "maplibre-gl";
 
 /**
  * Options for the maplibre area transform control
@@ -131,6 +131,8 @@ type ControlButtonOptions = {
     iconClass: string;
     onClick: () => void;
 }
+
+type MapListenerEntry = readonly [event: keyof MapEventType | 'style.load', listener: Listener];
 
 const createTransformState = (): TransformState => ({
     features: { type: "FeatureCollection", features: [] },
@@ -619,33 +621,28 @@ export class MaplibreAreaTransform implements IControl {
     };
 
     private addMapListeners(map: Map): void {
-        map.on('touchstart', this.onMouseDown);
-        map.on('touchmove', this.onMouseMove);
-        map.on('touchend', this.onMouseUp);
-        map.on('touchcancel', this.onMouseUp);
-        map.on('mousedown', this.onMouseDown);
-        map.on('mousemove', this.onMouseMoveForCursor);
-        map.on('mousemove', this.onMouseMove);
-        map.on('mouseup', this.onMouseUp);
-        map.on('click', this.onClick);
-        map.on('styleimagemissing', this.onStyleImageMissing);
-        map.on('styledataloading', this.onStyleDataLoading);
-        map.on('style.load', this.onStyleLoad);
+        for (const [event, listener] of this.getMapListeners()) map.on(event, listener);
     }
 
     private removeMapListeners(map: Map): void {
-        map.off('touchstart', this.onMouseDown);
-        map.off('touchmove', this.onMouseMove);
-        map.off('touchend', this.onMouseUp);
-        map.off('touchcancel', this.onMouseUp);
-        map.off('mousedown', this.onMouseDown);
-        map.off('mousemove', this.onMouseMoveForCursor);
-        map.off('mousemove', this.onMouseMove);
-        map.off('mouseup', this.onMouseUp);
-        map.off('click', this.onClick);
-        map.off('styleimagemissing', this.onStyleImageMissing);
-        map.off('styledataloading', this.onStyleDataLoading);
-        map.off('style.load', this.onStyleLoad);
+        for (const [event, listener] of this.getMapListeners()) map.off(event, listener);
+    }
+
+    private getMapListeners(): readonly MapListenerEntry[] {
+        return [
+            ['touchstart', this.onMouseDown],
+            ['touchmove', this.onMouseMove],
+            ['touchend', this.onMouseUp],
+            ['touchcancel', this.onMouseUp],
+            ['mousedown', this.onMouseDown],
+            ['mousemove', this.onMouseMoveForCursor],
+            ['mousemove', this.onMouseMove],
+            ['mouseup', this.onMouseUp],
+            ['click', this.onClick],
+            ['styleimagemissing', this.onStyleImageMissing],
+            ['styledataloading', this.onStyleDataLoading],
+            ['style.load', this.onStyleLoad]
+        ];
     }
 
     private onStyleDataLoading = () => {
