@@ -401,21 +401,22 @@ describe('MaplibreAreaTransform image opacity', () => {
 });
 
 describe('MaplibreAreaTransform icon preparation', () => {
-    let ctx: SetupResponse;
+    it('loads the base assets once across concurrent colors', async () => {
+        const loadImage = vi.spyOn(maplibregl.Map.prototype, 'loadImage');
+        const ctx = await setup();
+        try {
+            await Promise.all([
+                ctx.control.setAreaColor('purple'),
+                ctx.control.setAreaColor('blue'),
+                ctx.control.setAreaColor('purple'),
+            ]);
 
-    beforeEach(async () => { ctx = await setup(); });
-    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
-
-    it('shares in-flight loading and recoloring work for the same color', async () => {
-        const loadImage = vi.spyOn(ctx.map, 'loadImage');
-
-        await Promise.all([
-            ctx.control.setAreaColor('purple'),
-            ctx.control.setAreaColor('purple'),
-            ctx.control.setAreaColor('purple'),
-        ]);
-
-        expect(loadImage).toHaveBeenCalledTimes(2);
+            expect(loadImage).toHaveBeenCalledTimes(2);
+        } finally {
+            loadImage.mockRestore();
+            ctx.map.remove();
+            ctx.container.remove();
+        }
     });
 });
 

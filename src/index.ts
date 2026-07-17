@@ -1,8 +1,8 @@
 import EventEmitter from "eventemitter3";
 import { pxCentroid, pxDistance, pxMidpoint, pxRotatePolygon, pxScalePolygon, pxMovePoints, sortPoints, type PxPoint, pxResizePolygon, pxAngle } from "./pixel-utils";
 import { recolor } from "./image-recolor";
-import rotate from '../assets/rotate.png';
-import scale from '../assets/scale.png';
+import rotateImageUrl from '../assets/rotate.png';
+import scaleImageUrl from '../assets/scale.png';
 
 import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style, MapStyleImageMissingEvent, MapEventType, Listener } from "maplibre-gl";
 
@@ -120,6 +120,11 @@ type ManagedImage = {
     opacity: number;
 }
 
+type BaseHandleImages = {
+    rotate: HTMLImageElement | ImageBitmap;
+    scale: HTMLImageElement | ImageBitmap;
+}
+
 type TransformState = {
     features: GeoJSON.FeatureCollection;
     managedImages: globalThis.Map<string, ManagedImage>;
@@ -197,6 +202,7 @@ export class MaplibreAreaTransform implements IControl {
     private _polygonPoints: PxPoint[] = [];
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
+    private _baseHandleImagesPromise: Promise<BaseHandleImages> | null = null;
     private _coloredImageCache = new globalThis.Map<string, ImageData>();
     private _coloredImagePromises = new globalThis.Map<string, Promise<void>>();
     private _addedImageIds: Set<string> = new Set<string>();
@@ -385,6 +391,7 @@ export class MaplibreAreaTransform implements IControl {
         this._polygonPoints = [];
         this._startPx = null;
         this._startCornersPx = undefined;
+        this._baseHandleImagesPromise = null;
         this._coloredImageCache.clear();
         this._coloredImagePromises.clear();
         this._imageQueue.clear();
@@ -1125,17 +1132,33 @@ export class MaplibreAreaTransform implements IControl {
 
     private prepareColoredImages(color: string, map: Map): Promise<void> {
         const imageIds = this.getHandleImageIds(color);
-        const promise = Promise.all([
-            map.loadImage(rotate).then(image => recolor(image.data, color)),
-            map.loadImage(scale).then(image => recolor(image.data, color))
-        ]).then(([rotateImage, scaleImage]) => {
-            if (map !== this._map) return;
-            if (rotateImage) this._coloredImageCache.set(imageIds.rotate, rotateImage);
-            if (scaleImage) this._coloredImageCache.set(imageIds.scale, scaleImage);
-        });
+        const promise = this.getBaseHandleImages(map)
+            .then(images => Promise.all([
+                recolor(images.rotate, color),
+                recolor(images.scale, color)
+            ]))
+            .then(([rotateImage, scaleImage]) => {
+                if (map !== this._map) return;
+                if (rotateImage) this._coloredImageCache.set(imageIds.rotate, rotateImage);
+                if (scaleImage) this._coloredImageCache.set(imageIds.scale, scaleImage);
+            });
         this._coloredImagePromises.set(color, promise);
         void promise.catch(() => {
             if (this._coloredImagePromises.get(color) === promise) this._coloredImagePromises.delete(color);
+        });
+        return promise;
+    }
+
+    private getBaseHandleImages(map: Map): Promise<BaseHandleImages> {
+        if (this._baseHandleImagesPromise) return this._baseHandleImagesPromise;
+        const promise = Promise.all([map.loadImage(rotateImageUrl), map.loadImage(scaleImageUrl)])
+            .then(([rotateImage, scaleImage]) => ({
+                rotate: rotateImage.data,
+                scale: scaleImage.data
+            }));
+        this._baseHandleImagesPromise = promise;
+        void promise.catch(() => {
+            if (this._baseHandleImagesPromise === promise) this._baseHandleImagesPromise = null;
         });
         return promise;
     }
