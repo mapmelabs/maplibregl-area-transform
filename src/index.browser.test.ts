@@ -548,6 +548,31 @@ describe('MaplibreAreaTransform style replacement', () => {
         expect(data.features.some((f) => f.properties?.['temp'])).toBe(false);
         expect(events).toEqual([]);
     });
+
+    it('rejects queued operations after a failed style load and recovers on the next style', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        const styleError = map.once('error');
+        map.setStyle({ version: 7, sources: {}, layers: [] } as never, { diff: false });
+        const imagePromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        const polygonPromise = control.addPolygon(coordinates, false);
+        const imageRejection = expect(imagePromise).rejects.toThrow();
+        const polygonRejection = expect(polygonPromise).rejects.toThrow();
+
+        await styleError;
+        await Promise.all([imageRejection, polygonRejection]);
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() => Boolean(map.getSource(GEOJSON_SOURCE) && map.getLayer(HANDLE_LAYER)));
+
+        const data = await (map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource).getData() as GeoJSON.FeatureCollection;
+        expect(data.features).toEqual([]);
+        await expect(control.addPolygon(coordinates, false)).resolves.toBeTruthy();
+    });
 });
 
 describe('MaplibreAreaTransform rotation', () => {

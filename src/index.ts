@@ -4,7 +4,7 @@ import { recolor } from "./image-recolor";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style } from "maplibre-gl";
 
 /**
  * Options for the maplibre area transform control
@@ -194,6 +194,8 @@ export class MaplibreAreaTransform implements IControl {
     private transformState = createTransformState();
     private _styleRestorePromise: Promise<void> = Promise.resolve();
     private _resolveStyleLoad: (() => void) | null = null;
+    private _rejectStyleLoad: ((reason: Error) => void) | null = null;
+    private _loadingStyle: Style | null = null;
     private _styleGeneration = 0;
 
     /**
@@ -374,7 +376,7 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.off('style.load', this.onStyleLoad);
         this._styleGeneration++;
         this._resolveStyleLoad?.();
-        this._resolveStyleLoad = null;
+        this.clearPendingStyleLoad();
         for (const layerId of [...this._addedLayerIds].reverse()) {
             this.removeLayer(layerId);
         }
@@ -651,22 +653,45 @@ export class MaplibreAreaTransform implements IControl {
             this._polygonPoints = [];
             this.setState("");
         }
+        this._loadingStyle?.off('error', this.onStyleError);
         this._resolveStyleLoad?.();
         this._styleGeneration++;
-        this._styleRestorePromise = new Promise<void>((resolve) => {
+        const styleLoad = new Promise<void>((resolve, reject) => {
             this._resolveStyleLoad = resolve;
+            this._rejectStyleLoad = reject;
         });
+        // The promise may have no public operation waiting on it when the style fails.
+        // Attach a rejection handler while preserving rejection for callers that await it.
+        void styleLoad.catch(() => {});
+        this._styleRestorePromise = styleLoad;
+        this._loadingStyle = this._map?.style ?? null;
+        this._loadingStyle?.on('error', this.onStyleError);
     };
 
     private onStyleLoad = () => {
         const generation = this._styleGeneration;
         const map = this._map;
         const resolveStyleLoad = this._resolveStyleLoad;
+        this.clearPendingStyleLoad();
         const restoration = this.restoreAfterStyleLoad(map, generation);
         this._styleRestorePromise = restoration;
         resolveStyleLoad?.();
-        this._resolveStyleLoad = null;
     };
+
+    private onStyleError = (event: ErrorEvent) => {
+        const rejectStyleLoad = this._rejectStyleLoad;
+        if (!rejectStyleLoad) return;
+        const error = event.error instanceof Error ? event.error : new Error(event.error.message);
+        this.clearPendingStyleLoad();
+        rejectStyleLoad(error);
+    };
+
+    private clearPendingStyleLoad(): void {
+        this._loadingStyle?.off('error', this.onStyleError);
+        this._loadingStyle = null;
+        this._resolveStyleLoad = null;
+        this._rejectStyleLoad = null;
+    }
 
     private async waitForStyleReady(): Promise<void> {
         let restoration: Promise<void>;
