@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import * as maplibregl from 'maplibre-gl';
 import { MaplibreAreaTransform, type MaplibreAreaTransformOptions } from './index';
 import { pxCentroid, pxRotatePoint, type PxPoint } from './pixel-utils';
@@ -397,6 +397,25 @@ describe('MaplibreAreaTransform image opacity', () => {
         await control.setImageOpacity(imageId, 0);
         expect(imageOpacity(map, imageId)).toBe(0);
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined();
+    });
+});
+
+describe('MaplibreAreaTransform icon preparation', () => {
+    let ctx: SetupResponse;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    it('shares in-flight loading and recoloring work for the same color', async () => {
+        const loadImage = vi.spyOn(ctx.map, 'loadImage');
+
+        await Promise.all([
+            ctx.control.setAreaColor('purple'),
+            ctx.control.setAreaColor('purple'),
+            ctx.control.setAreaColor('purple'),
+        ]);
+
+        expect(loadImage).toHaveBeenCalledTimes(2);
     });
 });
 

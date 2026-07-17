@@ -186,8 +186,8 @@ export class MaplibreAreaTransform implements IControl {
     private _polygonPoints: PxPoint[] = [];
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
-    private _colorCache: Set<string> = new Set<string>();
     private _coloredImageCache = new globalThis.Map<string, ImageData>();
+    private _coloredImagePromises = new globalThis.Map<string, Promise<void>>();
     private _addedImageIds: Set<string> = new Set<string>();
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
@@ -394,8 +394,8 @@ export class MaplibreAreaTransform implements IControl {
         this._polygonPoints = [];
         this._startPx = null;
         this._startCornersPx = undefined;
-        this._colorCache.clear();
         this._coloredImageCache.clear();
+        this._coloredImagePromises.clear();
         this._addedImageIds.clear();
         this._addedLayerIds.clear();
         this._addedSourceIds.clear();
@@ -1102,34 +1102,38 @@ export class MaplibreAreaTransform implements IControl {
 
     private async addColoredImages(color: string) {
         const map = this._map;
-        if (!map) {
-            return;
-        }
+        if (!map) return;
         const rotateImageId = 'rotate-' + color;
         const scaleImageId = 'scale-' + color;
-        if (this._colorCache.has(color) && map.hasImage(rotateImageId) && map.hasImage(scaleImageId)) return;
-        return Promise.all([
-            map.loadImage(rotate).then(rotateImage =>
-                recolor(rotateImage?.data!, color).then(recoloredRotateImage => {
-                    if (map !== this._map) return;
-                    if (recoloredRotateImage) this._coloredImageCache.set(rotateImageId, recoloredRotateImage);
-                    if (!map.hasImage(rotateImageId)) {
-                        map.addImage(rotateImageId, recoloredRotateImage!);
-                        this._addedImageIds.add(rotateImageId);
-                    }
-                }),
-            ),
-            map.loadImage(scale).then(scaleImage =>
-                recolor(scaleImage?.data!, color).then(recoloredScaleImage => {
-                    if (map !== this._map) return;
-                    if (recoloredScaleImage) this._coloredImageCache.set(scaleImageId, recoloredScaleImage);
-                    if (!map.hasImage(scaleImageId)) {
-                        map.addImage(scaleImageId, recoloredScaleImage!);
-                        this._addedImageIds.add(scaleImageId);
-                    }
-                }),
-            ),
-        ]).then(() => this._colorCache.add(color));
+        if (!this._coloredImageCache.has(rotateImageId) || !this._coloredImageCache.has(scaleImageId)) {
+            await (this._coloredImagePromises.get(color) ?? this.prepareColoredImages(color, map));
+        }
+        if (map !== this._map) return;
+        for (const imageId of [rotateImageId, scaleImageId]) {
+            const image = this._coloredImageCache.get(imageId);
+            if (image && !map.hasImage(imageId)) {
+                map.addImage(imageId, image);
+                this._addedImageIds.add(imageId);
+            }
+        }
+    }
+
+    private prepareColoredImages(color: string, map: Map): Promise<void> {
+        const rotateImageId = 'rotate-' + color;
+        const scaleImageId = 'scale-' + color;
+        const promise = Promise.all([
+            map.loadImage(rotate).then(image => recolor(image.data, color)),
+            map.loadImage(scale).then(image => recolor(image.data, color))
+        ]).then(([rotateImage, scaleImage]) => {
+            if (map !== this._map) return;
+            if (rotateImage) this._coloredImageCache.set(rotateImageId, rotateImage);
+            if (scaleImage) this._coloredImageCache.set(scaleImageId, scaleImage);
+        });
+        this._coloredImagePromises.set(color, promise);
+        void promise.catch(() => {
+            if (this._coloredImagePromises.get(color) === promise) this._coloredImagePromises.delete(color);
+        });
+        return promise;
     }
 
     private removeLayer(layerId: string): void {
