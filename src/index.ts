@@ -102,7 +102,9 @@ export type MaplibreAreaTransformEventMap = {
     selected: [featureId: string | null];
 };
 
-type MaplibreAreaTransformState = "rotating" | "scaling" | "resizeing" | "adding-ploygon" | "moving" | "deleting" | "";
+type MaplibreAreaTransformState = "rotating" | "scaling" | "resizing" | "adding-polygon" | "moving" | "deleting" | "";
+
+const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>(["moving", "resizing", "rotating", "scaling"]);
 
 type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[];
@@ -221,7 +223,8 @@ export class MaplibreAreaTransform implements IControl {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
         this.addMapListeners(map);
-        this.addColoredImages(this.options.areaBackgroundColor!);
+        // This is an optional preload; feature creation retries preparation if it fails.
+        void this.addColoredImages(this.options.areaBackgroundColor!).catch(() => {});
         this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
             this.initFileButton();
@@ -471,7 +474,7 @@ export class MaplibreAreaTransform implements IControl {
     private async addImageInternal(options: AddImageOptions): Promise<string> {
         await this.waitForStyleReady();
         const map = this.getAttachedMap();
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
         const imageId = `${ID_PREFIX}${this.transformState.nextFeatureId++}`;
@@ -506,7 +509,7 @@ export class MaplibreAreaTransform implements IControl {
      * @returns a pomise that resolves to the newly added rectangle ID
      */
     public addRectangle(): Promise<string> {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             return Promise.reject("Cannot add rectangle while adding polygon");
         }
         const canvas = this._map!.getCanvas();
@@ -527,12 +530,17 @@ export class MaplibreAreaTransform implements IControl {
      */
     public startAddPolygonSequence() {
         this.removeSelection();
-        this.setState("adding-ploygon");
+        this.cancelPolygonDraft();
+        this.setState("adding-polygon");
+    }
+
+    private cancelPolygonDraft(): void {
         this._polygonPoints = [];
+        if (this._state === "adding-polygon") this.setState("");
     }
 
     private onDeleteButtonClick() {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             return;
         }
         this.removeSelection();
@@ -646,10 +654,7 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onStyleDataLoading = () => {
-        if (this._state === "adding-ploygon") {
-            this._polygonPoints = [];
-            this.setState("");
-        }
+        this.cancelPolygonDraft();
         this._loadingStyle?.off('error', this.onStyleError);
         this._resolveStyleLoad?.();
         this._styleGeneration++;
@@ -822,7 +827,7 @@ export class MaplibreAreaTransform implements IControl {
                     id: "scale-" + i + "-" + featureId,
                     featureId,
                     type: 'scale-handle',
-                    icon: this.getHandleImageIds(this.options.areaBackgroundColor!).scale,
+                    icon: this.getHandleImageIds(color).scale,
                     color,
                     isSelected,
                     heading: this.getScaleHandleHeadingSnapped(coordinates, i)
@@ -969,7 +974,7 @@ export class MaplibreAreaTransform implements IControl {
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates);
         if (closestFeature.properties?.["type"] === "scale-handle" && this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-            this.setState("resizeing");
+            this.setState("resizing");
         } else {
             this.setState("scaling");
         }
@@ -987,7 +992,7 @@ export class MaplibreAreaTransform implements IControl {
             case "scaling":
                 newCornersPx = pxScalePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
-            case "resizeing":
+            case "resizing":
                 newCornersPx = pxResizePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
             default:
@@ -1006,16 +1011,11 @@ export class MaplibreAreaTransform implements IControl {
     private onMouseUp = () => {
         this._startPx = null;
         this._startCornersPx = undefined;
-        if (this._state === "moving" ||
-            this._state === "resizeing" ||
-            this._state === "rotating" ||
-            this._state === "scaling") {
-            this.setState("");
-        }
+        if (TRANSFORMING_STATES.has(this._state)) this.setState("");
     }
 
     private onClick = (e: MapMouseEvent) => {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             this.onClickWhenInPolygonMode(e);
             return;
         }
@@ -1049,7 +1049,7 @@ export class MaplibreAreaTransform implements IControl {
             await source.updateData({ remove: [...ids, 'temp-area'] }, true);
             const points = sortPoints(this._polygonPoints);
             this.addPolygon(this.unprojectAll(points), false);
-            this._polygonPoints = [];
+            this.cancelPolygonDraft();
             return;
         }
 
@@ -1241,7 +1241,7 @@ export class MaplibreAreaTransform implements IControl {
 
     private setState(state: MaplibreAreaTransformState) {
         this._state = state;
-        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-ploygon");
+        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-polygon");
         document.getElementById(DELETE_BUTTON_ID)?.classList.toggle('active', this._state === "deleting");
     }
 }
