@@ -125,6 +125,13 @@ type TransformState = {
     nextFeatureId: number;
 }
 
+type ControlButtonOptions = {
+    id: string;
+    label: string;
+    iconClass: string;
+    onClick: () => void;
+}
+
 const createTransformState = (): TransformState => ({
     features: { type: "FeatureCollection", features: [] },
     managedImages: new globalThis.Map<string, ManagedImage>(),
@@ -211,10 +218,7 @@ export class MaplibreAreaTransform implements IControl {
         this._map = map;
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
-        this.initMapListeners();
-        map.on('styleimagemissing', this.onStyleImageMissing);
-        map.on('styledataloading', this.onStyleDataLoading);
-        map.on('style.load', this.onStyleLoad);
+        this.addMapListeners(map);
         this.addColoredImages(this.options.areaBackgroundColor!);
         this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
@@ -244,14 +248,12 @@ export class MaplibreAreaTransform implements IControl {
 
         fileInput.onchange = this.onFileSelected;
 
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = IMAGE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Image');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-image';
-        button.appendChild(icon);
-        button.onclick = () => fileInput.click();
+        const button = this.createControlButton({
+            id: IMAGE_BUTTON_ID,
+            label: 'Add Image',
+            iconClass: 'icon-add-image',
+            onClick: () => fileInput.click()
+        });
         this._container!.appendChild(fileInput);
         this._container!.appendChild(button);
     }
@@ -260,42 +262,45 @@ export class MaplibreAreaTransform implements IControl {
      * Initialize the polygon button
      */
     private initPolygonButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = POLYGON_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Polygon');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-polygon';
-        button.appendChild(icon);
-        button.onclick = () => this.startAddPolygonSequence();
-        this._container!.appendChild(button);
+        this._container!.appendChild(this.createControlButton({
+            id: POLYGON_BUTTON_ID,
+            label: 'Add Polygon',
+            iconClass: 'icon-add-polygon',
+            onClick: () => this.startAddPolygonSequence()
+        }));
     }
 
     /**
      * Initialize the rectangle button
      */
     private initRectangleButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = RECTANGLE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Rectangle');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-rectangle';
-        button.appendChild(icon);
-        button.onclick = () => this.addRectangle();
-        this._container!.appendChild(button);
+        this._container!.appendChild(this.createControlButton({
+            id: RECTANGLE_BUTTON_ID,
+            label: 'Add Rectangle',
+            iconClass: 'icon-add-rectangle',
+            onClick: () => { void this.addRectangle(); }
+        }));
     }
 
     private initDeleteButton() {
+        this._container!.appendChild(this.createControlButton({
+            id: DELETE_BUTTON_ID,
+            label: 'Delete',
+            iconClass: 'icon-delete',
+            onClick: () => this.onDeleteButtonClick()
+        }));
+    }
+
+    private createControlButton(options: ControlButtonOptions): HTMLButtonElement {
         const button = document.createElement('button');
         button.type = 'button';
-        button.id = DELETE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Delete');
+        button.id = options.id;
+        button.setAttribute('aria-label', options.label);
         const icon = document.createElement('span');
-        icon.className = 'icon-delete';
+        icon.className = options.iconClass;
         button.appendChild(icon);
-        button.onclick = () => this.onDeleteButtonClick();
-        this._container!.appendChild(button);
+        button.onclick = options.onClick;
+        return button;
     }
 
     private initGeojsonSourceAndLayers() {
@@ -365,30 +370,11 @@ export class MaplibreAreaTransform implements IControl {
     /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
-        this._map?.off('touchstart', this.onMouseDown);
-        this._map?.off('touchmove', this.onMouseMove);
-        this._map?.off('touchend', this.onMouseUp);
-        this._map?.off('touchcancel', this.onMouseUp);
-        this._map?.off('mousedown', this.onMouseDown);
-        this._map?.off('mousemove', this.onMouseMoveForCursor);
-        this._map?.off('mousemove', this.onMouseMove);
-        this._map?.off('mouseup', this.onMouseUp);
-        this._map?.off('click', this.onClick);
-        this._map?.off('styleimagemissing', this.onStyleImageMissing);
-        this._map?.off('styledataloading', this.onStyleDataLoading);
-        this._map?.off('style.load', this.onStyleLoad);
+        if (this._map) this.removeMapListeners(this._map);
         this._styleGeneration++;
         this._resolveStyleLoad?.();
         this.clearPendingStyleLoad();
-        for (const layerId of [...this._addedLayerIds].reverse()) {
-            this.removeLayer(layerId);
-        }
-        for (const sourceId of [...this._addedSourceIds].reverse()) {
-            this.removeSource(sourceId);
-        }
-        for (const imageId of [...this._addedImageIds].reverse()) {
-            this.removeImage(imageId);
-        }
+        this.removeTrackedResources();
         this._container = null;
         this._state = '';
         this._polygonPoints = [];
@@ -396,9 +382,6 @@ export class MaplibreAreaTransform implements IControl {
         this._startCornersPx = undefined;
         this._coloredImageCache.clear();
         this._coloredImagePromises.clear();
-        this._addedImageIds.clear();
-        this._addedLayerIds.clear();
-        this._addedSourceIds.clear();
         this._imageQueue.clear();
         this.transformState = createTransformState();
         this._styleRestorePromise = Promise.resolve();
@@ -502,8 +485,7 @@ export class MaplibreAreaTransform implements IControl {
             this.transformState.managedImages.delete(imageId);
             this.transformState.features.features = this.transformState.features.features.filter(f => f.properties?.["featureId"] !== imageId);
             if (this._map === map) {
-                this.removeLayer(IMAGE_LAYER_PREFIX + imageId);
-                this.removeSource(IMAGE_SOURCE_PREFIX + imageId);
+                this.removeImageResources(imageId);
                 await this.renderFeatures();
             }
             throw error;
@@ -513,7 +495,7 @@ export class MaplibreAreaTransform implements IControl {
     public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
         const image = this.transformState.managedImages.get(imageId);
         if (image) image.opacity = opacity;
-        const layerId = `${IMAGE_LAYER_PREFIX}${imageId}`;
+        const { layerId } = this.getImageResourceIds(imageId);
         if (this._map?.getLayer(layerId)) this._map.setPaintProperty(layerId, 'raster-opacity', opacity);
     }
 
@@ -583,11 +565,7 @@ export class MaplibreAreaTransform implements IControl {
         await this.removeSelection();
         this.transformState.features.features = this.transformState.features.features.filter(f => f.properties?.["featureId"] !== featureId);
         await this.renderFeatures();
-        const imageSource = this._map?.getSource<ImageSource>(IMAGE_SOURCE_PREFIX + featureId);
-        if (imageSource) {
-            this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-            this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
-        }
+        this.removeImageResources(featureId);
         this.transformState.managedImages.delete(featureId);
         this._eventEmitter.emit("delete", featureId);
     }
@@ -640,16 +618,34 @@ export class MaplibreAreaTransform implements IControl {
         img.src = imageUrl;
     };
 
-    private initMapListeners() {
-        this._map?.on('touchstart', this.onMouseDown);
-        this._map?.on('touchmove', this.onMouseMove);
-        this._map?.on('touchend', this.onMouseUp);
-        this._map?.on('touchcancel', this.onMouseUp);
-        this._map?.on('mousedown', this.onMouseDown);
-        this._map?.on('mousemove', this.onMouseMoveForCursor);
-        this._map?.on('mousemove', this.onMouseMove);
-        this._map?.on('mouseup', this.onMouseUp);
-        this._map?.on('click', this.onClick);
+    private addMapListeners(map: Map): void {
+        map.on('touchstart', this.onMouseDown);
+        map.on('touchmove', this.onMouseMove);
+        map.on('touchend', this.onMouseUp);
+        map.on('touchcancel', this.onMouseUp);
+        map.on('mousedown', this.onMouseDown);
+        map.on('mousemove', this.onMouseMoveForCursor);
+        map.on('mousemove', this.onMouseMove);
+        map.on('mouseup', this.onMouseUp);
+        map.on('click', this.onClick);
+        map.on('styleimagemissing', this.onStyleImageMissing);
+        map.on('styledataloading', this.onStyleDataLoading);
+        map.on('style.load', this.onStyleLoad);
+    }
+
+    private removeMapListeners(map: Map): void {
+        map.off('touchstart', this.onMouseDown);
+        map.off('touchmove', this.onMouseMove);
+        map.off('touchend', this.onMouseUp);
+        map.off('touchcancel', this.onMouseUp);
+        map.off('mousedown', this.onMouseDown);
+        map.off('mousemove', this.onMouseMoveForCursor);
+        map.off('mousemove', this.onMouseMove);
+        map.off('mouseup', this.onMouseUp);
+        map.off('click', this.onClick);
+        map.off('styleimagemissing', this.onStyleImageMissing);
+        map.off('styledataloading', this.onStyleDataLoading);
+        map.off('style.load', this.onStyleLoad);
     }
 
     private onStyleDataLoading = () => {
@@ -760,7 +756,7 @@ export class MaplibreAreaTransform implements IControl {
     private addImageResources(image: ManagedImage): void {
         const map = this._map;
         if (!map) return;
-        const sourceId = `${IMAGE_SOURCE_PREFIX}${image.id}`;
+        const { sourceId, layerId } = this.getImageResourceIds(image.id);
         if (!map.getSource(sourceId)) {
             map.addSource(sourceId, {
                 type: 'image',
@@ -769,7 +765,6 @@ export class MaplibreAreaTransform implements IControl {
             });
         }
         this._addedSourceIds.add(sourceId);
-        const layerId = `${IMAGE_LAYER_PREFIX}${image.id}`;
         if (!map.getLayer(layerId)) {
             map.addLayer({
                 id: layerId,
@@ -779,6 +774,19 @@ export class MaplibreAreaTransform implements IControl {
             }, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : undefined);
         }
         this._addedLayerIds.add(layerId);
+    }
+
+    private getImageResourceIds(imageId: string) {
+        return {
+            sourceId: `${IMAGE_SOURCE_PREFIX}${imageId}`,
+            layerId: `${IMAGE_LAYER_PREFIX}${imageId}`
+        };
+    }
+
+    private removeImageResources(imageId: string): void {
+        const { sourceId, layerId } = this.getImageResourceIds(imageId);
+        this.removeLayer(layerId);
+        this.removeSource(sourceId);
     }
 
     private async renderFeatures(): Promise<void> {
@@ -817,7 +825,7 @@ export class MaplibreAreaTransform implements IControl {
                     id: "scale-" + i + "-" + featureId,
                     featureId,
                     type: 'scale-handle',
-                    icon: 'scale-' + this.options.areaBackgroundColor!,
+                    icon: this.getHandleImageIds(this.options.areaBackgroundColor!).scale,
                     color,
                     isSelected,
                     heading: this.getScaleHandleHeadingSnapped(coordinates, i)
@@ -848,7 +856,7 @@ export class MaplibreAreaTransform implements IControl {
                 id: "rotate-" + featureId,
                 featureId,
                 type: 'rotate-handle',
-                icon: 'rotate-' + color,
+                icon: this.getHandleImageIds(color).rotate,
                 color,
                 isSelected: true,
                 heading: 0
@@ -993,7 +1001,8 @@ export class MaplibreAreaTransform implements IControl {
         }
         const newCoordinates = this.unprojectAll(newCornersPx);
 
-        this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this.transformState.selectedFeatureId}`)?.setCoordinates(newCoordinates as Coordinates);
+        const { sourceId } = this.getImageResourceIds(this.transformState.selectedFeatureId);
+        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(newCoordinates as Coordinates);
         this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates);
     }
 
@@ -1103,13 +1112,12 @@ export class MaplibreAreaTransform implements IControl {
     private async addColoredImages(color: string) {
         const map = this._map;
         if (!map) return;
-        const rotateImageId = 'rotate-' + color;
-        const scaleImageId = 'scale-' + color;
-        if (!this._coloredImageCache.has(rotateImageId) || !this._coloredImageCache.has(scaleImageId)) {
+        const imageIds = this.getHandleImageIds(color);
+        if (!this._coloredImageCache.has(imageIds.rotate) || !this._coloredImageCache.has(imageIds.scale)) {
             await (this._coloredImagePromises.get(color) ?? this.prepareColoredImages(color, map));
         }
         if (map !== this._map) return;
-        for (const imageId of [rotateImageId, scaleImageId]) {
+        for (const imageId of Object.values(imageIds)) {
             const image = this._coloredImageCache.get(imageId);
             if (image && !map.hasImage(imageId)) {
                 map.addImage(imageId, image);
@@ -1119,21 +1127,33 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private prepareColoredImages(color: string, map: Map): Promise<void> {
-        const rotateImageId = 'rotate-' + color;
-        const scaleImageId = 'scale-' + color;
+        const imageIds = this.getHandleImageIds(color);
         const promise = Promise.all([
             map.loadImage(rotate).then(image => recolor(image.data, color)),
             map.loadImage(scale).then(image => recolor(image.data, color))
         ]).then(([rotateImage, scaleImage]) => {
             if (map !== this._map) return;
-            if (rotateImage) this._coloredImageCache.set(rotateImageId, rotateImage);
-            if (scaleImage) this._coloredImageCache.set(scaleImageId, scaleImage);
+            if (rotateImage) this._coloredImageCache.set(imageIds.rotate, rotateImage);
+            if (scaleImage) this._coloredImageCache.set(imageIds.scale, scaleImage);
         });
         this._coloredImagePromises.set(color, promise);
         void promise.catch(() => {
             if (this._coloredImagePromises.get(color) === promise) this._coloredImagePromises.delete(color);
         });
         return promise;
+    }
+
+    private getHandleImageIds(color: string) {
+        return {
+            rotate: `rotate-${color}`,
+            scale: `scale-${color}`
+        };
+    }
+
+    private removeTrackedResources(): void {
+        for (const layerId of [...this._addedLayerIds].reverse()) this.removeLayer(layerId);
+        for (const sourceId of [...this._addedSourceIds].reverse()) this.removeSource(sourceId);
+        for (const imageId of [...this._addedImageIds].reverse()) this.removeImage(imageId);
     }
 
     private removeLayer(layerId: string): void {
