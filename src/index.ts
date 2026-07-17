@@ -647,6 +647,10 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onStyleDataLoading = () => {
+        if (this._state === "adding-ploygon") {
+            this._polygonPoints = [];
+            this.setState("");
+        }
         this._resolveStyleLoad?.();
         this._styleGeneration++;
         this._styleRestorePromise = new Promise<void>((resolve) => {

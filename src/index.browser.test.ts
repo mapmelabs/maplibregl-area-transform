@@ -519,6 +519,31 @@ describe('MaplibreAreaTransform style replacement', () => {
         await loaded;
         expect(rasterLayers(map)).toEqual([]);
     });
+
+    it('cleanly cancels an unfinished polygon draft during style replacement', async () => {
+        const { map, control } = ctx;
+        control.startAddPolygonSequence();
+        clickAt(map, map.unproject([120, 120]));
+        await map.once('idle');
+        clickAt(map, map.unproject([280, 120]));
+        await map.once('idle');
+        expect(document.getElementById(BUTTON_IDS.polygon)!.classList.contains('active')).toBe(true);
+
+        const events: string[] = [];
+        control.on('create', () => events.push('create'));
+        control.on('change', () => events.push('change'));
+        control.on('selected', () => events.push('selected'));
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() => Boolean(map.getSource(GEOJSON_SOURCE) && map.getLayer(HANDLE_LAYER)));
+
+        expect(document.getElementById(BUTTON_IDS.polygon)!.classList.contains('active')).toBe(false);
+        const data = await (map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource).getData() as GeoJSON.FeatureCollection;
+        expect(data.features.some((f) => f.properties?.['temp'])).toBe(false);
+        expect(events).toEqual([]);
+    });
 });
 
 describe('MaplibreAreaTransform rotation', () => {
