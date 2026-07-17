@@ -111,6 +111,13 @@ type BuildPolygonOptions = {
     color: string;
 }
 
+type ManagedImage = {
+    id: string;
+    imageUrl: string;
+    coordinates: GeoJSON.Position[];
+    opacity: number;
+}
+
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
     showAddRectangleButton: true,
@@ -173,6 +180,11 @@ export class MaplibreAreaTransform implements IControl {
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
     private _imageQueue = new globalThis.Map<string, Promise<string>>();
+    private _features: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+    private _managedImages = new globalThis.Map<string, ManagedImage>();
+    private _styleRestorePromise: Promise<void> = Promise.resolve();
+    private _resolveStyleLoad: (() => void) | null = null;
+    private _styleGeneration = 0;
 
     /**
      * @param options - control options; any omitted option falls back to its default
@@ -187,6 +199,8 @@ export class MaplibreAreaTransform implements IControl {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
         this.initMapListeners();
+        map.on('styledataloading', this.onStyleDataLoading);
+        map.on('style.load', this.onStyleLoad);
         this.addColoredImages(this.options.areaBackgroundColor!);
         this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
@@ -271,12 +285,12 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private initGeojsonSourceAndLayers() {
-        this._map?.addSource(GEOJSON_SOURCE, {
+        if (!this._map?.getSource(GEOJSON_SOURCE)) this._map?.addSource(GEOJSON_SOURCE, {
             type: 'geojson',
             promoteId: 'id',
             data: {
                 type: "FeatureCollection",
-                features: []
+                features: this._features.features
             }
         });
         this._addedSourceIds.add(GEOJSON_SOURCE);
@@ -346,6 +360,11 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.off('mousemove', this.onMouseMove);
         this._map?.off('mouseup', this.onMouseUp);
         this._map?.off('click', this.onClick);
+        this._map?.off('styledataloading', this.onStyleDataLoading);
+        this._map?.off('style.load', this.onStyleLoad);
+        this._styleGeneration++;
+        this._resolveStyleLoad?.();
+        this._resolveStyleLoad = null;
         for (const layerId of [...this._addedLayerIds].reverse()) {
             this.removeLayer(layerId);
         }
@@ -366,6 +385,9 @@ export class MaplibreAreaTransform implements IControl {
         this._addedLayerIds.clear();
         this._addedSourceIds.clear();
         this._imageQueue.clear();
+        this._features = { type: "FeatureCollection", features: [] };
+        this._managedImages.clear();
+        this._styleRestorePromise = Promise.resolve();
         this._map = null;
     }
 
@@ -448,41 +470,37 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async addImageInternal(options: AddImageOptions): Promise<string> {
+        await this.waitForStyleReady();
+        const map = this.getAttachedMap();
         if (this._state === "adding-ploygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
         const imageId = `${ID_PREFIX}${maxFeatureId++}`;
-        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
-        this._map?.addSource(imageSourceId, {
-            type: 'image',
-            url: options.imageUrl,
-            coordinates: options.coordinates as [[number, number], [number, number], [number, number], [number, number]]
-        });
-        this._addedSourceIds.add(imageSourceId);
-        const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
-        this._map?.addLayer({
-            id: imageLayerId,
-            type: 'raster',
-            source: imageSourceId,
-            paint: {
-                'raster-opacity': options.opacity ?? 0.9,
-                'raster-fade-duration': 0
+        const managedImage = { id: imageId, imageUrl: options.imageUrl, coordinates: options.coordinates, opacity: options.opacity ?? 0.9 };
+        try {
+            this.addImageResources(managedImage);
+            this._managedImages.set(imageId, managedImage);
+            await this.addFeatureState(imageId, options.coordinates, map);
+            this.setState("");
+            this._eventEmitter.emit("create", { id: imageId, coordinates: options.coordinates });
+            return imageId;
+        } catch (error) {
+            this._managedImages.delete(imageId);
+            this._features.features = this._features.features.filter(f => f.properties?.["featureId"] !== imageId);
+            if (this._map === map) {
+                this.removeLayer(IMAGE_LAYER_PREFIX + imageId);
+                this.removeSource(IMAGE_SOURCE_PREFIX + imageId);
+                await this.renderFeatures();
             }
-        }, HANDLE_LAYER);
-        this._addedLayerIds.add(imageLayerId);
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates: options.coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(imageId);
-        this.setState("");
-        this._eventEmitter.emit("create", { id: imageId, coordinates: options.coordinates });
-        return imageId;
+            throw error;
+        }
     }
 
     public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
-        this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity', opacity);
+        const image = this._managedImages.get(imageId);
+        if (image) image.opacity = opacity;
+        const layerId = `${IMAGE_LAYER_PREFIX}${imageId}`;
+        if (this._map?.getLayer(layerId)) this._map.setPaintProperty(layerId, 'raster-opacity', opacity);
     }
 
     /**
@@ -534,13 +552,10 @@ export class MaplibreAreaTransform implements IControl {
      * @returns a promise with the polygon ID
      */
     public async addPolygon(coordinates: GeoJSON.Position[], resizable: boolean) {
+        await this.waitForStyleReady();
+        const map = this.getAttachedMap();
         const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true, color: this.options.areaBackgroundColor! })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(polygonId);
+        await this.addFeatureState(polygonId, coordinates, map);
         this.setState("");
         this._eventEmitter.emit('create', { id: polygonId, coordinates })
         return polygonId;
@@ -551,16 +566,15 @@ export class MaplibreAreaTransform implements IControl {
      * @param featureId - the feature ID to delete
      */
     public async deleteFeature(featureId: string) {
-        this.removeSelection();
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        let data = await geojsonSource.getData() as GeoJSON.FeatureCollection;
-        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        geojsonSource.setData(data);
+        await this.removeSelection();
+        this._features.features = this._features.features.filter(f => f.properties?.["featureId"] !== featureId);
+        await this.renderFeatures();
         const imageSource = this._map?.getSource<ImageSource>(IMAGE_SOURCE_PREFIX + featureId);
         if (imageSource) {
             this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
             this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
         }
+        this._managedImages.delete(featureId);
         this._eventEmitter.emit("delete", featureId);
     }
 
@@ -570,7 +584,7 @@ export class MaplibreAreaTransform implements IControl {
      */
     public async setAreaColor(color: string) {
         this.options.areaBackgroundColor = color;
-        this.addColoredImages(color);
+        await this.addColoredImages(color);
     }
 
     /**
@@ -624,8 +638,113 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.on('click', this.onClick);
     }
 
+    private onStyleDataLoading = () => {
+        this._resolveStyleLoad?.();
+        this._styleGeneration++;
+        this._styleRestorePromise = new Promise<void>((resolve) => {
+            this._resolveStyleLoad = resolve;
+        });
+    };
+
+    private onStyleLoad = () => {
+        const generation = this._styleGeneration;
+        const map = this._map;
+        const resolveStyleLoad = this._resolveStyleLoad;
+        const restoration = this.restoreAfterStyleLoad(map, generation);
+        this._styleRestorePromise = restoration;
+        resolveStyleLoad?.();
+        this._resolveStyleLoad = null;
+    };
+
+    private async waitForStyleReady(): Promise<void> {
+        let restoration: Promise<void>;
+        do {
+            restoration = this._styleRestorePromise;
+            await restoration;
+        } while (restoration !== this._styleRestorePromise);
+    }
+
+    private async restoreAfterStyleLoad(map: Map | null, generation: number): Promise<void> {
+        if (!map || this._map !== map) return;
+        const isObsolete = () => this._map !== map || generation !== this._styleGeneration;
+        await Promise.all(this.getRetainedColors().map(color => this.addColoredImages(color)));
+        if (isObsolete()) return;
+        this.initGeojsonSourceAndLayers();
+        await this.renderFeatures();
+        if (isObsolete()) return;
+        for (const image of this._managedImages.values()) {
+            if (isObsolete()) return;
+            this.addImageResources(image);
+        }
+    }
+
+    private getRetainedColors(): string[] {
+        const colors = new Set<string>([this.options.areaBackgroundColor!]);
+        for (const feature of this._features.features) {
+            const color = feature.properties?.["color"];
+            if (typeof color === "string") colors.add(color);
+            const icon = feature.properties?.["icon"];
+            if (typeof icon === "string" && icon.startsWith("scale-")) colors.add(icon.slice("scale-".length));
+            if (typeof icon === "string" && icon.startsWith("rotate-")) colors.add(icon.slice("rotate-".length));
+        }
+        return [...colors];
+    }
+
+    private getAttachedMap(): Map {
+        if (!this._map) throw new Error("Control is not attached to a map");
+        return this._map;
+    }
+
+    private assertAttachedTo(map: Map): void {
+        if (this._map !== map) throw new Error("Control is no longer attached to the map");
+    }
+
+    private async addFeatureState(featureId: string, coordinates: GeoJSON.Position[], map: Map): Promise<void> {
+        this._features.features.push(...this.buildPolygonGeoJSONFeatures({
+            coordinates,
+            featureId,
+            isSelected: true,
+            color: this.options.areaBackgroundColor!
+        }));
+        await this.renderFeatures();
+        this.assertAttachedTo(map);
+        await this.removeSelection();
+        this.assertAttachedTo(map);
+        await this.setSelection(featureId);
+        this.assertAttachedTo(map);
+    }
+
+    private addImageResources(image: ManagedImage): void {
+        const map = this._map;
+        if (!map) return;
+        const sourceId = `${IMAGE_SOURCE_PREFIX}${image.id}`;
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, {
+                type: 'image',
+                url: image.imageUrl,
+                coordinates: image.coordinates as [[number, number], [number, number], [number, number], [number, number]]
+            });
+        }
+        this._addedSourceIds.add(sourceId);
+        const layerId = `${IMAGE_LAYER_PREFIX}${image.id}`;
+        if (!map.getLayer(layerId)) {
+            map.addLayer({
+                id: layerId,
+                type: 'raster',
+                source: sourceId,
+                paint: { 'raster-opacity': image.opacity, 'raster-fade-duration': 0 }
+            }, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : undefined);
+        }
+        this._addedLayerIds.add(layerId);
+    }
+
+    private async renderFeatures(): Promise<void> {
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE);
+        if (source) await source.setData(this._features, true);
+    }
+
     private addTrackedLayer(layer: LayerSpecification, beforeId?: string): void {
-        this._map?.addLayer(layer, beforeId);
+        if (!this._map?.getLayer(layer.id)) this._map?.addLayer(layer, beforeId);
         this._addedLayerIds.add(layer.id);
     }
 
@@ -931,17 +1050,17 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async addColoredImages(color: string) {
-        if (this._colorCache.has(color)) {
-            return;
-        }
         const map = this._map;
         if (!map) {
             return;
         }
+        const rotateImageId = 'rotate-' + color;
+        const scaleImageId = 'scale-' + color;
+        if (this._colorCache.has(color) && map.hasImage(rotateImageId) && map.hasImage(scaleImageId)) return;
         return Promise.all([
             map.loadImage(rotate).then(rotateImage =>
                 recolor(rotateImage?.data!, color).then(recoloredRotateImage => {
-                    const rotateImageId = 'rotate-' + color;
+                    if (map !== this._map) return;
                     if (!map.hasImage(rotateImageId)) {
                         map.addImage(rotateImageId, recoloredRotateImage!);
                         this._addedImageIds.add(rotateImageId);
@@ -950,7 +1069,7 @@ export class MaplibreAreaTransform implements IControl {
             ),
             map.loadImage(scale).then(scaleImage =>
                 recolor(scaleImage?.data!, color).then(recoloredScaleImage => {
-                    const scaleImageId = 'scale-' + color;
+                    if (map !== this._map) return;
                     if (!map.hasImage(scaleImageId)) {
                         map.addImage(scaleImageId, recoloredScaleImage!);
                         this._addedImageIds.add(scaleImageId);
@@ -961,17 +1080,17 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private removeLayer(layerId: string): void {
-        this._map?.removeLayer(layerId);
+        if (this._map?.getLayer(layerId)) this._map.removeLayer(layerId);
         this._addedLayerIds.delete(layerId);
     }
 
     private removeSource(sourceId: string): void {
-        this._map?.removeSource(sourceId);
+        if (this._map?.getSource(sourceId)) this._map.removeSource(sourceId);
         this._addedSourceIds.delete(sourceId);
     }
 
     private removeImage(imageId: string): void {
-        this._map?.removeImage(imageId);
+        if (this._map?.hasImage(imageId)) this._map.removeImage(imageId);
         this._addedImageIds.delete(imageId);
     }
 
@@ -986,19 +1105,16 @@ export class MaplibreAreaTransform implements IControl {
 
     private async removeSelection() {
         this.setSelectedFeatureId(null);
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
-        for (const feature of data.features) {
+        for (const feature of this._features.features) {
             delete feature?.properties?.["isSelected"];
         }
-        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-        await source.setData(data, true);
+        this._features.features = this._features.features.filter(f => f.properties?.["type"] !== "rotate-handle");
+        await this.renderFeatures();
     }
 
     private async setSelection(featureId: string) {
         this.setSelectedFeatureId(featureId);
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const data = this._features;
         const corners: GeoJSON.Feature<GeoJSON.Point>[] = [];
         for (const feature of data.features) {
             if (feature.geometry.type === "Point" &&
@@ -1012,18 +1128,19 @@ export class MaplibreAreaTransform implements IControl {
         const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         const coords = corners.map(f => f.geometry.coordinates);
         data.features.push(this.getRotateHandlePoint(coords, featureId, color));
-        await source.setData(data, true);
+        await this.renderFeatures();
     }
 
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const data = this._features;
         const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
         data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
         data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
         data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
-        await source.setData(data, true);
+        const image = this._managedImages.get(featureId);
+        if (image) image.coordinates = newCoordinates;
+        await this.renderFeatures();
         this._eventEmitter.emit("change", { id: featureId, coordinates: newCoordinates });
     }
     /** Project a lat/lng GeoJSON position to map pixel point */
