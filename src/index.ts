@@ -4,7 +4,7 @@ import { recolor } from "./image-recolor";
 import rotate from '../assets/rotate.png';
 import scale from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style, MapStyleImageMissingEvent } from "maplibre-gl";
 
 /**
  * Options for the maplibre area transform control
@@ -187,6 +187,7 @@ export class MaplibreAreaTransform implements IControl {
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
     private _colorCache: Set<string> = new Set<string>();
+    private _coloredImageCache = new globalThis.Map<string, ImageData>();
     private _addedImageIds: Set<string> = new Set<string>();
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
@@ -211,6 +212,7 @@ export class MaplibreAreaTransform implements IControl {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
         this.initMapListeners();
+        map.on('styleimagemissing', this.onStyleImageMissing);
         map.on('styledataloading', this.onStyleDataLoading);
         map.on('style.load', this.onStyleLoad);
         this.addColoredImages(this.options.areaBackgroundColor!);
@@ -372,6 +374,7 @@ export class MaplibreAreaTransform implements IControl {
         this._map?.off('mousemove', this.onMouseMove);
         this._map?.off('mouseup', this.onMouseUp);
         this._map?.off('click', this.onClick);
+        this._map?.off('styleimagemissing', this.onStyleImageMissing);
         this._map?.off('styledataloading', this.onStyleDataLoading);
         this._map?.off('style.load', this.onStyleLoad);
         this._styleGeneration++;
@@ -392,6 +395,7 @@ export class MaplibreAreaTransform implements IControl {
         this._startPx = null;
         this._startCornersPx = undefined;
         this._colorCache.clear();
+        this._coloredImageCache.clear();
         this._addedImageIds.clear();
         this._addedLayerIds.clear();
         this._addedSourceIds.clear();
@@ -737,6 +741,8 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async addFeatureState(featureId: string, coordinates: GeoJSON.Position[], map: Map): Promise<void> {
+        await this.addColoredImages(this.options.areaBackgroundColor!);
+        this.assertAttachedTo(map);
         this.transformState.features.features.push(...this.buildPolygonGeoJSONFeatures({
             coordinates,
             featureId,
@@ -1086,6 +1092,14 @@ export class MaplibreAreaTransform implements IControl {
         }, true);
     }
 
+    private onStyleImageMissing = (event: MapStyleImageMissingEvent) => {
+        const image = this._coloredImageCache.get(event.id);
+        if (image && this._map && !this._map.hasImage(event.id)) {
+            this._map.addImage(event.id, image);
+            this._addedImageIds.add(event.id);
+        }
+    };
+
     private async addColoredImages(color: string) {
         const map = this._map;
         if (!map) {
@@ -1098,6 +1112,7 @@ export class MaplibreAreaTransform implements IControl {
             map.loadImage(rotate).then(rotateImage =>
                 recolor(rotateImage?.data!, color).then(recoloredRotateImage => {
                     if (map !== this._map) return;
+                    if (recoloredRotateImage) this._coloredImageCache.set(rotateImageId, recoloredRotateImage);
                     if (!map.hasImage(rotateImageId)) {
                         map.addImage(rotateImageId, recoloredRotateImage!);
                         this._addedImageIds.add(rotateImageId);
@@ -1107,6 +1122,7 @@ export class MaplibreAreaTransform implements IControl {
             map.loadImage(scale).then(scaleImage =>
                 recolor(scaleImage?.data!, color).then(recoloredScaleImage => {
                     if (map !== this._map) return;
+                    if (recoloredScaleImage) this._coloredImageCache.set(scaleImageId, recoloredScaleImage);
                     if (!map.hasImage(scaleImageId)) {
                         map.addImage(scaleImageId, recoloredScaleImage!);
                         this._addedImageIds.add(scaleImageId);

@@ -509,6 +509,17 @@ describe('MaplibreAreaTransform style replacement', () => {
         expect(map.hasImage('scale-blue')).toBe(true);
     });
 
+    it('synchronously restores a cached handle icon when MapLibre reports it missing', async () => {
+        const { map, control } = ctx;
+        await control.addRectangle();
+        map.removeImage('scale-orange');
+        expect(map.hasImage('scale-orange')).toBe(false);
+
+        map.fire('styleimagemissing', { id: 'scale-orange' });
+
+        expect(map.hasImage('scale-orange')).toBe(true);
+    });
+
     it('rejects a queued image cleanly if the control is removed during style loading', async () => {
         const { map, control } = ctx;
         const img = await loadImage(rotateUrl);
