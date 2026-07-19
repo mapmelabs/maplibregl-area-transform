@@ -15656,16 +15656,23 @@ declare class MaplibreAreaTransform implements IControl {
   private _map;
   private _container;
   private _eventEmitter;
-  private _selectedFeatureId;
   private _state;
   private _polygonPoints;
   private _startPx;
   private _startCornersPx;
-  private _colorCache;
+  private _baseHandleImagesPromise;
+  private _coloredImageCache;
+  private _coloredImagePromises;
   private _addedImageIds;
   private _addedLayerIds;
   private _addedSourceIds;
   private _imageQueue;
+  private transformState;
+  private _styleRestorePromise;
+  private _resolveStyleLoad;
+  private _rejectStyleLoad;
+  private _loadingStyle;
+  private _styleGeneration;
   /**
    * @param options - control options; any omitted option falls back to its default
    */
@@ -15685,6 +15692,7 @@ declare class MaplibreAreaTransform implements IControl {
    */
   private initRectangleButton;
   private initDeleteButton;
+  private createControlButton;
   private initGeojsonSourceAndLayers;
   /** @inheritdoc */
   onRemove(): void;
@@ -15729,6 +15737,7 @@ declare class MaplibreAreaTransform implements IControl {
    * Initiates the state of adding points in order to create a polygon on the screen
    */
   startAddPolygonSequence(): void;
+  private cancelPolygonDraft;
   private onDeleteButtonClick;
   /**
    * Adds a polygon to the map
@@ -15760,7 +15769,23 @@ declare class MaplibreAreaTransform implements IControl {
    */
   off<K extends keyof MaplibreAreaTransformEventMap>(event: K, listener: (...args: MaplibreAreaTransformEventMap[K]) => void): void;
   private onFileSelected;
-  private initMapListeners;
+  private addMapListeners;
+  private removeMapListeners;
+  private getMapListeners;
+  private onStyleDataLoading;
+  private onStyleLoad;
+  private onStyleError;
+  private clearPendingStyleLoad;
+  private waitForStyleReady;
+  private restoreAfterStyleLoad;
+  private getRetainedColors;
+  private getAttachedMap;
+  private assertAttachedTo;
+  private addFeatureState;
+  private addImageResources;
+  private getImageResourceIds;
+  private removeImageResources;
+  private renderFeatures;
   private addTrackedLayer;
   private buildPolygonGeoJSONFeatures;
   private getRotateHandlePoint;
@@ -15773,7 +15798,12 @@ declare class MaplibreAreaTransform implements IControl {
   private onMouseUp;
   private onClick;
   private onClickWhenInPolygonMode;
+  private onStyleImageMissing;
   private addColoredImages;
+  private prepareColoredImages;
+  private getBaseHandleImages;
+  private getHandleImageIds;
+  private removeTrackedResources;
   private removeLayer;
   private removeSource;
   private removeImage;

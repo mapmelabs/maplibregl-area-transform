@@ -452,6 +452,21 @@ var rotate_default = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYA
 var scale_default = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAActJREFUeNpi/P//PwMJwAWIbYH4MBDvIUUjA8giIvGy/6igmQS9RFnEA7fk1+f/v6/NQbZsGbUsAllyDGbJz73x/3+ss/r/61A2mE+KZUwEQnY6EFv+/3ib4de+BAYQDQL/3pxn+HU4h4Hh9xcQNxKIiwlFESGLQBHP8PtEJcP/b89R4xZo6e+zrSjq8AEWAvKg1CXPJOcJNPgOAyO3JMPfOysZmCTtIK4UMUBWR1Gqc0GOeVBCAMURWoIAARNK4wiUV1yBuAlZkJGVB8YsAWJTID5DrXzkAkt5f1+fI8knpOQjbBn2GimWgDAjiUWQIBAbQCP/DykaSbWIbMDEQCdAjkUGtLYoGYiPAfF5KK1Di2oiGZbc/n24BWM+A2IRYlMdMT4ygZVlf4BlG6hw/ff8EIgrSUwZR2zQgSw5DcTxYN9DC9Z/H27D5NdBg5Fii+pBBKggBWE4+POV4c/1ubBqw5KYaoJQPvoAxPw/t7jD6h5UVwJLcVaLdhBzIxAHUOIjcPHPZjuFgQFRkEJcyK/KwKKZRLVqQgZWlYNS24/NbuBqAlSlI1Xlx6hVqKJY9ut4BcntBVJKb7hl5LSAyCm9i5EakL2kaAQIMAAP/aLE8VYEBwAAAABJRU5ErkJggg==";
 //#endregion
 //#region src/index.ts
+const TRANSFORMING_STATES = new Set([
+	"moving",
+	"resizing",
+	"rotating",
+	"scaling"
+]);
+const createTransformState = () => ({
+	features: {
+		type: "FeatureCollection",
+		features: []
+	},
+	managedImages: new globalThis.Map(),
+	selectedFeatureId: null,
+	nextFeatureId: 0
+});
 const defaultOptions = {
 	showAddImageButton: true,
 	showAddRectangleButton: true,
@@ -475,7 +490,6 @@ const IMAGE_BUTTON_ID = "area-transfrom-image";
 const RECTANGLE_BUTTON_ID = "area-transfrom-rectangle";
 const POLYGON_BUTTON_ID = "area-transfrom-polygon";
 const DELETE_BUTTON_ID = "area-transfrom-delete";
-let maxFeatureId = 0;
 /**
 * Maplibre area transform control
 *
@@ -502,16 +516,23 @@ var MaplibreAreaTransform = class {
 	_map = null;
 	_container = null;
 	_eventEmitter = new eventemitter3_default();
-	_selectedFeatureId = null;
 	_state = "";
 	_polygonPoints = [];
 	_startPx = null;
 	_startCornersPx = void 0;
-	_colorCache = /* @__PURE__ */ new Set();
+	_baseHandleImagesPromise = null;
+	_coloredImageCache = new globalThis.Map();
+	_coloredImagePromises = new globalThis.Map();
 	_addedImageIds = /* @__PURE__ */ new Set();
 	_addedLayerIds = /* @__PURE__ */ new Set();
 	_addedSourceIds = /* @__PURE__ */ new Set();
 	_imageQueue = new globalThis.Map();
+	transformState = createTransformState();
+	_styleRestorePromise = Promise.resolve();
+	_resolveStyleLoad = null;
+	_rejectStyleLoad = null;
+	_loadingStyle = null;
+	_styleGeneration = 0;
 	/**
 	* @param options - control options; any omitted option falls back to its default
 	*/
@@ -527,8 +548,8 @@ var MaplibreAreaTransform = class {
 		this._map = map;
 		this._container = document.createElement("div");
 		this._container.className = "maplibregl-ctrl maplibregl-ctrl-area-transform";
-		this.initMapListeners();
-		this.addColoredImages(this.options.areaBackgroundColor);
+		this.addMapListeners(map);
+		this.addColoredImages(this.options.areaBackgroundColor).catch(() => {});
 		this.initGeojsonSourceAndLayers();
 		if (this.options.showAddImageButton) this.initFileButton();
 		if (this.options.showAddRectangleButton) this.initRectangleButton();
@@ -546,14 +567,12 @@ var MaplibreAreaTransform = class {
 		fileInput.accept = "image/*";
 		fileInput.style.display = "none";
 		fileInput.onchange = this.onFileSelected;
-		const button = document.createElement("button");
-		button.type = "button";
-		button.id = IMAGE_BUTTON_ID;
-		button.setAttribute("aria-label", "Add Image");
-		const icon = document.createElement("span");
-		icon.className = "icon-add-image";
-		button.appendChild(icon);
-		button.onclick = () => fileInput.click();
+		const button = this.createControlButton({
+			id: IMAGE_BUTTON_ID,
+			label: "Add Image",
+			iconClass: "icon-add-image",
+			onClick: () => fileInput.click()
+		});
 		this._container.appendChild(fileInput);
 		this._container.appendChild(button);
 	}
@@ -561,48 +580,52 @@ var MaplibreAreaTransform = class {
 	* Initialize the polygon button
 	*/
 	initPolygonButton() {
-		const button = document.createElement("button");
-		button.type = "button";
-		button.id = POLYGON_BUTTON_ID;
-		button.setAttribute("aria-label", "Add Polygon");
-		const icon = document.createElement("span");
-		icon.className = "icon-add-polygon";
-		button.appendChild(icon);
-		button.onclick = () => this.startAddPolygonSequence();
-		this._container.appendChild(button);
+		this._container.appendChild(this.createControlButton({
+			id: POLYGON_BUTTON_ID,
+			label: "Add Polygon",
+			iconClass: "icon-add-polygon",
+			onClick: () => this.startAddPolygonSequence()
+		}));
 	}
 	/**
 	* Initialize the rectangle button
 	*/
 	initRectangleButton() {
-		const button = document.createElement("button");
-		button.type = "button";
-		button.id = RECTANGLE_BUTTON_ID;
-		button.setAttribute("aria-label", "Add Rectangle");
-		const icon = document.createElement("span");
-		icon.className = "icon-add-rectangle";
-		button.appendChild(icon);
-		button.onclick = () => this.addRectangle();
-		this._container.appendChild(button);
+		this._container.appendChild(this.createControlButton({
+			id: RECTANGLE_BUTTON_ID,
+			label: "Add Rectangle",
+			iconClass: "icon-add-rectangle",
+			onClick: () => {
+				this.addRectangle();
+			}
+		}));
 	}
 	initDeleteButton() {
+		this._container.appendChild(this.createControlButton({
+			id: DELETE_BUTTON_ID,
+			label: "Delete",
+			iconClass: "icon-delete",
+			onClick: () => this.onDeleteButtonClick()
+		}));
+	}
+	createControlButton(options) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.id = DELETE_BUTTON_ID;
-		button.setAttribute("aria-label", "Delete");
+		button.id = options.id;
+		button.setAttribute("aria-label", options.label);
 		const icon = document.createElement("span");
-		icon.className = "icon-delete";
+		icon.className = options.iconClass;
 		button.appendChild(icon);
-		button.onclick = () => this.onDeleteButtonClick();
-		this._container.appendChild(button);
+		button.onclick = options.onClick;
+		return button;
 	}
 	initGeojsonSourceAndLayers() {
-		this._map?.addSource(GEOJSON_SOURCE, {
+		if (!this._map?.getSource(GEOJSON_SOURCE)) this._map?.addSource(GEOJSON_SOURCE, {
 			type: "geojson",
 			promoteId: "id",
 			data: {
 				type: "FeatureCollection",
-				features: []
+				features: this.transformState.features.features
 			}
 		});
 		this._addedSourceIds.add(GEOJSON_SOURCE);
@@ -678,29 +701,22 @@ var MaplibreAreaTransform = class {
 	/** @inheritdoc */
 	onRemove() {
 		this._container?.remove();
-		this._map?.off("touchstart", this.onMouseDown);
-		this._map?.off("touchmove", this.onMouseMove);
-		this._map?.off("touchend", this.onMouseUp);
-		this._map?.off("touchcancel", this.onMouseUp);
-		this._map?.off("mousedown", this.onMouseDown);
-		this._map?.off("mousemove", this.onMouseMoveForCursor);
-		this._map?.off("mousemove", this.onMouseMove);
-		this._map?.off("mouseup", this.onMouseUp);
-		this._map?.off("click", this.onClick);
-		for (const layerId of [...this._addedLayerIds].reverse()) this.removeLayer(layerId);
-		for (const sourceId of [...this._addedSourceIds].reverse()) this.removeSource(sourceId);
-		for (const imageId of [...this._addedImageIds].reverse()) this.removeImage(imageId);
+		if (this._map) this.removeMapListeners(this._map);
+		this._styleGeneration++;
+		this._resolveStyleLoad?.();
+		this.clearPendingStyleLoad();
+		this.removeTrackedResources();
 		this._container = null;
-		this._selectedFeatureId = null;
 		this._state = "";
 		this._polygonPoints = [];
 		this._startPx = null;
 		this._startCornersPx = void 0;
-		this._colorCache.clear();
-		this._addedImageIds.clear();
-		this._addedLayerIds.clear();
-		this._addedSourceIds.clear();
+		this._baseHandleImagesPromise = null;
+		this._coloredImageCache.clear();
+		this._coloredImagePromises.clear();
 		this._imageQueue.clear();
+		this.transformState = createTransformState();
+		this._styleRestorePromise = Promise.resolve();
 		this._map = null;
 	}
 	/**
@@ -767,50 +783,48 @@ var MaplibreAreaTransform = class {
 		return JSON.stringify([imageUrl, coordinates]);
 	}
 	async addImageInternal(options) {
-		if (this._state === "adding-ploygon") return Promise.reject("Cannot add image while adding polygon");
-		const imageId = `${ID_PREFIX}${maxFeatureId++}`;
-		const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
-		this._map?.addSource(imageSourceId, {
-			type: "image",
-			url: options.imageUrl,
-			coordinates: options.coordinates
-		});
-		this._addedSourceIds.add(imageSourceId);
-		const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
-		this._map?.addLayer({
-			id: imageLayerId,
-			type: "raster",
-			source: imageSourceId,
-			paint: {
-				"raster-opacity": options.opacity ?? .9,
-				"raster-fade-duration": 0
-			}
-		}, HANDLE_LAYER);
-		this._addedLayerIds.add(imageLayerId);
-		await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
-			coordinates: options.coordinates,
-			featureId: imageId,
-			isSelected: true,
-			color: this.options.areaBackgroundColor
-		}) }, true);
-		await this.removeSelection();
-		await this.setSelection(imageId);
-		this.setState("");
-		this._eventEmitter.emit("create", {
+		await this.waitForStyleReady();
+		const map = this.getAttachedMap();
+		if (this._state === "adding-polygon") return Promise.reject("Cannot add image while adding polygon");
+		const imageId = `${ID_PREFIX}${this.transformState.nextFeatureId++}`;
+		const managedImage = {
 			id: imageId,
-			coordinates: options.coordinates
-		});
-		return imageId;
+			imageUrl: options.imageUrl,
+			coordinates: options.coordinates,
+			opacity: options.opacity ?? .9
+		};
+		try {
+			this.addImageResources(managedImage);
+			this.transformState.managedImages.set(imageId, managedImage);
+			await this.addFeatureState(imageId, options.coordinates, map);
+			this.setState("");
+			this._eventEmitter.emit("create", {
+				id: imageId,
+				coordinates: options.coordinates
+			});
+			return imageId;
+		} catch (error) {
+			this.transformState.managedImages.delete(imageId);
+			this.transformState.features.features = this.transformState.features.features.filter((f) => f.properties?.["featureId"] !== imageId);
+			if (this._map === map) {
+				this.removeImageResources(imageId);
+				await this.renderFeatures();
+			}
+			throw error;
+		}
 	}
 	async setImageOpacity(imageId, opacity) {
-		this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, "raster-opacity", opacity);
+		const image = this.transformState.managedImages.get(imageId);
+		if (image) image.opacity = opacity;
+		const { layerId } = this.getImageResourceIds(imageId);
+		if (this._map?.getLayer(layerId)) this._map.setPaintProperty(layerId, "raster-opacity", opacity);
 	}
 	/**
 	* This adds a rectangle to the middle of the screen
 	* @returns a pomise that resolves to the newly added rectangle ID
 	*/
 	addRectangle() {
-		if (this._state === "adding-ploygon") return Promise.reject("Cannot add rectangle while adding polygon");
+		if (this._state === "adding-polygon") return Promise.reject("Cannot add rectangle while adding polygon");
 		const canvas = this._map.getCanvas();
 		const dpr = window.devicePixelRatio || 1;
 		const logicalWidth = canvas.width / dpr;
@@ -832,11 +846,15 @@ var MaplibreAreaTransform = class {
 	*/
 	startAddPolygonSequence() {
 		this.removeSelection();
-		this.setState("adding-ploygon");
+		this.cancelPolygonDraft();
+		this.setState("adding-polygon");
+	}
+	cancelPolygonDraft() {
 		this._polygonPoints = [];
+		if (this._state === "adding-polygon") this.setState("");
 	}
 	onDeleteButtonClick() {
-		if (this._state === "adding-ploygon") return;
+		if (this._state === "adding-polygon") return;
 		this.removeSelection();
 		if (this._state === "deleting") this.setState("");
 		else this.setState("deleting");
@@ -848,15 +866,10 @@ var MaplibreAreaTransform = class {
 	* @returns a promise with the polygon ID
 	*/
 	async addPolygon(coordinates, resizable) {
-		const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
-		await (this._map?.getSource(GEOJSON_SOURCE)).updateData({ add: this.buildPolygonGeoJSONFeatures({
-			coordinates,
-			featureId: polygonId,
-			isSelected: true,
-			color: this.options.areaBackgroundColor
-		}) }, true);
-		await this.removeSelection();
-		await this.setSelection(polygonId);
+		await this.waitForStyleReady();
+		const map = this.getAttachedMap();
+		const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${this.transformState.nextFeatureId++}`;
+		await this.addFeatureState(polygonId, coordinates, map);
 		this.setState("");
 		this._eventEmitter.emit("create", {
 			id: polygonId,
@@ -869,15 +882,11 @@ var MaplibreAreaTransform = class {
 	* @param featureId - the feature ID to delete
 	*/
 	async deleteFeature(featureId) {
-		this.removeSelection();
-		const geojsonSource = this._map?.getSource(GEOJSON_SOURCE);
-		let data = await geojsonSource.getData();
-		data.features = data.features.filter((f) => f.properties?.["featureId"] !== featureId);
-		geojsonSource.setData(data);
-		if (this._map?.getSource(IMAGE_SOURCE_PREFIX + featureId)) {
-			this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-			this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
-		}
+		await this.removeSelection();
+		this.transformState.features.features = this.transformState.features.features.filter((f) => f.properties?.["featureId"] !== featureId);
+		await this.renderFeatures();
+		this.removeImageResources(featureId);
+		this.transformState.managedImages.delete(featureId);
 		this._eventEmitter.emit("delete", featureId);
 	}
 	/**
@@ -886,7 +895,7 @@ var MaplibreAreaTransform = class {
 	*/
 	async setAreaColor(color) {
 		this.options.areaBackgroundColor = color;
-		this.addColoredImages(color);
+		await this.addColoredImages(color);
 	}
 	/**
 	* Subscribes to a control event.
@@ -920,19 +929,156 @@ var MaplibreAreaTransform = class {
 		};
 		img.src = imageUrl;
 	};
-	initMapListeners() {
-		this._map?.on("touchstart", this.onMouseDown);
-		this._map?.on("touchmove", this.onMouseMove);
-		this._map?.on("touchend", this.onMouseUp);
-		this._map?.on("touchcancel", this.onMouseUp);
-		this._map?.on("mousedown", this.onMouseDown);
-		this._map?.on("mousemove", this.onMouseMoveForCursor);
-		this._map?.on("mousemove", this.onMouseMove);
-		this._map?.on("mouseup", this.onMouseUp);
-		this._map?.on("click", this.onClick);
+	addMapListeners(map) {
+		for (const [event, listener] of this.getMapListeners()) map.on(event, listener);
+	}
+	removeMapListeners(map) {
+		for (const [event, listener] of this.getMapListeners()) map.off(event, listener);
+	}
+	getMapListeners() {
+		return [
+			["touchstart", this.onMouseDown],
+			["touchmove", this.onMouseMove],
+			["touchend", this.onMouseUp],
+			["touchcancel", this.onMouseUp],
+			["mousedown", this.onMouseDown],
+			["mousemove", this.onMouseMoveForCursor],
+			["mousemove", this.onMouseMove],
+			["mouseup", this.onMouseUp],
+			["click", this.onClick],
+			["styleimagemissing", this.onStyleImageMissing],
+			["styledataloading", this.onStyleDataLoading],
+			["style.load", this.onStyleLoad]
+		];
+	}
+	onStyleDataLoading = () => {
+		this.cancelPolygonDraft();
+		this._loadingStyle?.off("error", this.onStyleError);
+		this._resolveStyleLoad?.();
+		this._styleGeneration++;
+		const styleLoad = new Promise((resolve, reject) => {
+			this._resolveStyleLoad = resolve;
+			this._rejectStyleLoad = reject;
+		});
+		styleLoad.catch(() => {});
+		this._styleRestorePromise = styleLoad;
+		this._loadingStyle = this._map?.style ?? null;
+		this._loadingStyle?.on("error", this.onStyleError);
+	};
+	onStyleLoad = () => {
+		const generation = this._styleGeneration;
+		const map = this._map;
+		const resolveStyleLoad = this._resolveStyleLoad;
+		this.clearPendingStyleLoad();
+		const restoration = this.restoreAfterStyleLoad(map, generation);
+		this._styleRestorePromise = restoration;
+		resolveStyleLoad?.();
+	};
+	onStyleError = (event) => {
+		const rejectStyleLoad = this._rejectStyleLoad;
+		if (!rejectStyleLoad) return;
+		const error = event.error instanceof Error ? event.error : new Error(event.error.message);
+		this.clearPendingStyleLoad();
+		rejectStyleLoad(error);
+	};
+	clearPendingStyleLoad() {
+		this._loadingStyle?.off("error", this.onStyleError);
+		this._loadingStyle = null;
+		this._resolveStyleLoad = null;
+		this._rejectStyleLoad = null;
+	}
+	async waitForStyleReady() {
+		let restoration;
+		do {
+			restoration = this._styleRestorePromise;
+			await restoration;
+		} while (restoration !== this._styleRestorePromise);
+	}
+	async restoreAfterStyleLoad(map, generation) {
+		if (!map || this._map !== map) return;
+		const isObsolete = () => this._map !== map || generation !== this._styleGeneration;
+		await Promise.all(this.getRetainedColors().map((color) => this.addColoredImages(color)));
+		if (isObsolete()) return;
+		this.initGeojsonSourceAndLayers();
+		await this.renderFeatures();
+		if (isObsolete()) return;
+		for (const image of this.transformState.managedImages.values()) {
+			if (isObsolete()) return;
+			this.addImageResources(image);
+		}
+	}
+	getRetainedColors() {
+		const colors = new Set([this.options.areaBackgroundColor]);
+		for (const feature of this.transformState.features.features) {
+			const color = feature.properties?.["color"];
+			if (typeof color === "string") colors.add(color);
+			const icon = feature.properties?.["icon"];
+			if (typeof icon === "string" && icon.startsWith("scale-")) colors.add(icon.slice(6));
+			if (typeof icon === "string" && icon.startsWith("rotate-")) colors.add(icon.slice(7));
+		}
+		return [...colors];
+	}
+	getAttachedMap() {
+		if (!this._map) throw new Error("Control is not attached to a map");
+		return this._map;
+	}
+	assertAttachedTo(map) {
+		if (this._map !== map) throw new Error("Control is no longer attached to the map");
+	}
+	async addFeatureState(featureId, coordinates, map) {
+		await this.addColoredImages(this.options.areaBackgroundColor);
+		this.assertAttachedTo(map);
+		this.transformState.features.features.push(...this.buildPolygonGeoJSONFeatures({
+			coordinates,
+			featureId,
+			isSelected: true,
+			color: this.options.areaBackgroundColor
+		}));
+		await this.renderFeatures();
+		this.assertAttachedTo(map);
+		await this.removeSelection();
+		this.assertAttachedTo(map);
+		await this.setSelection(featureId);
+		this.assertAttachedTo(map);
+	}
+	addImageResources(image) {
+		const map = this._map;
+		if (!map) return;
+		const { sourceId, layerId } = this.getImageResourceIds(image.id);
+		if (!map.getSource(sourceId)) map.addSource(sourceId, {
+			type: "image",
+			url: image.imageUrl,
+			coordinates: image.coordinates
+		});
+		this._addedSourceIds.add(sourceId);
+		if (!map.getLayer(layerId)) map.addLayer({
+			id: layerId,
+			type: "raster",
+			source: sourceId,
+			paint: {
+				"raster-opacity": image.opacity,
+				"raster-fade-duration": 0
+			}
+		}, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : void 0);
+		this._addedLayerIds.add(layerId);
+	}
+	getImageResourceIds(imageId) {
+		return {
+			sourceId: `${IMAGE_SOURCE_PREFIX}${imageId}`,
+			layerId: `${IMAGE_LAYER_PREFIX}${imageId}`
+		};
+	}
+	removeImageResources(imageId) {
+		const { sourceId, layerId } = this.getImageResourceIds(imageId);
+		this.removeLayer(layerId);
+		this.removeSource(sourceId);
+	}
+	async renderFeatures() {
+		const source = this._map?.getSource(GEOJSON_SOURCE);
+		if (source) await source.setData(this.transformState.features, true);
 	}
 	addTrackedLayer(layer, beforeId) {
-		this._map?.addLayer(layer, beforeId);
+		if (!this._map?.getLayer(layer.id)) this._map?.addLayer(layer, beforeId);
 		this._addedLayerIds.add(layer.id);
 	}
 	buildPolygonGeoJSONFeatures(buildOptions) {
@@ -959,7 +1105,7 @@ var MaplibreAreaTransform = class {
 				id: "scale-" + i + "-" + featureId,
 				featureId,
 				type: "scale-handle",
-				icon: "scale-" + this.options.areaBackgroundColor,
+				icon: this.getHandleImageIds(color).scale,
 				color,
 				isSelected,
 				heading: this.getScaleHandleHeadingSnapped(coordinates, i)
@@ -987,7 +1133,7 @@ var MaplibreAreaTransform = class {
 				id: "rotate-" + featureId,
 				featureId,
 				type: "rotate-handle",
-				icon: "rotate-" + color,
+				icon: this.getHandleImageIds(color).rotate,
 				color,
 				isSelected: true,
 				heading: 0
@@ -1007,12 +1153,12 @@ var MaplibreAreaTransform = class {
 		return currentPointIndex % 2 === 0 ? 45 : 135;
 	}
 	onMouseMoveForCursor = (e) => {
-		if (this._selectedFeatureId == null || this._startPx != null) {
+		if (this.transformState.selectedFeatureId == null || this._startPx != null) {
 			this._map.getCanvas().style.cursor = "";
 			return;
 		}
-		if (!this._selectedFeatureId) return;
-		const features = this._map?.queryRenderedFeatures(e.point).filter((f) => f.properties?.["featureId"] === this._selectedFeatureId);
+		if (!this.transformState.selectedFeatureId) return;
+		const features = this._map?.queryRenderedFeatures(e.point).filter((f) => f.properties?.["featureId"] === this.transformState.selectedFeatureId);
 		const rotate = features?.find((f) => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === "rotate-handle");
 		const scaleOrResize = features?.find((f) => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === "scale-handle");
 		const drag = features?.find((f) => f.layer.id.startsWith(AREA_LAYER));
@@ -1038,16 +1184,16 @@ var MaplibreAreaTransform = class {
 		else this._map.getCanvas().style.cursor = "";
 	};
 	onMouseDown = (e) => {
-		if (this._selectedFeatureId == null) return;
+		if (this.transformState.selectedFeatureId == null) return;
 		let features = this._map?.queryRenderedFeatures(e.point);
-		features = features?.filter((f) => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this._selectedFeatureId) ?? [];
+		features = features?.filter((f) => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this.transformState.selectedFeatureId) ?? [];
 		if (features.length <= 0) return;
 		e.preventDefault();
 		const currentPx = [e.point.x, e.point.y];
 		this.setStateFromMouseDown(currentPx, features);
 	};
 	async setStateFromMouseDown(currentPx, queriedFeatures) {
-		const featurePoints = (await this._map?.getSource(GEOJSON_SOURCE)?.getData()).features.filter((f) => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId);
+		const featurePoints = (await this._map?.getSource(GEOJSON_SOURCE)?.getData()).features.filter((f) => f.geometry.type === "Point" && f.properties?.["featureId"] === this.transformState.selectedFeatureId);
 		this._startCornersPx = featurePoints.filter((f) => f.properties?.["type"] === "scale-handle").map((f) => this.project(f.geometry.coordinates));
 		if (!queriedFeatures.some((f) => f.layer.id.startsWith(HANDLE_LAYER))) {
 			this.setState("moving");
@@ -1066,11 +1212,11 @@ var MaplibreAreaTransform = class {
 			if (pxDistance(fPx, currentPx) < pxDistance(bestPx, currentPx)) closestFeature = feature;
 		}
 		this._startPx = this.project(closestFeature.geometry.coordinates);
-		if (closestFeature.properties?.["type"] === "scale-handle" && this._selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) this.setState("resizeing");
+		if (closestFeature.properties?.["type"] === "scale-handle" && this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) this.setState("resizing");
 		else this.setState("scaling");
 	}
 	onMouseMove = (e) => {
-		if (!this._selectedFeatureId || this._startPx == null) return;
+		if (!this.transformState.selectedFeatureId || this._startPx == null) return;
 		const currentPx = [e.point.x, e.point.y];
 		let newCornersPx;
 		switch (this._state) {
@@ -1080,7 +1226,7 @@ var MaplibreAreaTransform = class {
 			case "scaling":
 				newCornersPx = pxScalePolygon(this._startCornersPx, this._startPx, currentPx);
 				break;
-			case "resizeing":
+			case "resizing":
 				newCornersPx = pxResizePolygon(this._startCornersPx, this._startPx, currentPx);
 				break;
 			default:
@@ -1089,16 +1235,17 @@ var MaplibreAreaTransform = class {
 				break;
 		}
 		const newCoordinates = this.unprojectAll(newCornersPx);
-		this._map?.getSource(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates);
-		this.updateCoordinates(this._selectedFeatureId, newCoordinates);
+		const { sourceId } = this.getImageResourceIds(this.transformState.selectedFeatureId);
+		this._map?.getSource(sourceId)?.setCoordinates(newCoordinates);
+		this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates);
 	};
 	onMouseUp = () => {
 		this._startPx = null;
 		this._startCornersPx = void 0;
-		if (this._state === "moving" || this._state === "resizeing" || this._state === "rotating" || this._state === "scaling") this.setState("");
+		if (TRANSFORMING_STATES.has(this._state)) this.setState("");
 	};
 	onClick = (e) => {
-		if (this._state === "adding-ploygon") {
+		if (this._state === "adding-polygon") {
 			this.onClickWhenInPolygonMode(e);
 			return;
 		}
@@ -1108,7 +1255,7 @@ var MaplibreAreaTransform = class {
 			return;
 		}
 		const targetId = polygonFeature ? polygonFeature.properties["featureId"] : null;
-		if (targetId === this._selectedFeatureId) return;
+		if (targetId === this.transformState.selectedFeatureId) return;
 		this.removeSelection();
 		if (targetId) this.setSelection(targetId);
 	};
@@ -1121,7 +1268,7 @@ var MaplibreAreaTransform = class {
 			await source.updateData({ remove: [...ids, "temp-area"] }, true);
 			const points = sortPoints(this._polygonPoints);
 			this.addPolygon(this.unprojectAll(points), false);
-			this._polygonPoints = [];
+			this.cancelPolygonDraft();
 			return;
 		}
 		this._polygonPoints.push([e.point.x, e.point.y]);
@@ -1166,54 +1313,90 @@ var MaplibreAreaTransform = class {
 			}]
 		}, true);
 	}
+	onStyleImageMissing = (event) => {
+		const image = this._coloredImageCache.get(event.id);
+		if (image && this._map && !this._map.hasImage(event.id)) {
+			this._map.addImage(event.id, image);
+			this._addedImageIds.add(event.id);
+		}
+	};
 	async addColoredImages(color) {
-		if (this._colorCache.has(color)) return;
 		const map = this._map;
 		if (!map) return;
-		return Promise.all([map.loadImage(rotate_default).then((rotateImage) => recolor(rotateImage?.data, color).then((recoloredRotateImage) => {
-			const rotateImageId = "rotate-" + color;
-			if (!map.hasImage(rotateImageId)) {
-				map.addImage(rotateImageId, recoloredRotateImage);
-				this._addedImageIds.add(rotateImageId);
+		const imageIds = this.getHandleImageIds(color);
+		if (!this._coloredImageCache.has(imageIds.rotate) || !this._coloredImageCache.has(imageIds.scale)) await (this._coloredImagePromises.get(color) ?? this.prepareColoredImages(color, map));
+		if (map !== this._map) return;
+		for (const imageId of Object.values(imageIds)) {
+			const image = this._coloredImageCache.get(imageId);
+			if (image && !map.hasImage(imageId)) {
+				map.addImage(imageId, image);
+				this._addedImageIds.add(imageId);
 			}
-		})), map.loadImage(scale_default).then((scaleImage) => recolor(scaleImage?.data, color).then((recoloredScaleImage) => {
-			const scaleImageId = "scale-" + color;
-			if (!map.hasImage(scaleImageId)) {
-				map.addImage(scaleImageId, recoloredScaleImage);
-				this._addedImageIds.add(scaleImageId);
-			}
-		}))]).then(() => this._colorCache.add(color));
+		}
+	}
+	prepareColoredImages(color, map) {
+		const imageIds = this.getHandleImageIds(color);
+		const promise = this.getBaseHandleImages(map).then((images) => Promise.all([recolor(images.rotate, color), recolor(images.scale, color)])).then(([rotateImage, scaleImage]) => {
+			if (map !== this._map) return;
+			if (rotateImage) this._coloredImageCache.set(imageIds.rotate, rotateImage);
+			if (scaleImage) this._coloredImageCache.set(imageIds.scale, scaleImage);
+		});
+		this._coloredImagePromises.set(color, promise);
+		promise.catch(() => {
+			if (this._coloredImagePromises.get(color) === promise) this._coloredImagePromises.delete(color);
+		});
+		return promise;
+	}
+	getBaseHandleImages(map) {
+		if (this._baseHandleImagesPromise) return this._baseHandleImagesPromise;
+		const promise = Promise.all([map.loadImage(rotate_default), map.loadImage(scale_default)]).then(([rotateImage, scaleImage]) => ({
+			rotate: rotateImage.data,
+			scale: scaleImage.data
+		}));
+		this._baseHandleImagesPromise = promise;
+		promise.catch(() => {
+			if (this._baseHandleImagesPromise === promise) this._baseHandleImagesPromise = null;
+		});
+		return promise;
+	}
+	getHandleImageIds(color) {
+		return {
+			rotate: `rotate-${color}`,
+			scale: `scale-${color}`
+		};
+	}
+	removeTrackedResources() {
+		for (const layerId of [...this._addedLayerIds].reverse()) this.removeLayer(layerId);
+		for (const sourceId of [...this._addedSourceIds].reverse()) this.removeSource(sourceId);
+		for (const imageId of [...this._addedImageIds].reverse()) this.removeImage(imageId);
 	}
 	removeLayer(layerId) {
-		this._map?.removeLayer(layerId);
+		if (this._map?.getLayer(layerId)) this._map.removeLayer(layerId);
 		this._addedLayerIds.delete(layerId);
 	}
 	removeSource(sourceId) {
-		this._map?.removeSource(sourceId);
+		if (this._map?.getSource(sourceId)) this._map.removeSource(sourceId);
 		this._addedSourceIds.delete(sourceId);
 	}
 	removeImage(imageId) {
-		this._map?.removeImage(imageId);
+		if (this._map?.hasImage(imageId)) this._map.removeImage(imageId);
 		this._addedImageIds.delete(imageId);
 	}
 	/** Updates the current selection, emitting `selected` only when it actually changes. */
 	setSelectedFeatureId(featureId) {
-		if (this._selectedFeatureId === featureId) return;
-		this._selectedFeatureId = featureId;
+		if (this.transformState.selectedFeatureId === featureId) return;
+		this.transformState.selectedFeatureId = featureId;
 		this._eventEmitter.emit("selected", featureId);
 	}
 	async removeSelection() {
 		this.setSelectedFeatureId(null);
-		const source = this._map?.getSource(GEOJSON_SOURCE);
-		const data = await source.getData();
-		for (const feature of data.features) delete feature?.properties?.["isSelected"];
-		data.features = data.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
-		await source.setData(data, true);
+		for (const feature of this.transformState.features.features) delete feature?.properties?.["isSelected"];
+		this.transformState.features.features = this.transformState.features.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
+		await this.renderFeatures();
 	}
 	async setSelection(featureId) {
 		this.setSelectedFeatureId(featureId);
-		const source = this._map?.getSource(GEOJSON_SOURCE);
-		const data = await source.getData();
+		const data = this.transformState.features;
 		const corners = [];
 		for (const feature of data.features) if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId && feature.properties?.["type"] === "scale-handle") {
 			feature.properties["isSelected"] = true;
@@ -1223,11 +1406,10 @@ var MaplibreAreaTransform = class {
 		const color = data.features.find((f) => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
 		const coords = corners.map((f) => f.geometry.coordinates);
 		data.features.push(this.getRotateHandlePoint(coords, featureId, color));
-		await source.setData(data, true);
+		await this.renderFeatures();
 	}
 	async updateCoordinates(featureId, newCoordinates) {
-		const source = this._map?.getSource(GEOJSON_SOURCE);
-		const data = await source.getData();
+		const data = this.transformState.features;
 		const color = data.features.find((f) => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
 		data.features = data.features.filter((f) => f.properties?.["featureId"] !== featureId);
 		data.features.push(...this.buildPolygonGeoJSONFeatures({
@@ -1238,7 +1420,9 @@ var MaplibreAreaTransform = class {
 		}));
 		data.features = data.features.filter((f) => f.properties?.["type"] !== "rotate-handle");
 		data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
-		await source.setData(data, true);
+		const image = this.transformState.managedImages.get(featureId);
+		if (image) image.coordinates = newCoordinates;
+		await this.renderFeatures();
 		this._eventEmitter.emit("change", {
 			id: featureId,
 			coordinates: newCoordinates
@@ -1264,7 +1448,7 @@ var MaplibreAreaTransform = class {
 	}
 	setState(state) {
 		this._state = state;
-		document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle("active", this._state === "adding-ploygon");
+		document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle("active", this._state === "adding-polygon");
 		document.getElementById(DELETE_BUTTON_ID)?.classList.toggle("active", this._state === "deleting");
 	}
 };
