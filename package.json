@@ -1,6 +1,6 @@
 {
   "name": "maplibregl-area-transform",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A maplibre-gl-js control to allow scaling, rotating and moving images on the map",
   "keywords": [
     "maplibre-gl-js",
