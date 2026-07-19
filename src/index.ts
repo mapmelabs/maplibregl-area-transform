@@ -1,10 +1,10 @@
 import EventEmitter from "eventemitter3";
 import { pxCentroid, pxDistance, pxMidpoint, pxRotatePolygon, pxScalePolygon, pxMovePoints, sortPoints, type PxPoint, pxResizePolygon, pxAngle } from "./pixel-utils";
 import { recolor } from "./image-recolor";
-import rotate from '../assets/rotate.png';
-import scale from '../assets/scale.png';
+import rotateImageUrl from '../assets/rotate.png';
+import scaleImageUrl from '../assets/scale.png';
 
-import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates } from "maplibre-gl";
+import type { Map, IControl, ImageSource, GeoJSONSource, LayerSpecification, MapMouseEvent, MapGeoJSONFeature, Coordinates, ErrorEvent, Style, MapStyleImageMissingEvent, MapEventType, Listener } from "maplibre-gl";
 
 /**
  * Options for the maplibre area transform control
@@ -102,7 +102,9 @@ export type MaplibreAreaTransformEventMap = {
     selected: [featureId: string | null];
 };
 
-type MaplibreAreaTransformState = "rotating" | "scaling" | "resizeing" | "adding-ploygon" | "moving" | "deleting" | "";
+type MaplibreAreaTransformState = "rotating" | "scaling" | "resizing" | "adding-polygon" | "moving" | "deleting" | "";
+
+const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>(["moving", "resizing", "rotating", "scaling"]);
 
 type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[];
@@ -110,6 +112,41 @@ type BuildPolygonOptions = {
     isSelected: boolean;
     color: string;
 }
+
+type ManagedImage = {
+    id: string;
+    imageUrl: string;
+    coordinates: GeoJSON.Position[];
+    opacity: number;
+}
+
+type BaseHandleImages = {
+    rotate: HTMLImageElement | ImageBitmap;
+    scale: HTMLImageElement | ImageBitmap;
+}
+
+type TransformState = {
+    features: GeoJSON.FeatureCollection;
+    managedImages: globalThis.Map<string, ManagedImage>;
+    selectedFeatureId: string | null;
+    nextFeatureId: number;
+}
+
+type ControlButtonOptions = {
+    id: string;
+    label: string;
+    iconClass: string;
+    onClick: () => void;
+}
+
+type MapListenerEntry = readonly [event: keyof MapEventType | 'style.load', listener: Listener];
+
+const createTransformState = (): TransformState => ({
+    features: { type: "FeatureCollection", features: [] },
+    managedImages: new globalThis.Map<string, ManagedImage>(),
+    selectedFeatureId: null,
+    nextFeatureId: 0
+});
 
 const defaultOptions: MaplibreAreaTransformOptions = {
     showAddImageButton: true,
@@ -136,8 +173,6 @@ const RECTANGLE_BUTTON_ID = 'area-transfrom-rectangle';
 const POLYGON_BUTTON_ID = 'area-transfrom-polygon'
 const DELETE_BUTTON_ID = 'area-transfrom-delete';
 
-let maxFeatureId = 0;
-
 /**
  * Maplibre area transform control
  *
@@ -163,16 +198,23 @@ export class MaplibreAreaTransform implements IControl {
     private _map: Map | null = null;
     private _container: HTMLElement | null = null;
     private _eventEmitter: EventEmitter<MaplibreAreaTransformEventMap> = new EventEmitter<MaplibreAreaTransformEventMap>();
-    private _selectedFeatureId: string | null = null;
     private _state: MaplibreAreaTransformState = "";
     private _polygonPoints: PxPoint[] = [];
     private _startPx: PxPoint | null = null;
     private _startCornersPx: PxPoint[] | undefined = undefined; // corners at drag start
-    private _colorCache: Set<string> = new Set<string>();
+    private _baseHandleImagesPromise: Promise<BaseHandleImages> | null = null;
+    private _coloredImageCache = new globalThis.Map<string, ImageData>();
+    private _coloredImagePromises = new globalThis.Map<string, Promise<void>>();
     private _addedImageIds: Set<string> = new Set<string>();
     private _addedLayerIds: Set<string> = new Set<string>();
     private _addedSourceIds: Set<string> = new Set<string>();
     private _imageQueue = new globalThis.Map<string, Promise<string>>();
+    private transformState = createTransformState();
+    private _styleRestorePromise: Promise<void> = Promise.resolve();
+    private _resolveStyleLoad: (() => void) | null = null;
+    private _rejectStyleLoad: ((reason: Error) => void) | null = null;
+    private _loadingStyle: Style | null = null;
+    private _styleGeneration = 0;
 
     /**
      * @param options - control options; any omitted option falls back to its default
@@ -186,8 +228,9 @@ export class MaplibreAreaTransform implements IControl {
         this._map = map;
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-area-transform';
-        this.initMapListeners();
-        this.addColoredImages(this.options.areaBackgroundColor!);
+        this.addMapListeners(map);
+        // This is an optional preload; feature creation retries preparation if it fails.
+        void this.addColoredImages(this.options.areaBackgroundColor!).catch(() => {});
         this.initGeojsonSourceAndLayers();
         if (this.options.showAddImageButton) {
             this.initFileButton();
@@ -216,14 +259,12 @@ export class MaplibreAreaTransform implements IControl {
 
         fileInput.onchange = this.onFileSelected;
 
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = IMAGE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Image');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-image';
-        button.appendChild(icon);
-        button.onclick = () => fileInput.click();
+        const button = this.createControlButton({
+            id: IMAGE_BUTTON_ID,
+            label: 'Add Image',
+            iconClass: 'icon-add-image',
+            onClick: () => fileInput.click()
+        });
         this._container!.appendChild(fileInput);
         this._container!.appendChild(button);
     }
@@ -232,51 +273,54 @@ export class MaplibreAreaTransform implements IControl {
      * Initialize the polygon button
      */
     private initPolygonButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = POLYGON_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Polygon');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-polygon';
-        button.appendChild(icon);
-        button.onclick = () => this.startAddPolygonSequence();
-        this._container!.appendChild(button);
+        this._container!.appendChild(this.createControlButton({
+            id: POLYGON_BUTTON_ID,
+            label: 'Add Polygon',
+            iconClass: 'icon-add-polygon',
+            onClick: () => this.startAddPolygonSequence()
+        }));
     }
 
     /**
      * Initialize the rectangle button
      */
     private initRectangleButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = RECTANGLE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Add Rectangle');
-        const icon = document.createElement('span');
-        icon.className = 'icon-add-rectangle';
-        button.appendChild(icon);
-        button.onclick = () => this.addRectangle();
-        this._container!.appendChild(button);
+        this._container!.appendChild(this.createControlButton({
+            id: RECTANGLE_BUTTON_ID,
+            label: 'Add Rectangle',
+            iconClass: 'icon-add-rectangle',
+            onClick: () => { void this.addRectangle(); }
+        }));
     }
 
     private initDeleteButton() {
+        this._container!.appendChild(this.createControlButton({
+            id: DELETE_BUTTON_ID,
+            label: 'Delete',
+            iconClass: 'icon-delete',
+            onClick: () => this.onDeleteButtonClick()
+        }));
+    }
+
+    private createControlButton(options: ControlButtonOptions): HTMLButtonElement {
         const button = document.createElement('button');
         button.type = 'button';
-        button.id = DELETE_BUTTON_ID;
-        button.setAttribute('aria-label', 'Delete');
+        button.id = options.id;
+        button.setAttribute('aria-label', options.label);
         const icon = document.createElement('span');
-        icon.className = 'icon-delete';
+        icon.className = options.iconClass;
         button.appendChild(icon);
-        button.onclick = () => this.onDeleteButtonClick();
-        this._container!.appendChild(button);
+        button.onclick = options.onClick;
+        return button;
     }
 
     private initGeojsonSourceAndLayers() {
-        this._map?.addSource(GEOJSON_SOURCE, {
+        if (!this._map?.getSource(GEOJSON_SOURCE)) this._map?.addSource(GEOJSON_SOURCE, {
             type: 'geojson',
             promoteId: 'id',
             data: {
                 type: "FeatureCollection",
-                features: []
+                features: this.transformState.features.features
             }
         });
         this._addedSourceIds.add(GEOJSON_SOURCE);
@@ -337,35 +381,22 @@ export class MaplibreAreaTransform implements IControl {
     /** @inheritdoc */
     public onRemove(): void {
         this._container?.remove();
-        this._map?.off('touchstart', this.onMouseDown);
-        this._map?.off('touchmove', this.onMouseMove);
-        this._map?.off('touchend', this.onMouseUp);
-        this._map?.off('touchcancel', this.onMouseUp);
-        this._map?.off('mousedown', this.onMouseDown);
-        this._map?.off('mousemove', this.onMouseMoveForCursor);
-        this._map?.off('mousemove', this.onMouseMove);
-        this._map?.off('mouseup', this.onMouseUp);
-        this._map?.off('click', this.onClick);
-        for (const layerId of [...this._addedLayerIds].reverse()) {
-            this.removeLayer(layerId);
-        }
-        for (const sourceId of [...this._addedSourceIds].reverse()) {
-            this.removeSource(sourceId);
-        }
-        for (const imageId of [...this._addedImageIds].reverse()) {
-            this.removeImage(imageId);
-        }
+        if (this._map) this.removeMapListeners(this._map);
+        this._styleGeneration++;
+        this._resolveStyleLoad?.();
+        this.clearPendingStyleLoad();
+        this.removeTrackedResources();
         this._container = null;
-        this._selectedFeatureId = null;
         this._state = '';
         this._polygonPoints = [];
         this._startPx = null;
         this._startCornersPx = undefined;
-        this._colorCache.clear();
-        this._addedImageIds.clear();
-        this._addedLayerIds.clear();
-        this._addedSourceIds.clear();
+        this._baseHandleImagesPromise = null;
+        this._coloredImageCache.clear();
+        this._coloredImagePromises.clear();
         this._imageQueue.clear();
+        this.transformState = createTransformState();
+        this._styleRestorePromise = Promise.resolve();
         this._map = null;
     }
 
@@ -448,41 +479,36 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async addImageInternal(options: AddImageOptions): Promise<string> {
-        if (this._state === "adding-ploygon") {
+        await this.waitForStyleReady();
+        const map = this.getAttachedMap();
+        if (this._state === "adding-polygon") {
             return Promise.reject("Cannot add image while adding polygon");
         }
-        const imageId = `${ID_PREFIX}${maxFeatureId++}`;
-        const imageSourceId = `${IMAGE_SOURCE_PREFIX}${imageId}`;
-        this._map?.addSource(imageSourceId, {
-            type: 'image',
-            url: options.imageUrl,
-            coordinates: options.coordinates as [[number, number], [number, number], [number, number], [number, number]]
-        });
-        this._addedSourceIds.add(imageSourceId);
-        const imageLayerId = IMAGE_LAYER_PREFIX + imageId;
-        this._map?.addLayer({
-            id: imageLayerId,
-            type: 'raster',
-            source: imageSourceId,
-            paint: {
-                'raster-opacity': options.opacity ?? 0.9,
-                'raster-fade-duration': 0
+        const imageId = `${ID_PREFIX}${this.transformState.nextFeatureId++}`;
+        const managedImage = { id: imageId, imageUrl: options.imageUrl, coordinates: options.coordinates, opacity: options.opacity ?? 0.9 };
+        try {
+            this.addImageResources(managedImage);
+            this.transformState.managedImages.set(imageId, managedImage);
+            await this.addFeatureState(imageId, options.coordinates, map);
+            this.setState("");
+            this._eventEmitter.emit("create", { id: imageId, coordinates: options.coordinates });
+            return imageId;
+        } catch (error) {
+            this.transformState.managedImages.delete(imageId);
+            this.transformState.features.features = this.transformState.features.features.filter(f => f.properties?.["featureId"] !== imageId);
+            if (this._map === map) {
+                this.removeImageResources(imageId);
+                await this.renderFeatures();
             }
-        }, HANDLE_LAYER);
-        this._addedLayerIds.add(imageLayerId);
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates: options.coordinates, featureId: imageId, isSelected: true, color: this.options.areaBackgroundColor! })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(imageId);
-        this.setState("");
-        this._eventEmitter.emit("create", { id: imageId, coordinates: options.coordinates });
-        return imageId;
+            throw error;
+        }
     }
 
     public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
-        this._map?.setPaintProperty(`${IMAGE_LAYER_PREFIX}${imageId}`, 'raster-opacity', opacity);
+        const image = this.transformState.managedImages.get(imageId);
+        if (image) image.opacity = opacity;
+        const { layerId } = this.getImageResourceIds(imageId);
+        if (this._map?.getLayer(layerId)) this._map.setPaintProperty(layerId, 'raster-opacity', opacity);
     }
 
     /**
@@ -490,7 +516,7 @@ export class MaplibreAreaTransform implements IControl {
      * @returns a pomise that resolves to the newly added rectangle ID
      */
     public addRectangle(): Promise<string> {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             return Promise.reject("Cannot add rectangle while adding polygon");
         }
         const canvas = this._map!.getCanvas();
@@ -511,12 +537,17 @@ export class MaplibreAreaTransform implements IControl {
      */
     public startAddPolygonSequence() {
         this.removeSelection();
-        this.setState("adding-ploygon");
+        this.cancelPolygonDraft();
+        this.setState("adding-polygon");
+    }
+
+    private cancelPolygonDraft(): void {
         this._polygonPoints = [];
+        if (this._state === "adding-polygon") this.setState("");
     }
 
     private onDeleteButtonClick() {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             return;
         }
         this.removeSelection();
@@ -534,13 +565,10 @@ export class MaplibreAreaTransform implements IControl {
      * @returns a promise with the polygon ID
      */
     public async addPolygon(coordinates: GeoJSON.Position[], resizable: boolean) {
-        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${maxFeatureId++}`;
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        await geojsonSource.updateData({
-            add: this.buildPolygonGeoJSONFeatures({ coordinates, featureId: polygonId, isSelected: true, color: this.options.areaBackgroundColor! })
-        }, true);
-        await this.removeSelection();
-        await this.setSelection(polygonId);
+        await this.waitForStyleReady();
+        const map = this.getAttachedMap();
+        const polygonId = `${resizable ? RESIZEABLE_POLYGON_FEATURE_ID : ID_PREFIX}${this.transformState.nextFeatureId++}`;
+        await this.addFeatureState(polygonId, coordinates, map);
         this.setState("");
         this._eventEmitter.emit('create', { id: polygonId, coordinates })
         return polygonId;
@@ -551,16 +579,11 @@ export class MaplibreAreaTransform implements IControl {
      * @param featureId - the feature ID to delete
      */
     public async deleteFeature(featureId: string) {
-        this.removeSelection();
-        const geojsonSource = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        let data = await geojsonSource.getData() as GeoJSON.FeatureCollection;
-        data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
-        geojsonSource.setData(data);
-        const imageSource = this._map?.getSource<ImageSource>(IMAGE_SOURCE_PREFIX + featureId);
-        if (imageSource) {
-            this.removeLayer(IMAGE_LAYER_PREFIX + featureId);
-            this.removeSource(IMAGE_SOURCE_PREFIX + featureId);
-        }
+        await this.removeSelection();
+        this.transformState.features.features = this.transformState.features.features.filter(f => f.properties?.["featureId"] !== featureId);
+        await this.renderFeatures();
+        this.removeImageResources(featureId);
+        this.transformState.managedImages.delete(featureId);
         this._eventEmitter.emit("delete", featureId);
     }
 
@@ -570,7 +593,7 @@ export class MaplibreAreaTransform implements IControl {
      */
     public async setAreaColor(color: string) {
         this.options.areaBackgroundColor = color;
-        this.addColoredImages(color);
+        await this.addColoredImages(color);
     }
 
     /**
@@ -612,20 +635,176 @@ export class MaplibreAreaTransform implements IControl {
         img.src = imageUrl;
     };
 
-    private initMapListeners() {
-        this._map?.on('touchstart', this.onMouseDown);
-        this._map?.on('touchmove', this.onMouseMove);
-        this._map?.on('touchend', this.onMouseUp);
-        this._map?.on('touchcancel', this.onMouseUp);
-        this._map?.on('mousedown', this.onMouseDown);
-        this._map?.on('mousemove', this.onMouseMoveForCursor);
-        this._map?.on('mousemove', this.onMouseMove);
-        this._map?.on('mouseup', this.onMouseUp);
-        this._map?.on('click', this.onClick);
+    private addMapListeners(map: Map): void {
+        for (const [event, listener] of this.getMapListeners()) map.on(event, listener);
+    }
+
+    private removeMapListeners(map: Map): void {
+        for (const [event, listener] of this.getMapListeners()) map.off(event, listener);
+    }
+
+    private getMapListeners(): readonly MapListenerEntry[] {
+        return [
+            ['touchstart', this.onMouseDown],
+            ['touchmove', this.onMouseMove],
+            ['touchend', this.onMouseUp],
+            ['touchcancel', this.onMouseUp],
+            ['mousedown', this.onMouseDown],
+            ['mousemove', this.onMouseMoveForCursor],
+            ['mousemove', this.onMouseMove],
+            ['mouseup', this.onMouseUp],
+            ['click', this.onClick],
+            ['styleimagemissing', this.onStyleImageMissing],
+            ['styledataloading', this.onStyleDataLoading],
+            ['style.load', this.onStyleLoad]
+        ];
+    }
+
+    private onStyleDataLoading = () => {
+        this.cancelPolygonDraft();
+        this._loadingStyle?.off('error', this.onStyleError);
+        this._resolveStyleLoad?.();
+        this._styleGeneration++;
+        const styleLoad = new Promise<void>((resolve, reject) => {
+            this._resolveStyleLoad = resolve;
+            this._rejectStyleLoad = reject;
+        });
+        // The promise may have no public operation waiting on it when the style fails.
+        // Attach a rejection handler while preserving rejection for callers that await it.
+        void styleLoad.catch(() => {});
+        this._styleRestorePromise = styleLoad;
+        this._loadingStyle = this._map?.style ?? null;
+        this._loadingStyle?.on('error', this.onStyleError);
+    };
+
+    private onStyleLoad = () => {
+        const generation = this._styleGeneration;
+        const map = this._map;
+        const resolveStyleLoad = this._resolveStyleLoad;
+        this.clearPendingStyleLoad();
+        const restoration = this.restoreAfterStyleLoad(map, generation);
+        this._styleRestorePromise = restoration;
+        resolveStyleLoad?.();
+    };
+
+    private onStyleError = (event: ErrorEvent) => {
+        const rejectStyleLoad = this._rejectStyleLoad;
+        if (!rejectStyleLoad) return;
+        const error = event.error instanceof Error ? event.error : new Error(event.error.message);
+        this.clearPendingStyleLoad();
+        rejectStyleLoad(error);
+    };
+
+    private clearPendingStyleLoad(): void {
+        this._loadingStyle?.off('error', this.onStyleError);
+        this._loadingStyle = null;
+        this._resolveStyleLoad = null;
+        this._rejectStyleLoad = null;
+    }
+
+    private async waitForStyleReady(): Promise<void> {
+        let restoration: Promise<void>;
+        do {
+            restoration = this._styleRestorePromise;
+            await restoration;
+        } while (restoration !== this._styleRestorePromise);
+    }
+
+    private async restoreAfterStyleLoad(map: Map | null, generation: number): Promise<void> {
+        if (!map || this._map !== map) return;
+        const isObsolete = () => this._map !== map || generation !== this._styleGeneration;
+        await Promise.all(this.getRetainedColors().map(color => this.addColoredImages(color)));
+        if (isObsolete()) return;
+        this.initGeojsonSourceAndLayers();
+        await this.renderFeatures();
+        if (isObsolete()) return;
+        for (const image of this.transformState.managedImages.values()) {
+            if (isObsolete()) return;
+            this.addImageResources(image);
+        }
+    }
+
+    private getRetainedColors(): string[] {
+        const colors = new Set<string>([this.options.areaBackgroundColor!]);
+        for (const feature of this.transformState.features.features) {
+            const color = feature.properties?.["color"];
+            if (typeof color === "string") colors.add(color);
+            const icon = feature.properties?.["icon"];
+            if (typeof icon === "string" && icon.startsWith("scale-")) colors.add(icon.slice("scale-".length));
+            if (typeof icon === "string" && icon.startsWith("rotate-")) colors.add(icon.slice("rotate-".length));
+        }
+        return [...colors];
+    }
+
+    private getAttachedMap(): Map {
+        if (!this._map) throw new Error("Control is not attached to a map");
+        return this._map;
+    }
+
+    private assertAttachedTo(map: Map): void {
+        if (this._map !== map) throw new Error("Control is no longer attached to the map");
+    }
+
+    private async addFeatureState(featureId: string, coordinates: GeoJSON.Position[], map: Map): Promise<void> {
+        await this.addColoredImages(this.options.areaBackgroundColor!);
+        this.assertAttachedTo(map);
+        this.transformState.features.features.push(...this.buildPolygonGeoJSONFeatures({
+            coordinates,
+            featureId,
+            isSelected: true,
+            color: this.options.areaBackgroundColor!
+        }));
+        await this.renderFeatures();
+        this.assertAttachedTo(map);
+        await this.removeSelection();
+        this.assertAttachedTo(map);
+        await this.setSelection(featureId);
+        this.assertAttachedTo(map);
+    }
+
+    private addImageResources(image: ManagedImage): void {
+        const map = this._map;
+        if (!map) return;
+        const { sourceId, layerId } = this.getImageResourceIds(image.id);
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, {
+                type: 'image',
+                url: image.imageUrl,
+                coordinates: image.coordinates as [[number, number], [number, number], [number, number], [number, number]]
+            });
+        }
+        this._addedSourceIds.add(sourceId);
+        if (!map.getLayer(layerId)) {
+            map.addLayer({
+                id: layerId,
+                type: 'raster',
+                source: sourceId,
+                paint: { 'raster-opacity': image.opacity, 'raster-fade-duration': 0 }
+            }, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : undefined);
+        }
+        this._addedLayerIds.add(layerId);
+    }
+
+    private getImageResourceIds(imageId: string) {
+        return {
+            sourceId: `${IMAGE_SOURCE_PREFIX}${imageId}`,
+            layerId: `${IMAGE_LAYER_PREFIX}${imageId}`
+        };
+    }
+
+    private removeImageResources(imageId: string): void {
+        const { sourceId, layerId } = this.getImageResourceIds(imageId);
+        this.removeLayer(layerId);
+        this.removeSource(sourceId);
+    }
+
+    private async renderFeatures(): Promise<void> {
+        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE);
+        if (source) await source.setData(this.transformState.features, true);
     }
 
     private addTrackedLayer(layer: LayerSpecification, beforeId?: string): void {
-        this._map?.addLayer(layer, beforeId);
+        if (!this._map?.getLayer(layer.id)) this._map?.addLayer(layer, beforeId);
         this._addedLayerIds.add(layer.id);
     }
 
@@ -655,7 +834,7 @@ export class MaplibreAreaTransform implements IControl {
                     id: "scale-" + i + "-" + featureId,
                     featureId,
                     type: 'scale-handle',
-                    icon: 'scale-' + this.options.areaBackgroundColor!,
+                    icon: this.getHandleImageIds(color).scale,
                     color,
                     isSelected,
                     heading: this.getScaleHandleHeadingSnapped(coordinates, i)
@@ -686,7 +865,7 @@ export class MaplibreAreaTransform implements IControl {
                 id: "rotate-" + featureId,
                 featureId,
                 type: 'rotate-handle',
-                icon: 'rotate-' + color,
+                icon: this.getHandleImageIds(color).rotate,
                 color,
                 isSelected: true,
                 heading: 0
@@ -718,14 +897,14 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseMoveForCursor = (e: MapMouseEvent) => {
-        if (this._selectedFeatureId == null || this._startPx != null) {
+        if (this.transformState.selectedFeatureId == null || this._startPx != null) {
             this._map!.getCanvas().style.cursor = '';
             return;
         }
-        if (!this._selectedFeatureId) {
+        if (!this.transformState.selectedFeatureId) {
             return;
         }
-        const features = this._map?.queryRenderedFeatures(e.point).filter(f => f.properties?.["featureId"] === this._selectedFeatureId);
+        const features = this._map?.queryRenderedFeatures(e.point).filter(f => f.properties?.["featureId"] === this.transformState.selectedFeatureId);
         const rotate = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && f.properties["type"] === 'rotate-handle');
         const scaleOrResize = features?.find(f => f.layer.id.startsWith(HANDLE_LAYER) && (f.properties["type"] === 'scale-handle'));
         const drag = features?.find(f => f.layer.id.startsWith(AREA_LAYER));
@@ -758,11 +937,11 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseDown = (e: MapMouseEvent) => {
-        if (this._selectedFeatureId == null) {
+        if (this.transformState.selectedFeatureId == null) {
             return;
         }
         let features = this._map?.queryRenderedFeatures(e.point);
-        features = features?.filter(f => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this._selectedFeatureId) ?? [];
+        features = features?.filter(f => f.source === GEOJSON_SOURCE && f.properties?.["featureId"] === this.transformState.selectedFeatureId) ?? [];
         if (features.length <= 0) {
             return;
         }
@@ -774,7 +953,7 @@ export class MaplibreAreaTransform implements IControl {
     private async setStateFromMouseDown(currentPx: PxPoint, queriedFeatures: MapGeoJSONFeature[]) {
         const data = await this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)?.getData() as GeoJSON.FeatureCollection;
 
-        const featurePoints = data.features.filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this._selectedFeatureId) as GeoJSON.Feature<GeoJSON.Point>[];
+        const featurePoints = data.features.filter(f => f.geometry.type === "Point" && f.properties?.["featureId"] === this.transformState.selectedFeatureId) as GeoJSON.Feature<GeoJSON.Point>[];
 
         this._startCornersPx = featurePoints
             .filter(f => f.properties?.["type"] === "scale-handle")
@@ -801,15 +980,15 @@ export class MaplibreAreaTransform implements IControl {
         }
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates);
-        if (closestFeature.properties?.["type"] === "scale-handle" && this._selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
-            this.setState("resizeing");
+        if (closestFeature.properties?.["type"] === "scale-handle" && this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
+            this.setState("resizing");
         } else {
             this.setState("scaling");
         }
     }
 
     private onMouseMove = (e: MapMouseEvent) => {
-        if (!this._selectedFeatureId || this._startPx == null) return;
+        if (!this.transformState.selectedFeatureId || this._startPx == null) return;
         const currentPx: PxPoint = [e.point.x, e.point.y];
 
         let newCornersPx: PxPoint[];
@@ -820,7 +999,7 @@ export class MaplibreAreaTransform implements IControl {
             case "scaling":
                 newCornersPx = pxScalePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
-            case "resizeing":
+            case "resizing":
                 newCornersPx = pxResizePolygon(this._startCornersPx!, this._startPx, currentPx);
                 break;
             default:
@@ -831,23 +1010,19 @@ export class MaplibreAreaTransform implements IControl {
         }
         const newCoordinates = this.unprojectAll(newCornersPx);
 
-        this._map?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${this._selectedFeatureId}`)?.setCoordinates(newCoordinates as Coordinates);
-        this.updateCoordinates(this._selectedFeatureId, newCoordinates);
+        const { sourceId } = this.getImageResourceIds(this.transformState.selectedFeatureId);
+        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(newCoordinates as Coordinates);
+        this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates);
     }
 
     private onMouseUp = () => {
         this._startPx = null;
         this._startCornersPx = undefined;
-        if (this._state === "moving" ||
-            this._state === "resizeing" ||
-            this._state === "rotating" ||
-            this._state === "scaling") {
-            this.setState("");
-        }
+        if (TRANSFORMING_STATES.has(this._state)) this.setState("");
     }
 
     private onClick = (e: MapMouseEvent) => {
-        if (this._state === "adding-ploygon") {
+        if (this._state === "adding-polygon") {
             this.onClickWhenInPolygonMode(e);
             return;
         }
@@ -858,7 +1033,7 @@ export class MaplibreAreaTransform implements IControl {
             return;
         }
         const targetId: string | null = polygonFeature ? polygonFeature.properties["featureId"] : null;
-        if (targetId === this._selectedFeatureId) {
+        if (targetId === this.transformState.selectedFeatureId) {
             // Clicked the current selection, or empty space while nothing is selected:
             // nothing changed, so don't rebuild state or emit a `selected` event.
             return;
@@ -881,7 +1056,7 @@ export class MaplibreAreaTransform implements IControl {
             await source.updateData({ remove: [...ids, 'temp-area'] }, true);
             const points = sortPoints(this._polygonPoints);
             this.addPolygon(this.unprojectAll(points), false);
-            this._polygonPoints = [];
+            this.cancelPolygonDraft();
             return;
         }
 
@@ -930,75 +1105,113 @@ export class MaplibreAreaTransform implements IControl {
         }, true);
     }
 
+    private onStyleImageMissing = (event: MapStyleImageMissingEvent) => {
+        const image = this._coloredImageCache.get(event.id);
+        if (image && this._map && !this._map.hasImage(event.id)) {
+            this._map.addImage(event.id, image);
+            this._addedImageIds.add(event.id);
+        }
+    };
+
     private async addColoredImages(color: string) {
-        if (this._colorCache.has(color)) {
-            return;
-        }
         const map = this._map;
-        if (!map) {
-            return;
+        if (!map) return;
+        const imageIds = this.getHandleImageIds(color);
+        if (!this._coloredImageCache.has(imageIds.rotate) || !this._coloredImageCache.has(imageIds.scale)) {
+            await (this._coloredImagePromises.get(color) ?? this.prepareColoredImages(color, map));
         }
-        return Promise.all([
-            map.loadImage(rotate).then(rotateImage =>
-                recolor(rotateImage?.data!, color).then(recoloredRotateImage => {
-                    const rotateImageId = 'rotate-' + color;
-                    if (!map.hasImage(rotateImageId)) {
-                        map.addImage(rotateImageId, recoloredRotateImage!);
-                        this._addedImageIds.add(rotateImageId);
-                    }
-                }),
-            ),
-            map.loadImage(scale).then(scaleImage =>
-                recolor(scaleImage?.data!, color).then(recoloredScaleImage => {
-                    const scaleImageId = 'scale-' + color;
-                    if (!map.hasImage(scaleImageId)) {
-                        map.addImage(scaleImageId, recoloredScaleImage!);
-                        this._addedImageIds.add(scaleImageId);
-                    }
-                }),
-            ),
-        ]).then(() => this._colorCache.add(color));
+        if (map !== this._map) return;
+        for (const imageId of Object.values(imageIds)) {
+            const image = this._coloredImageCache.get(imageId);
+            if (image && !map.hasImage(imageId)) {
+                map.addImage(imageId, image);
+                this._addedImageIds.add(imageId);
+            }
+        }
+    }
+
+    private prepareColoredImages(color: string, map: Map): Promise<void> {
+        const imageIds = this.getHandleImageIds(color);
+        const promise = this.getBaseHandleImages(map)
+            .then(images => Promise.all([
+                recolor(images.rotate, color),
+                recolor(images.scale, color)
+            ]))
+            .then(([rotateImage, scaleImage]) => {
+                if (map !== this._map) return;
+                if (rotateImage) this._coloredImageCache.set(imageIds.rotate, rotateImage);
+                if (scaleImage) this._coloredImageCache.set(imageIds.scale, scaleImage);
+            });
+        this._coloredImagePromises.set(color, promise);
+        void promise.catch(() => {
+            if (this._coloredImagePromises.get(color) === promise) this._coloredImagePromises.delete(color);
+        });
+        return promise;
+    }
+
+    private getBaseHandleImages(map: Map): Promise<BaseHandleImages> {
+        if (this._baseHandleImagesPromise) return this._baseHandleImagesPromise;
+        const promise = Promise.all([map.loadImage(rotateImageUrl), map.loadImage(scaleImageUrl)])
+            .then(([rotateImage, scaleImage]) => ({
+                rotate: rotateImage.data,
+                scale: scaleImage.data
+            }));
+        this._baseHandleImagesPromise = promise;
+        void promise.catch(() => {
+            if (this._baseHandleImagesPromise === promise) this._baseHandleImagesPromise = null;
+        });
+        return promise;
+    }
+
+    private getHandleImageIds(color: string) {
+        return {
+            rotate: `rotate-${color}`,
+            scale: `scale-${color}`
+        };
+    }
+
+    private removeTrackedResources(): void {
+        for (const layerId of [...this._addedLayerIds].reverse()) this.removeLayer(layerId);
+        for (const sourceId of [...this._addedSourceIds].reverse()) this.removeSource(sourceId);
+        for (const imageId of [...this._addedImageIds].reverse()) this.removeImage(imageId);
     }
 
     private removeLayer(layerId: string): void {
-        this._map?.removeLayer(layerId);
+        if (this._map?.getLayer(layerId)) this._map.removeLayer(layerId);
         this._addedLayerIds.delete(layerId);
     }
 
     private removeSource(sourceId: string): void {
-        this._map?.removeSource(sourceId);
+        if (this._map?.getSource(sourceId)) this._map.removeSource(sourceId);
         this._addedSourceIds.delete(sourceId);
     }
 
     private removeImage(imageId: string): void {
-        this._map?.removeImage(imageId);
+        if (this._map?.hasImage(imageId)) this._map.removeImage(imageId);
         this._addedImageIds.delete(imageId);
     }
 
     /** Updates the current selection, emitting `selected` only when it actually changes. */
     private setSelectedFeatureId(featureId: string | null) {
-        if (this._selectedFeatureId === featureId) {
+        if (this.transformState.selectedFeatureId === featureId) {
             return;
         }
-        this._selectedFeatureId = featureId;
+        this.transformState.selectedFeatureId = featureId;
         this._eventEmitter.emit("selected", featureId);
     }
 
     private async removeSelection() {
         this.setSelectedFeatureId(null);
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
-        for (const feature of data.features) {
+        for (const feature of this.transformState.features.features) {
             delete feature?.properties?.["isSelected"];
         }
-        data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
-        await source.setData(data, true);
+        this.transformState.features.features = this.transformState.features.features.filter(f => f.properties?.["type"] !== "rotate-handle");
+        await this.renderFeatures();
     }
 
     private async setSelection(featureId: string) {
         this.setSelectedFeatureId(featureId);
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const data = this.transformState.features;
         const corners: GeoJSON.Feature<GeoJSON.Point>[] = [];
         for (const feature of data.features) {
             if (feature.geometry.type === "Point" &&
@@ -1012,18 +1225,19 @@ export class MaplibreAreaTransform implements IControl {
         const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         const coords = corners.map(f => f.geometry.coordinates);
         data.features.push(this.getRotateHandlePoint(coords, featureId, color));
-        await source.setData(data, true);
+        await this.renderFeatures();
     }
 
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
-        const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)!;
-        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const data = this.transformState.features;
         const color = data.features.find(f => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
         data.features = data.features.filter(f => f.properties?.["featureId"] !== featureId);
         data.features.push(...this.buildPolygonGeoJSONFeatures({ coordinates: newCoordinates, featureId, isSelected: true, color }));
         data.features = data.features.filter(f => f.properties?.["type"] !== "rotate-handle");
         data.features.push(this.getRotateHandlePoint(newCoordinates, featureId, color));
-        await source.setData(data, true);
+        const image = this.transformState.managedImages.get(featureId);
+        if (image) image.coordinates = newCoordinates;
+        await this.renderFeatures();
         this._eventEmitter.emit("change", { id: featureId, coordinates: newCoordinates });
     }
     /** Project a lat/lng GeoJSON position to map pixel point */
@@ -1050,7 +1264,7 @@ export class MaplibreAreaTransform implements IControl {
 
     private setState(state: MaplibreAreaTransformState) {
         this._state = state;
-        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-ploygon");
+        document.getElementById(POLYGON_BUTTON_ID)?.classList.toggle('active', this._state === "adding-polygon");
         document.getElementById(DELETE_BUTTON_ID)?.classList.toggle('active', this._state === "deleting");
     }
 }

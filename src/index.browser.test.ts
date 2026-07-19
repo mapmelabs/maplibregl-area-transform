@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import * as maplibregl from 'maplibre-gl';
 import { MaplibreAreaTransform, type MaplibreAreaTransformOptions } from './index';
 import { pxCentroid, pxRotatePoint, type PxPoint } from './pixel-utils';
@@ -12,7 +12,11 @@ type SetupResponse = {
 }
 
 const AREA_LAYER = 'area-transform-layer-polygon-area';
+const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border';
+const HANDLE_LAYER = 'area-transform-layer-polygon-handle';
+const HANDLE_CIRCLE_LAYER = HANDLE_LAYER + '-circle';
 const GEOJSON_SOURCE = 'area-transform-geojson-source';
+const IMAGE_SOURCE_PREFIX = 'area-transform-raster-';
 const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-';
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
@@ -56,6 +60,9 @@ function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouse
 function rasterLayers(map: maplibregl.Map) {
     return map.getStyle().layers.filter((l) => l.id.startsWith(IMAGE_LAYER_PREFIX));
 }
+
+const imageOpacity = (map: maplibregl.Map, imageId: string) =>
+    map.getPaintProperty(IMAGE_LAYER_PREFIX + imageId, 'raster-opacity');
 
 /** Shifts coordinates east, so the same image can be requested for a different place. */
 function shifted(coordinates: GeoJSON.Position[]) {
@@ -362,9 +369,6 @@ describe('MaplibreAreaTransform image opacity', () => {
     beforeEach(async () => { ctx = await setup(); });
     afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
 
-    const imageOpacity = (map: maplibregl.Map, imageId: string) =>
-        map.getPaintProperty(IMAGE_LAYER_PREFIX + imageId, 'raster-opacity');
-
     it('uses the default opacity when none is given', async () => {
         const { map, control } = ctx;
         const img = await loadImage(rotateUrl);
@@ -393,6 +397,212 @@ describe('MaplibreAreaTransform image opacity', () => {
         await control.setImageOpacity(imageId, 0);
         expect(imageOpacity(map, imageId)).toBe(0);
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined();
+    });
+});
+
+describe('MaplibreAreaTransform icon preparation', () => {
+    it('loads the base assets once across concurrent colors', async () => {
+        const loadImage = vi.spyOn(maplibregl.Map.prototype, 'loadImage');
+        const ctx = await setup();
+        try {
+            await Promise.all([
+                ctx.control.setAreaColor('purple'),
+                ctx.control.setAreaColor('blue'),
+                ctx.control.setAreaColor('purple'),
+            ]);
+
+            expect(loadImage).toHaveBeenCalledTimes(2);
+        } finally {
+            loadImage.mockRestore();
+            ctx.map.remove();
+            ctx.container.remove();
+        }
+    });
+});
+
+describe('MaplibreAreaTransform style replacement', () => {
+    let ctx: SetupResponse;
+
+    beforeEach(async () => { ctx = await setup(); });
+    afterEach(() => { ctx.map.remove(); ctx.container.remove(); });
+
+    it('silently restores images, editable features, selection, and opacity with the same ID', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates, opacity: 0.35 });
+        const events: string[] = [];
+        control.on('create', () => events.push('create'));
+        control.on('change', () => events.push('change'));
+        control.on('selected', () => events.push('selected'));
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() => Boolean(
+            map.getSource(IMAGE_SOURCE_PREFIX + imageId) &&
+            map.getLayer(IMAGE_LAYER_PREFIX + imageId) &&
+            map.getLayer(HANDLE_LAYER)
+        ));
+        await map.once('idle');
+
+        expect(events).toEqual([]);
+        expect(map.getSource(GEOJSON_SOURCE)).toBeDefined();
+        for (const layerId of [AREA_LAYER, AREA_BORDER_LAYER, HANDLE_CIRCLE_LAYER, HANDLE_LAYER]) {
+            expect(map.getLayer(layerId)).toBeDefined();
+        }
+        expect(imageOpacity(map, imageId)).toBe(0.35);
+
+        const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource;
+        const data = await source.getData() as GeoJSON.FeatureCollection;
+        const restoredPolygon = data.features.find(
+            (f) => f.geometry.type === 'Polygon' && f.properties?.['featureId'] === imageId,
+        ) as GeoJSON.Feature<GeoJSON.Polygon>;
+        expect(restoredPolygon.geometry.coordinates[0]!.slice(0, -1)).toEqual(coordinates);
+        expect(data.features.filter((f) => f.properties?.['featureId'] === imageId && f.properties?.['isSelected']).length).toBe(5);
+        expect(data.features.some((f) => f.properties?.['featureId'] === imageId && f.properties?.['type'] === 'rotate-handle')).toBe(true);
+    });
+
+    it('keeps the latest opacity set while style resources are absent', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+        const imageId = await control.addImage({ imageUrl: rotateUrl, coordinates });
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await control.setImageOpacity(imageId, 0.12);
+        await loaded;
+        await waitUntil(() => Boolean(map.getLayer(IMAGE_LAYER_PREFIX + imageId)));
+
+        expect(imageOpacity(map, imageId)).toBe(0.12);
+    });
+
+    it('queues an image requested while the replacement style is loading', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        const imagePromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        const [, imageId] = await Promise.all([loaded, imagePromise]);
+
+        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined();
+        expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined();
+        const data = await (map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource).getData() as GeoJSON.FeatureCollection;
+        expect(data.features.some((f) => f.properties?.['featureId'] === imageId)).toBe(true);
+    });
+
+    it('keeps queued image work behind rapid consecutive style replacements', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        const imagePromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        const finalLoaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [{ id: 'background', type: 'background' }] }, { diff: false });
+        const imageId = await imagePromise;
+        await finalLoaded;
+
+        expect(map.getLayer('background')).toBeDefined();
+        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined();
+        expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined();
+    });
+
+    it('restores icons for retained features created with an earlier color', async () => {
+        const { map, control } = ctx;
+        await control.addRectangle();
+        await control.setAreaColor('blue');
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() =>
+            map.hasImage('rotate-orange') &&
+            map.hasImage('scale-orange') &&
+            map.hasImage('rotate-blue') &&
+            map.hasImage('scale-blue')
+        );
+        expect(map.hasImage('rotate-blue')).toBe(true);
+        expect(map.hasImage('scale-blue')).toBe(true);
+    });
+
+    it('synchronously restores a cached handle icon when MapLibre reports it missing', async () => {
+        const { map, control } = ctx;
+        await control.addRectangle();
+        map.removeImage('scale-orange');
+        expect(map.hasImage('scale-orange')).toBe(false);
+
+        map.fire('styleimagemissing', { id: 'scale-orange' });
+
+        expect(map.hasImage('scale-orange')).toBe(true);
+    });
+
+    it('rejects a queued image cleanly if the control is removed during style loading', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        const imagePromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        map.removeControl(control);
+
+        await expect(imagePromise).rejects.toThrow('not attached');
+        await loaded;
+        expect(rasterLayers(map)).toEqual([]);
+    });
+
+    it('cleanly cancels an unfinished polygon draft during style replacement', async () => {
+        const { map, control } = ctx;
+        control.startAddPolygonSequence();
+        clickAt(map, map.unproject([120, 120]));
+        await map.once('idle');
+        clickAt(map, map.unproject([280, 120]));
+        await map.once('idle');
+        expect(document.getElementById(BUTTON_IDS.polygon)!.classList.contains('active')).toBe(true);
+
+        const events: string[] = [];
+        control.on('create', () => events.push('create'));
+        control.on('change', () => events.push('change'));
+        control.on('selected', () => events.push('selected'));
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() => Boolean(map.getSource(GEOJSON_SOURCE) && map.getLayer(HANDLE_LAYER)));
+
+        expect(document.getElementById(BUTTON_IDS.polygon)!.classList.contains('active')).toBe(false);
+        const data = await (map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource).getData() as GeoJSON.FeatureCollection;
+        expect(data.features.some((f) => f.properties?.['temp'])).toBe(false);
+        expect(events).toEqual([]);
+    });
+
+    it('rejects queued operations after a failed style load and recovers on the next style', async () => {
+        const { map, control } = ctx;
+        const img = await loadImage(rotateUrl);
+        const coordinates = control.createCoordinatesForLoadedImage(img);
+
+        const styleError = map.once('error');
+        map.setStyle({ version: 7, sources: {}, layers: [] } as never, { diff: false });
+        const imagePromise = control.addImage({ imageUrl: rotateUrl, coordinates });
+        const polygonPromise = control.addPolygon(coordinates, false);
+        const imageRejection = expect(imagePromise).rejects.toThrow();
+        const polygonRejection = expect(polygonPromise).rejects.toThrow();
+
+        await styleError;
+        await Promise.all([imageRejection, polygonRejection]);
+
+        const loaded = map.once('style.load');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+        await loaded;
+        await waitUntil(() => Boolean(map.getSource(GEOJSON_SOURCE) && map.getLayer(HANDLE_LAYER)));
+
+        const data = await (map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource).getData() as GeoJSON.FeatureCollection;
+        expect(data.features).toEqual([]);
+        await expect(control.addPolygon(coordinates, false)).resolves.toBeTruthy();
     });
 });
 
