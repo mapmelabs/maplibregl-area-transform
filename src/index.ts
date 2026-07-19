@@ -536,7 +536,7 @@ export class MaplibreAreaTransform implements IControl {
     this._map?.addSource(imageSourceId, {
       type: "canvas",
       canvas,
-      coordinates: imageCanvasBounds(options.coordinates),
+      coordinates: imageCanvasBounds(options.coordinates as Coordinates),
       animate: false,
     });
     this._addedSourceIds.add(imageSourceId);
@@ -581,17 +581,12 @@ export class MaplibreAreaTransform implements IControl {
     coordinates: GeoJSON.Position[],
   ): Coordinates | undefined {
     const entry = this._imageCanvases.get(featureId);
-    if (entry)
-      return paintImageOnCanvas(
-        entry.canvas,
-        entry.image,
-        coordinates as [
-          [number, number],
-          [number, number],
-          [number, number],
-          [number, number],
-        ],
-      );
+    if (!entry) return;
+    return paintImageOnCanvas(
+      entry.canvas,
+      entry.image,
+      coordinates as Coordinates,
+    );
   }
 
   private syncImageCoordinates(
@@ -608,7 +603,7 @@ export class MaplibreAreaTransform implements IControl {
       return;
     }
     this.paintImageCanvas(featureId, coordinates);
-    source.setCoordinates(imageCanvasBounds(coordinates));
+    source.setCoordinates(imageCanvasBounds(coordinates as Coordinates));
     // A static CanvasSource does not upload changed pixels on repaint alone.
     source.play?.();
     source.pause?.();
