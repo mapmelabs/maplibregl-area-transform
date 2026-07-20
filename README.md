@@ -10,44 +10,46 @@ https://mapmelabs.github.io/maplibregl-area-transform/
 
 https://mapmelabs.github.io/maplibregl-area-transform/demo/
 
-
 ## Use Cases
 
 - Image georeferencing (historical maps, floor plans, overlays)
 - Selecting and transforming map regions
 - Defining custom bounding areas with rotation
 
-
 ## Installation
 
 ```bash
 yarn add maplibregl-area-transform
 ```
+
 or
+
 ```bash
 npm install maplibregl-area-transform
 ```
+
 ## Basic Usage
+
 ```js
 import maplibregl from 'maplibre-gl'
 import AreaTransform from 'maplibregl-area-transform'
 
 const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://demotiles.maplibre.org/style.json',
-  center: [0, 0],
-  zoom: 2
+    container: 'map',
+    style: 'https://demotiles.maplibre.org/style.json',
+    center: [0, 0],
+    zoom: 2,
 })
 
 const tool = new AreaTransform({
-  // options
+    // options
 })
 
 map.addControl(tool)
 
 // listen to updates
-tool.on('change', (coords) => {
-  console.log('Area coordinates:', coords)
+tool.on('change', coords => {
+    console.log('Area coordinates:', coords)
 })
 ```
 
@@ -58,10 +60,10 @@ Releases are produced by the [Release workflow](.github/workflows/release.yaml).
 1. Go to the repo's **Actions** tab → **Release** → **Run workflow**.
 2. Pick the **Version bump** from the dropdown — `patch`, `minor`, or `major` (defaults to `patch`).
 3. Run it. The workflow then:
-   - builds the package,
-   - runs `npm version <bump>`, which updates the `version` in `package.json`, commits it, and creates a matching `vX.Y.Z` git tag,
-   - pushes the commit and tag back to the branch,
-   - packs the package with `npm pack` and publishes a **GitHub Release** for the tag with the `.tgz` attached.
+    - builds the package,
+    - runs `npm version <bump>`, which updates the `version` in `package.json`, commits it, and creates a matching `vX.Y.Z` git tag,
+    - pushes the commit and tag back to the branch,
+    - packs the package with `npm pack` and publishes a **GitHub Release** for the tag with the `.tgz` attached.
 
 Choose the bump according to [semver](https://semver.org/): `patch` for bug fixes, `minor` for backwards-compatible features, `major` for breaking changes.
 
@@ -74,4 +76,3 @@ npm install https://github.com/mapmelabs/maplibregl-area-transform/releases/down
 ```
 
 Replace the version in the URL with the release you want. Every release on the [Releases page](https://github.com/mapmelabs/maplibregl-area-transform/releases) has its own permalink.
-

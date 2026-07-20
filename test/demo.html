@@ -1,52 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Maplibre GL JS Georeferenced Image Control Demo</title>
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+        <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+        <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+        <link rel="stylesheet" href="../dist/maplibregl-area-transform.css" />
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
 
-<head>
-    <meta charset="utf-8" />
-    <title>Maplibre GL JS Georeferenced Image Control Demo</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
-    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <link rel="stylesheet" href="../dist/maplibregl-area-transform.css">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
+            #map {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+        </style>
+    </head>
 
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-    </style>
-</head>
-
-<body>
-    <div id="map"></div>
-    <script type="module">
-        import { MaplibreAreaTransform } from '../dist/maplibregl-area-transform.mjs';
-        const map = new maplibregl.Map({
-            container: 'map',
-            center: [34.8, 32.0],
-            zoom: 5,
-            style: 'https://demotiles.maplibre.org/style.json',
-            doubleClickZoom: false
-        });
-        map.on('load', () => {
-            const areaTransformControl = new MaplibreAreaTransform({
-                showAddPolygonButton: false,
-                areaBackgroundColor: 'blue',
-                areaOpacity: 0.5
-            });
-            map.addControl(areaTransformControl);
-            areaTransformControl.on('create', (e) => console.log('create', e))
-            areaTransformControl.on('change', (e) => console.log('change', e));
-            areaTransformControl.on('delete', (e) => console.log('delete', e))
-        });
-    </script>
-</body>
-
+    <body>
+        <div id="map"></div>
+        <script type="module">
+            import {MaplibreAreaTransform} from '../dist/maplibregl-area-transform.mjs'
+            const map = new maplibregl.Map({
+                container: 'map',
+                center: [34.8, 32.0],
+                zoom: 5,
+                style: 'https://demotiles.maplibre.org/style.json',
+                doubleClickZoom: false,
+            })
+            map.on('load', () => {
+                const areaTransformControl = new MaplibreAreaTransform({
+                    showAddPolygonButton: false,
+                    areaBackgroundColor: 'blue',
+                    areaOpacity: 0.5,
+                })
+                map.addControl(areaTransformControl)
+                areaTransformControl.on('create', e => console.log('create', e))
+                areaTransformControl.on('change', e => console.log('change', e))
+                areaTransformControl.on('delete', e => console.log('delete', e))
+            })
+        </script>
+    </body>
 </html>
