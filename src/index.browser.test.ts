@@ -250,6 +250,19 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ctx.container.remove()
     })
 
+    it('rejects coordinates that are not exactly four points', async () => {
+        const {control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+
+        await expect(control.addImage({imageUrl: rotateUrl, coordinates: coordinates.slice(0, 3)})).rejects.toBe(
+            'Image coordinates must contain exactly four points',
+        )
+        await expect(
+            control.addImage({imageUrl: rotateUrl, coordinates: [...coordinates, coordinates[0]!]}),
+        ).rejects.toBe('Image coordinates must contain exactly four points')
+    })
+
     it('shares one promise between concurrent calls with the same URL and coordinates', async () => {
         const {map, control} = ctx
         const created: string[] = []

@@ -511,6 +511,8 @@ export class MaplibreAreaTransform implements IControl {
     public addImage(optionsOrUrl: AddImageOptions | string, coordinates?: GeoJSON.Position[]): Promise<string> {
         const options: AddImageOptions =
             typeof optionsOrUrl === 'string' ? {imageUrl: optionsOrUrl, coordinates: coordinates!} : optionsOrUrl
+        if (options.coordinates.length !== 4)
+            return Promise.reject('Image coordinates must contain exactly four points')
         const key = this.getImageRequestKey(options.imageUrl, options.coordinates)
         return this._imageQueue.get(key) ?? this.addImageToQueue(key, options)
     }
@@ -575,7 +577,8 @@ export class MaplibreAreaTransform implements IControl {
     private paintImageCanvas(featureId: string, coordinates: GeoJSON.Position[]): Coordinates | undefined {
         const entry = this._imageCanvases.get(featureId)
         if (!entry) return
-        return paintImageOnCanvas(entry.canvas, entry.image, coordinates as Coordinates)
+        const grid = TRANSFORMING_STATES.has(this._state) ? 4 : 12
+        return paintImageOnCanvas(entry.canvas, entry.image, coordinates as Coordinates, grid)
     }
 
     private syncImageCoordinates(featureId: string, coordinates: GeoJSON.Position[]): void {
@@ -1196,10 +1199,16 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private onMouseUp = () => {
+        const featureId = this.transformState.selectedFeatureId
+        const wasTransforming = TRANSFORMING_STATES.has(this._state)
         this._startPx = null
         this._startCornersPx = undefined
         this._dragCornerIdx = undefined
-        if (TRANSFORMING_STATES.has(this._state)) this.setState('')
+        if (wasTransforming) this.setState('')
+        if (wasTransforming && featureId) {
+            const image = this.transformState.managedImages.get(featureId)
+            if (image) this.syncImageCoordinates(featureId, image.coordinates)
+        }
     }
 
     private onClick = (e: MapMouseEvent) => {

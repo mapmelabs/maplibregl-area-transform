@@ -156,6 +156,7 @@ export function paintImageOnCanvas(
         naturalHeight?: number
     },
     coordinates: LngLatCoord[],
+    grid = 12,
 ): [LngLatCoord, LngLatCoord, LngLatCoord, LngLatCoord] {
     const bounds = imageCanvasBounds(coordinates)
     const lngSpan = Math.max(bounds[1][0] - bounds[0][0], 1e-12)
@@ -168,7 +169,7 @@ export function paintImageOnCanvas(
             ] as PxPoint,
     )
     const {width, height} = imageSizeGet(image)
-    drawImageQuad(canvas.getContext('2d')!, image, width, height, destination)
+    drawImageQuad(canvas.getContext('2d')!, image, width, height, destination, grid)
     return bounds
 }
 
@@ -178,8 +179,8 @@ export function drawImageQuad(
     imageWidth: number,
     imageHeight: number,
     destination: PxPoint[],
+    grid = 12,
 ): void {
-    const grid = 12
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     for (let x = 0; x < grid; x++) {
         for (let y = 0; y < grid; y++) {
