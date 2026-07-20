@@ -1,7 +1,7 @@
-import { defineConfig } from 'rolldown';
-import { dts } from 'rolldown-plugin-dts';
+import {defineConfig} from 'rolldown'
+import {dts} from 'rolldown-plugin-dts'
 
-const name = 'maplibregl-area-transform';
+const name = 'maplibregl-area-transform'
 
 export default defineConfig([
     {
@@ -24,11 +24,11 @@ export default defineConfig([
         ],
     },
     {
-        input: { [name]: 'src/index.ts' },
-        plugins: [dts({ emitDtsOnly: true })],
+        input: {[name]: 'src/index.ts'},
+        plugins: [dts({emitDtsOnly: true})],
         output: {
             dir: 'dist',
             format: 'es',
         },
     },
-]);
+])
