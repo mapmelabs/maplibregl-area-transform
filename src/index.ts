@@ -135,7 +135,8 @@ export type MaplibreAreaTransformEventMap = {
     selected: [featureId: string | null]
 }
 
-type MaplibreAreaTransformState = 'rotating' | 'scaling' | 'resizing' | 'adding-polygon' | 'moving' | 'deleting' | ''
+type MaplibreAreaTransformState =
+    'rotating' | 'scaling' | 'resizing' | 'corner-moving' | 'adding-polygon' | 'moving' | 'deleting' | ''
 
 const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>([
     'moving',
@@ -552,7 +553,7 @@ export class MaplibreAreaTransform implements IControl {
             opacity: options.opacity ?? 0.9,
         }
         try {
-            this.addImageResources(managedImage)
+            await this.addImageResources(managedImage)
             this.transformState.managedImages.set(imageId, managedImage)
             await this.addFeatureState(imageId, options.coordinates, map)
             this.setState('')
@@ -578,11 +579,10 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private syncImageCoordinates(featureId: string, coordinates: GeoJSON.Position[]): void {
-        const source = this._map?.getSource<CanvasSource>(`${IMAGE_SOURCE_PREFIX}${featureId}`)
+        const {sourceId} = this.getImageResourceIds(featureId)
+        const source = this._map?.getSource<CanvasSource>(sourceId)
         if (!source || !this._imageCanvases.has(featureId)) {
-            this._map
-                ?.getSource<ImageSource>(`${IMAGE_SOURCE_PREFIX}${featureId}`)
-                ?.setCoordinates(coordinates as Coordinates)
+            this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(coordinates as Coordinates)
             return
         }
         this.paintImageCanvas(featureId, coordinates)
@@ -679,7 +679,6 @@ export class MaplibreAreaTransform implements IControl {
         await this.renderFeatures()
         this.removeImageResources(featureId)
         this.transformState.managedImages.delete(featureId)
-        this._imageCanvases.delete(featureId)
         this._eventEmitter.emit('delete', featureId)
     }
 
@@ -699,14 +698,12 @@ export class MaplibreAreaTransform implements IControl {
 
     /** Whether the selected feature's corners still form a rectangle. */
     public async isSelectedFeatureRectangle(): Promise<boolean> {
-        if (!this._selectedFeatureId) return false
-        const data = (await this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)?.getData()) as
-            GeoJSON.FeatureCollection | undefined
-        if (!data) return false
-        const corners = data.features.filter(
+        const featureId = this.transformState.selectedFeatureId
+        if (!featureId) return false
+        const corners = this.transformState.features.features.filter(
             (f): f is GeoJSON.Feature<GeoJSON.Point> =>
                 f.geometry.type === 'Point' &&
-                f.properties?.['featureId'] === this._selectedFeatureId &&
+                f.properties?.['featureId'] === featureId &&
                 f.properties?.['type'] === 'scale-handle',
         )
         if (corners.length !== 4) return false
@@ -715,13 +712,14 @@ export class MaplibreAreaTransform implements IControl {
 
     /** Reset selected image corners to a fresh centered placement for `imageUrl`. */
     public async resetSelectedFeaturePlacement(imageUrl: string): Promise<void> {
-        if (!this._selectedFeatureId) return
+        const featureId = this.transformState.selectedFeatureId
+        if (!featureId) return
         const img = new Image()
         img.src = imageUrl
         await img.decode()
         const coordinates = this.createCoordinatesForLoadedImage(img)
-        this.syncImageCoordinates(this._selectedFeatureId, coordinates)
-        await this.updateCoordinates(this._selectedFeatureId, coordinates)
+        this.syncImageCoordinates(featureId, coordinates)
+        await this.updateCoordinates(featureId, coordinates)
     }
 
     /**
@@ -848,7 +846,7 @@ export class MaplibreAreaTransform implements IControl {
         if (isObsolete()) return
         for (const image of this.transformState.managedImages.values()) {
             if (isObsolete()) return
-            this.addImageResources(image)
+            await this.addImageResources(image)
         }
     }
 
@@ -892,20 +890,30 @@ export class MaplibreAreaTransform implements IControl {
         this.assertAttachedTo(map)
     }
 
-    private addImageResources(image: ManagedImage): void {
+    private async addImageResources(image: ManagedImage): Promise<void> {
         const map = this._map
         if (!map) return
         const {sourceId, layerId} = this.getImageResourceIds(image.id)
         if (!map.getSource(sourceId)) {
+            let entry = this._imageCanvases.get(image.id)
+            if (!entry) {
+                const loaded = await map.loadImage(image.imageUrl)
+                if (this._map !== map) return
+                const img = loaded.data
+                const imageWidth = 'naturalWidth' in img ? img.naturalWidth : img.width
+                const imageHeight = 'naturalHeight' in img ? img.naturalHeight : img.height
+                const canvas = document.createElement('canvas')
+                canvas.width = imageWidth
+                canvas.height = imageHeight
+                entry = {image: img, canvas}
+                this._imageCanvases.set(image.id, entry)
+            }
+            this.paintImageCanvas(image.id, image.coordinates)
             map.addSource(sourceId, {
-                type: 'image',
-                url: image.imageUrl,
-                coordinates: image.coordinates as [
-                    [number, number],
-                    [number, number],
-                    [number, number],
-                    [number, number],
-                ],
+                type: 'canvas',
+                canvas: entry.canvas,
+                coordinates: imageCanvasBounds(image.coordinates as Coordinates),
+                animate: false,
             })
         }
         this._addedSourceIds.add(sourceId)
@@ -934,6 +942,7 @@ export class MaplibreAreaTransform implements IControl {
         const {sourceId, layerId} = this.getImageResourceIds(imageId)
         this.removeLayer(layerId)
         this.removeSource(sourceId)
+        this._imageCanvases.delete(imageId)
     }
 
     private async renderFeatures(): Promise<void> {
@@ -1182,8 +1191,7 @@ export class MaplibreAreaTransform implements IControl {
         }
         const newCoordinates = this.unprojectAll(newCornersPx)
 
-        const {sourceId} = this.getImageResourceIds(this.transformState.selectedFeatureId)
-        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(newCoordinates as Coordinates)
+        this.syncImageCoordinates(this.transformState.selectedFeatureId, newCoordinates)
         this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates)
     }
 
