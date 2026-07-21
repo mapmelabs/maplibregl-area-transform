@@ -810,3 +810,102 @@ describe('MaplibreAreaTransform quadrilateralMode', () => {
         }
     })
 })
+
+describe('MaplibreAreaTransform resetSelectedFeaturePlacement', () => {
+    let ctx: SetupResponse
+
+    beforeEach(async () => {
+        ctx = await setup()
+    })
+    afterEach(() => {
+        ctx.map.remove()
+        ctx.container.remove()
+    })
+
+    async function withDelayedDecode(run: (release: () => void) => Promise<void>) {
+        const original = HTMLImageElement.prototype.decode
+        let release!: () => void
+        const gate = new Promise<void>(resolve => {
+            release = resolve
+        })
+        const spy = vi.spyOn(HTMLImageElement.prototype, 'decode').mockImplementation(async function (
+            this: HTMLImageElement,
+        ) {
+            await gate
+            return original.call(this)
+        })
+        try {
+            await run(release)
+        } finally {
+            spy.mockRestore()
+        }
+    }
+
+    it('does not recreate geometry if the image is deleted while decoding', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+        const imageId = await control.addImage({imageUrl: rotateUrl, coordinates})
+
+        await withDelayedDecode(async release => {
+            const resetPromise = control.resetSelectedFeaturePlacement(rotateUrl)
+            await control.deleteFeature(imageId)
+            release()
+            await resetPromise
+
+            const data = (await (
+                map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+            ).getData()) as GeoJSON.FeatureCollection
+            expect(data.features.some(f => f.properties?.['featureId'] === imageId)).toBe(false)
+            expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeUndefined()
+        })
+    })
+
+    it('does not update the previous image if selection changes while decoding', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const firstCoords = control.createCoordinatesForLoadedImage(img)
+        // Keep the two images well apart so clicks hit distinct features.
+        const secondCoords = firstCoords.map(c => [c[0]! + 40, c[1]!] as GeoJSON.Position)
+        const firstId = await control.addImage({imageUrl: rotateUrl, coordinates: firstCoords})
+        const secondId = await control.addImage({imageUrl: rotateUrl, coordinates: secondCoords})
+        const selected: (string | null)[] = []
+        control.on('selected', id => selected.push(id))
+
+        const firstCenter = new maplibregl.LngLat(
+            firstCoords.reduce((s, c) => s + c[0]!, 0) / firstCoords.length,
+            firstCoords.reduce((s, c) => s + c[1]!, 0) / firstCoords.length,
+        )
+        const secondCenter = new maplibregl.LngLat(
+            secondCoords.reduce((s, c) => s + c[0]!, 0) / secondCoords.length,
+            secondCoords.reduce((s, c) => s + c[1]!, 0) / secondCoords.length,
+        )
+        clickAt(map, firstCenter)
+        await waitUntil(() => selected.at(-1) === firstId)
+
+        await withDelayedDecode(async release => {
+            const resetPromise = control.resetSelectedFeaturePlacement(rotateUrl)
+            clickAt(map, secondCenter)
+            await waitUntil(() => selected.at(-1) === secondId)
+            release()
+            await resetPromise
+
+            expect(selected.at(-1)).toBe(secondId)
+            const data = (await (
+                map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+            ).getData()) as GeoJSON.FeatureCollection
+            const firstPolygon = data.features.find(
+                f => f.geometry.type === 'Polygon' && f.properties?.['featureId'] === firstId,
+            ) as GeoJSON.Feature<GeoJSON.Polygon>
+            expect(firstPolygon.geometry.coordinates[0]!.slice(0, -1)).toEqual(firstCoords)
+        })
+    })
+
+    it('rejects reset when the selected feature is not an image', async () => {
+        const {control} = ctx
+        await control.addRectangle()
+        await expect(control.resetSelectedFeaturePlacement(rotateUrl)).rejects.toThrow(
+            'The selected feature is not an image',
+        )
+    })
+})

@@ -710,11 +710,24 @@ export class MaplibreAreaTransform implements IControl {
 
     /** Reset selected image corners to a fresh centered placement for `imageUrl`. */
     public async resetSelectedFeaturePlacement(imageUrl: string): Promise<void> {
+        const map = this._map
         const featureId = this.transformState.selectedFeatureId
-        if (!featureId) return
+        if (!map || !featureId) return
+        const managedImage = this.transformState.managedImages.get(featureId)
+        if (!managedImage) {
+            throw new Error('The selected feature is not an image')
+        }
         const img = new Image()
         img.src = imageUrl
         await img.decode()
+        // State may have changed while decoding.
+        if (
+            this._map !== map ||
+            this.transformState.selectedFeatureId !== featureId ||
+            this.transformState.managedImages.get(featureId) !== managedImage
+        )
+            return
+
         const coordinates = this.createCoordinatesForLoadedImage(img)
         this.syncImageCoordinates(featureId, coordinates)
         await this.updateCoordinates(featureId, coordinates)
