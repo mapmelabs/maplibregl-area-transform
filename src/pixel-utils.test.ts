@@ -183,6 +183,24 @@ describe('pxMoveCorner', () => {
             [0, 10],
         ])
     })
+
+    it('keeps a skewed quadrilateral convex', () => {
+        const corners: PxPoint[] = [
+            [0, 0],
+            [10, -10],
+            [0, 10],
+            [-10, 15],
+        ]
+        const moved = pxMoveCorner(corners, 1, [-30, -5])
+        const cross = (a: PxPoint, b: PxPoint, c: PxPoint) =>
+            (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        for (let i = 0; i < 4; i++) {
+            const a = moved[i]!
+            const b = moved[(i + 1) % 4]!
+            const c = moved[(i + 2) % 4]!
+            expect(cross(a, b, c)).toBeGreaterThan(0)
+        }
+    })
 })
 
 describe('pxIsRectangle', () => {
