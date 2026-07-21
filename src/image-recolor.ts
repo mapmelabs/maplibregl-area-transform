@@ -120,6 +120,8 @@ function drawTriangle(
 
 type LngLatCoord = [number, number]
 
+const MAX_MERCATOR_LAT = 85.051129
+
 const imageSizeGet = (
     image: CanvasImageSource & {
         width?: number
@@ -132,9 +134,21 @@ const imageSizeGet = (
     height: 'naturalHeight' in image && image.naturalHeight ? image.naturalHeight : image.height!,
 })
 
+function mercatorY(lat: number): number {
+    const clamped = Math.max(-MAX_MERCATOR_LAT, Math.min(MAX_MERCATOR_LAT, lat))
+    const radians = (clamped * Math.PI) / 180
+    return (1 - Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI) / 2
+}
+
+function unwrapCoordinates(coordinates: LngLatCoord[]): LngLatCoord[] {
+    const anchor = coordinates[0]?.[0] ?? 0
+    return coordinates.map(([lng, lat]) => [lng + 360 * Math.round((anchor - lng) / 360), lat])
+}
+
 export function imageCanvasBounds(coordinates: LngLatCoord[]): [LngLatCoord, LngLatCoord, LngLatCoord, LngLatCoord] {
-    const lngs = coordinates.map(([lng]) => lng)
-    const lats = coordinates.map(([, lat]) => lat)
+    const unwrapped = unwrapCoordinates(coordinates)
+    const lngs = unwrapped.map(([lng]) => lng)
+    const lats = unwrapped.map(([, lat]) => lat)
     const minLng = Math.min(...lngs)
     const maxLng = Math.max(...lngs)
     const minLat = Math.min(...lats)
@@ -158,16 +172,18 @@ export function paintImageOnCanvas(
     coordinates: LngLatCoord[],
     grid = 12,
 ): [LngLatCoord, LngLatCoord, LngLatCoord, LngLatCoord] {
-    const bounds = imageCanvasBounds(coordinates)
-    const lngSpan = Math.max(bounds[1][0] - bounds[0][0], 1e-12)
-    const latSpan = Math.max(bounds[0][1] - bounds[3][1], 1e-12)
-    const destination = coordinates.map(
-        ([lng, lat]) =>
-            [
-                ((lng - bounds[0][0]) / lngSpan) * canvas.width,
-                ((bounds[0][1] - lat) / latSpan) * canvas.height,
-            ] as PxPoint,
-    )
+    const unwrapped = unwrapCoordinates(coordinates)
+    const bounds = imageCanvasBounds(unwrapped)
+    const minLng = bounds[0][0]
+    const maxLng = bounds[1][0]
+    const topY = mercatorY(bounds[0][1])
+    const bottomY = mercatorY(bounds[3][1])
+    const lngSpan = Math.max(maxLng - minLng, 1e-12)
+    const mercatorSpan = Math.max(bottomY - topY, 1e-12)
+    const destination = unwrapped.map(([lng, lat]): PxPoint => [
+        ((lng - minLng) / lngSpan) * canvas.width,
+        ((mercatorY(lat) - topY) / mercatorSpan) * canvas.height,
+    ])
     const {width, height} = imageSizeGet(image)
     drawImageQuad(canvas.getContext('2d')!, image, width, height, destination, grid)
     return bounds
