@@ -505,12 +505,7 @@ export class MaplibreAreaTransform implements IControl {
      * @param options - The options for adding the image.
      * @returns The ID of the added image.
      */
-    public addImage(options: AddImageOptions): Promise<string>
-    /** @deprecated Prefer {@link AddImageOptions}. Kept for callers using `(url, coordinates)`. */
-    public addImage(imageUrl: string, coordinates: GeoJSON.Position[]): Promise<string>
-    public addImage(optionsOrUrl: AddImageOptions | string, coordinates?: GeoJSON.Position[]): Promise<string> {
-        const options: AddImageOptions =
-            typeof optionsOrUrl === 'string' ? {imageUrl: optionsOrUrl, coordinates: coordinates!} : optionsOrUrl
+    public addImage(options: AddImageOptions): Promise<string> {
         if (options.coordinates.length !== 4)
             return Promise.reject('Image coordinates must contain exactly four points')
         const key = this.getImageRequestKey(options.imageUrl, options.coordinates)
@@ -842,14 +837,19 @@ export class MaplibreAreaTransform implements IControl {
     private async restoreAfterStyleLoad(map: Map | null, generation: number): Promise<void> {
         if (!map || this._map !== map) return
         const isObsolete = () => this._map !== map || generation !== this._styleGeneration
-        await Promise.all(this.getRetainedColors().map(color => this.addColoredImages(color)))
+        const images = [...this.transformState.managedImages.values()]
+        // Load colors and image canvases concurrently; MapLibre source/layer attach stays ordered.
+        await Promise.all([
+            ...this.getRetainedColors().map(color => this.addColoredImages(color)),
+            ...images.map(image => this.prepareImageCanvas(image, map)),
+        ])
         if (isObsolete()) return
         this.initGeojsonSourceAndLayers()
         await this.renderFeatures()
         if (isObsolete()) return
-        for (const image of this.transformState.managedImages.values()) {
+        for (const image of images) {
             if (isObsolete()) return
-            await this.addImageResources(image)
+            this.attachImageResources(image)
         }
     }
 
@@ -896,21 +896,31 @@ export class MaplibreAreaTransform implements IControl {
     private async addImageResources(image: ManagedImage): Promise<void> {
         const map = this._map
         if (!map) return
+        await this.prepareImageCanvas(image, map)
+        if (this._map !== map) return
+        this.attachImageResources(image)
+    }
+
+    private async prepareImageCanvas(image: ManagedImage, map: Map): Promise<void> {
+        if (this._imageCanvases.has(image.id)) return
+        const loaded = await map.loadImage(image.imageUrl)
+        if (this._map !== map) return
+        const img = loaded.data
+        const imageWidth = 'naturalWidth' in img ? img.naturalWidth : img.width
+        const imageHeight = 'naturalHeight' in img ? img.naturalHeight : img.height
+        const canvas = document.createElement('canvas')
+        canvas.width = imageWidth
+        canvas.height = imageHeight
+        this._imageCanvases.set(image.id, {image: img, canvas})
+    }
+
+    private attachImageResources(image: ManagedImage): void {
+        const map = this._map
+        if (!map) return
         const {sourceId, layerId} = this.getImageResourceIds(image.id)
+        const entry = this._imageCanvases.get(image.id)
+        if (!entry) return
         if (!map.getSource(sourceId)) {
-            let entry = this._imageCanvases.get(image.id)
-            if (!entry) {
-                const loaded = await map.loadImage(image.imageUrl)
-                if (this._map !== map) return
-                const img = loaded.data
-                const imageWidth = 'naturalWidth' in img ? img.naturalWidth : img.width
-                const imageHeight = 'naturalHeight' in img ? img.naturalHeight : img.height
-                const canvas = document.createElement('canvas')
-                canvas.width = imageWidth
-                canvas.height = imageHeight
-                entry = {image: img, canvas}
-                this._imageCanvases.set(image.id, entry)
-            }
             this.paintImageCanvas(image.id, image.coordinates)
             map.addSource(sourceId, {
                 type: 'canvas',
