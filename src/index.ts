@@ -257,6 +257,8 @@ export class MaplibreAreaTransform implements IControl {
     private _addedSourceIds: Set<string> = new Set<string>()
     private _imageQueue = new globalThis.Map<string, Promise<string>>()
     private _imageCanvases = new globalThis.Map<string, ImageCanvas>()
+    private _pendingImageSync: {featureId: string; coordinates: GeoJSON.Position[]} | null = null
+    private _imageSyncFrame: number | null = null
     private transformState = createTransformState()
     private _styleRestorePromise: Promise<void> = Promise.resolve()
     private _resolveStyleLoad: (() => void) | null = null
@@ -450,6 +452,9 @@ export class MaplibreAreaTransform implements IControl {
         this._coloredImagePromises.clear()
         this._imageQueue.clear()
         this._imageCanvases.clear()
+        if (this._imageSyncFrame !== null) cancelAnimationFrame(this._imageSyncFrame)
+        this._imageSyncFrame = null
+        this._pendingImageSync = null
         this.transformState = createTransformState()
         this._styleRestorePromise = Promise.resolve()
         this._map = null
@@ -590,6 +595,28 @@ export class MaplibreAreaTransform implements IControl {
         source.pause?.()
         this._map?.triggerRepaint()
     }
+
+    private scheduleImageSync(featureId: string, coordinates: GeoJSON.Position[]): void {
+        this._pendingImageSync = {featureId, coordinates}
+        if (this._imageSyncFrame !== null) return
+        this._imageSyncFrame = requestAnimationFrame(() => {
+            this._imageSyncFrame = null
+            const pending = this._pendingImageSync
+            this._pendingImageSync = null
+            if (pending) this.syncImageCoordinates(pending.featureId, pending.coordinates)
+        })
+    }
+
+    private flushImageSync(): void {
+        if (this._imageSyncFrame !== null) {
+            cancelAnimationFrame(this._imageSyncFrame)
+            this._imageSyncFrame = null
+        }
+        const pending = this._pendingImageSync
+        this._pendingImageSync = null
+        if (pending) this.syncImageCoordinates(pending.featureId, pending.coordinates)
+    }
+
     public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
         const image = this.transformState.managedImages.get(imageId)
         if (image) image.opacity = opacity
@@ -1218,14 +1245,15 @@ export class MaplibreAreaTransform implements IControl {
             }
         }
         const newCoordinates = this.unprojectAll(newCornersPx)
-
-        this.syncImageCoordinates(this.transformState.selectedFeatureId, newCoordinates)
-        this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates)
+        const featureId = this.transformState.selectedFeatureId
+        this.scheduleImageSync(featureId, newCoordinates)
+        this.updateCoordinates(featureId, newCoordinates)
     }
 
     private onMouseUp = () => {
         const featureId = this.transformState.selectedFeatureId
         const wasTransforming = TRANSFORMING_STATES.has(this._state)
+        this.flushImageSync()
         this._startPx = null
         this._startCornersPx = undefined
         this._dragCornerIdx = undefined
