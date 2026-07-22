@@ -561,6 +561,39 @@ describe('MaplibreAreaTransform style replacement', () => {
         expect(data.features.some(f => f.properties?.['featureId'] === imageId)).toBe(true)
     })
 
+    it('waits for style readiness after a delayed loadImage before attaching sources', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+
+        const originalLoadImage = map.loadImage.bind(map)
+        let releaseLoad!: () => void
+        const loadGate = new Promise<void>(resolve => {
+            releaseLoad = resolve
+        })
+        const loadImageSpy = vi.spyOn(map, 'loadImage').mockImplementation(async url => {
+            const loaded = await originalLoadImage(url)
+            await loadGate
+            return loaded
+        })
+
+        try {
+            const imagePromise = control.addImage({imageUrl: rotateUrl, coordinates})
+            await waitUntil(() => loadImageSpy.mock.calls.length > 0)
+
+            const loaded = map.once('style.load')
+            map.setStyle({version: 8, sources: {}, layers: []}, {diff: false})
+            releaseLoad()
+            const [, imageId] = await Promise.all([loaded, imagePromise])
+
+            expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
+            expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
+            expect(rasterLayers(map)).toHaveLength(1)
+        } finally {
+            loadImageSpy.mockRestore()
+        }
+    })
+
     it('keeps queued image work behind rapid consecutive style replacements', async () => {
         const {map, control} = ctx
         const img = await loadImage(rotateUrl)

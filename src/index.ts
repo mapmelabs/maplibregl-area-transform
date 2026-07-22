@@ -907,10 +907,12 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private async addImageResources(image: ManagedImage): Promise<void> {
-        const map = this._map
-        if (!map) return
+        const map = this.getAttachedMap()
         await this.prepareImageCanvas(image, map)
-        if (this._map !== map) return
+        this.assertAttachedTo(map)
+        // Style may have changed while the image was loading.
+        await this.waitForStyleReady()
+        this.assertAttachedTo(map)
         this.attachImageResources(image)
     }
 
