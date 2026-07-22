@@ -847,6 +847,7 @@ export class MaplibreAreaTransform implements IControl {
         const resolveStyleLoad = this._resolveStyleLoad
         this.clearPendingStyleLoad()
         const restoration = this.restoreAfterStyleLoad(map, generation)
+        void restoration.catch(() => {})
         this._styleRestorePromise = restoration
         resolveStyleLoad?.()
     }
@@ -879,7 +880,7 @@ export class MaplibreAreaTransform implements IControl {
         const isObsolete = () => this._map !== map || generation !== this._styleGeneration
         const images = [...this.transformState.managedImages.values()]
         // Load colors and image canvases concurrently; MapLibre source/layer attach stays ordered.
-        await Promise.all([
+        await Promise.allSettled([
             ...this.getRetainedColors().map(color => this.addColoredImages(color)),
             ...images.map(image => this.prepareImageCanvas(image, map)),
         ])
