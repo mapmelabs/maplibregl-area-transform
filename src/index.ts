@@ -256,6 +256,7 @@ export class MaplibreAreaTransform implements IControl {
     private _addedLayerIds: Set<string> = new Set<string>()
     private _addedSourceIds: Set<string> = new Set<string>()
     private _imageQueue = new globalThis.Map<string, Promise<string>>()
+    private _loadedImagePromises = new globalThis.Map<string, Promise<HTMLImageElement | ImageBitmap>>()
     private _imageCanvases = new globalThis.Map<string, ImageCanvas>()
     private _pendingImageSync: {featureId: string; coordinates: GeoJSON.Position[]} | null = null
     private _imageSyncFrame: number | null = null
@@ -451,6 +452,7 @@ export class MaplibreAreaTransform implements IControl {
         this._coloredImageCache.clear()
         this._coloredImagePromises.clear()
         this._imageQueue.clear()
+        this._loadedImagePromises.clear()
         this._imageCanvases.clear()
         if (this._imageSyncFrame !== null) cancelAnimationFrame(this._imageSyncFrame)
         this._imageSyncFrame = null
@@ -513,8 +515,9 @@ export class MaplibreAreaTransform implements IControl {
     public addImage(options: AddImageOptions): Promise<string> {
         if (options.coordinates.length !== 4)
             return Promise.reject('Image coordinates must contain exactly four points')
+        const loadedImage = this.loadImageOnce(options.imageUrl)
         const key = this.getImageRequestKey(options.imageUrl, options.coordinates)
-        return this._imageQueue.get(key) ?? this.addImageToQueue(key, options)
+        return this._imageQueue.get(key) ?? this.addImageToQueue(key, options, loadedImage)
     }
 
     /**
@@ -524,15 +527,36 @@ export class MaplibreAreaTransform implements IControl {
      * @param options The options for adding the image.
      * @returns The ID of the added image.
      */
-    private addImageToQueue(key: string, options: AddImageOptions): Promise<string> {
+    private addImageToQueue(
+        key: string,
+        options: AddImageOptions,
+        loadedImage: Promise<HTMLImageElement | ImageBitmap>,
+    ): Promise<string> {
         const previous = [...this._imageQueue.values()].pop() ?? Promise.resolve()
         const promise = previous
             .catch(() => {
                 /* ignored on purpose */
             })
-            .then(() => this.addImageInternal(options))
+            .then(() => this.addImageInternal(options, loadedImage))
             .finally(() => this._imageQueue.delete(key))
         this._imageQueue.set(key, promise)
+        return promise
+    }
+
+    private loadImageOnce(imageUrl: string): Promise<HTMLImageElement | ImageBitmap> {
+        const existing = this._loadedImagePromises.get(imageUrl)
+        if (existing) return existing
+        const map = this.getAttachedMap()
+        const promise = map
+            .loadImage(imageUrl)
+            .then(({data}) => data)
+            .catch(error => {
+                if (this._loadedImagePromises.get(imageUrl) === promise) {
+                    this._loadedImagePromises.delete(imageUrl)
+                }
+                throw error
+            })
+        this._loadedImagePromises.set(imageUrl, promise)
         return promise
     }
 
@@ -541,12 +565,17 @@ export class MaplibreAreaTransform implements IControl {
         return JSON.stringify([imageUrl, coordinates])
     }
 
-    private async addImageInternal(options: AddImageOptions): Promise<string> {
+    private async addImageInternal(
+        options: AddImageOptions,
+        loadedImage: Promise<HTMLImageElement | ImageBitmap>,
+    ): Promise<string> {
         await this.waitForStyleReady()
         const map = this.getAttachedMap()
         if (this._state === 'adding-polygon') {
             return Promise.reject('Cannot add image while adding polygon')
         }
+        const sourceImage = await loadedImage
+        this.assertAttachedTo(map)
         const imageId = `${ID_PREFIX}${this.transformState.nextFeatureId++}`
         const managedImage = {
             id: imageId,
@@ -555,7 +584,7 @@ export class MaplibreAreaTransform implements IControl {
             opacity: options.opacity ?? 0.9,
         }
         try {
-            await this.addImageResources(managedImage)
+            await this.addImageResources(managedImage, sourceImage)
             this.transformState.managedImages.set(imageId, managedImage)
             await this.addFeatureState(imageId, options.coordinates, map)
             this.setState('')
@@ -934,9 +963,9 @@ export class MaplibreAreaTransform implements IControl {
         this.assertAttachedTo(map)
     }
 
-    private async addImageResources(image: ManagedImage): Promise<void> {
+    private async addImageResources(image: ManagedImage, loadedImage?: HTMLImageElement | ImageBitmap): Promise<void> {
         const map = this.getAttachedMap()
-        await this.prepareImageCanvas(image, map)
+        await this.prepareImageCanvas(image, map, loadedImage)
         this.assertAttachedTo(map)
         // Style may have changed while the image was loading.
         await this.waitForStyleReady()
@@ -944,17 +973,21 @@ export class MaplibreAreaTransform implements IControl {
         this.attachImageResources(image)
     }
 
-    private async prepareImageCanvas(image: ManagedImage, map: Map): Promise<void> {
+    private async prepareImageCanvas(
+        image: ManagedImage,
+        map: Map,
+        loadedImage?: HTMLImageElement | ImageBitmap,
+    ): Promise<void> {
         if (this._imageCanvases.has(image.id)) return
-        const loaded = await map.loadImage(image.imageUrl)
+        const img = loadedImage ?? (await map.loadImage(image.imageUrl)).data
         if (this._map !== map) return
-        const img = loaded.data
         const imageWidth = 'naturalWidth' in img ? img.naturalWidth : img.width
         const imageHeight = 'naturalHeight' in img ? img.naturalHeight : img.height
         const canvas = document.createElement('canvas')
         canvas.width = imageWidth
         canvas.height = imageHeight
         this._imageCanvases.set(image.id, {image: img, canvas})
+        this._loadedImagePromises.delete(image.imageUrl)
     }
 
     private attachImageResources(image: ManagedImage): void {

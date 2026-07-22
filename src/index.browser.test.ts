@@ -324,6 +324,30 @@ describe('MaplibreAreaTransform image URL queue', () => {
         expect(selected).toEqual([rotateId, null, scaleId])
     })
 
+    it('starts independent URL downloads before the commit queue runs', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+        const originalLoadImage = map.loadImage.bind(map)
+        const started: string[] = []
+        const loadImageSpy = vi.spyOn(map, 'loadImage').mockImplementation(async url => {
+            started.push(String(url))
+            return originalLoadImage(url)
+        })
+
+        try {
+            const first = control.addImage({imageUrl: rotateUrl, coordinates})
+            const second = control.addImage({imageUrl: scaleUrl, coordinates: shifted(coordinates)})
+            await waitUntil(() => started.includes(String(rotateUrl)) && started.includes(String(scaleUrl)))
+            expect(started.indexOf(String(rotateUrl))).toBeLessThan(2)
+            expect(started.indexOf(String(scaleUrl))).toBeLessThan(2)
+            await Promise.all([first, second])
+            expect(rasterLayers(map).length).toBe(2)
+        } finally {
+            loadImageSpy.mockRestore()
+        }
+    })
+
     it('releases the key after a failed request, so it can be retried', async () => {
         const {control} = ctx
         const img = await loadImage(rotateUrl)
