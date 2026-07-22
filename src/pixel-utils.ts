@@ -142,6 +142,93 @@ export function pxMovePoints(cornersPx: PxPoint[], startPx: PxPoint, currentPx: 
     return cornersPx!.map(p => [p[0] + dx, p[1] + dy] as PxPoint)
 }
 
+/** Move one corner while keeping the quadrilateral convex and non-degenerate. */
+export function pxMoveCorner(
+    cornersPx: PxPoint[],
+    cornerIndex: number,
+    currentPx: PxPoint,
+    minimumDistance = 2,
+): PxPoint[] {
+    const original = cornersPx[cornerIndex]!
+    const nextIndex = (cornerIndex + 1) % 4
+    const oppositeIndex = (cornerIndex + 2) % 4
+    const previousIndex = (cornerIndex + 3) % 4
+    let nextPoint = currentPx
+
+    for (const [edgeStart, edgeEnd] of [
+        [cornersPx[nextIndex]!, cornersPx[oppositeIndex]!],
+        [cornersPx[oppositeIndex]!, cornersPx[previousIndex]!],
+        [cornersPx[previousIndex]!, cornersPx[nextIndex]!],
+    ]) {
+        nextPoint = pxKeepPointOnSameSide(edgeStart, edgeEnd, original, nextPoint, minimumDistance)
+    }
+
+    const moved = [...cornersPx]
+    moved[cornerIndex] = nextPoint
+    return moved
+}
+
+function pxCrossProduct(lineStart: PxPoint, lineEnd: PxPoint, point: PxPoint): number {
+    return (
+        (lineEnd[0] - lineStart[0]) * (point[1] - lineStart[1]) -
+        (lineEnd[1] - lineStart[1]) * (point[0] - lineStart[0])
+    )
+}
+
+function pxKeepPointOnSameSide(
+    lineStart: PxPoint,
+    lineEnd: PxPoint,
+    referencePoint: PxPoint,
+    point: PxPoint,
+    minimumDistance: number,
+): PxPoint {
+    const referenceSide = pxCrossProduct(lineStart, lineEnd, referencePoint)
+    if (referenceSide === 0) return point
+
+    const lineLength = pxDistance(lineStart, lineEnd)
+    if (lineLength === 0) return referencePoint
+
+    const pointSide = pxCrossProduct(lineStart, lineEnd, point)
+    const signedMinimumDistance = Math.sign(referenceSide) * minimumDistance
+    if (referenceSide * pointSide > 0 && Math.abs(pointSide) / lineLength >= minimumDistance) return point
+
+    const lineX = (lineEnd[0] - lineStart[0]) / lineLength
+    const lineY = (lineEnd[1] - lineStart[1]) / lineLength
+    const projection = Math.max(
+        0,
+        Math.min(
+            1,
+            ((point[0] - lineStart[0]) * (lineEnd[0] - lineStart[0]) +
+                (point[1] - lineStart[1]) * (lineEnd[1] - lineStart[1])) /
+                lineLength ** 2,
+        ),
+    )
+    return [
+        lineStart[0] + projection * (lineEnd[0] - lineStart[0]) - lineY * signedMinimumDistance,
+        lineStart[1] + projection * (lineEnd[1] - lineStart[1]) + lineX * signedMinimumDistance,
+    ]
+}
+
+/** Whether four ordered corners form a rectangle, allowing minor projection error. */
+export function pxIsRectangle(cornersPx: PxPoint[], tolerance = 0.02): boolean {
+    if (cornersPx.length !== 4) return false
+    for (let i = 0; i < 4; i++) {
+        const corner = cornersPx[i]!
+        const previous = cornersPx[(i + 3) % 4]!
+        const next = cornersPx[(i + 1) % 4]!
+        const previousEdge: PxPoint = [previous[0] - corner[0], previous[1] - corner[1]]
+        const nextEdge: PxPoint = [next[0] - corner[0], next[1] - corner[1]]
+        const lengths = Math.hypot(...previousEdge) * Math.hypot(...nextEdge)
+        if (
+            lengths === 0 ||
+            Math.abs((previousEdge[0] * nextEdge[0] + previousEdge[1] * nextEdge[1]) / lengths) > tolerance
+        ) {
+            return false
+        }
+    }
+    return true
+}
+
 /**
  * Sort points in clockwise order starting from the top-left corner.
  * @param corners The corners of the rectangle.

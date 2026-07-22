@@ -439,6 +439,105 @@ describe('MaplibreAreaTransform image opacity', () => {
     })
 })
 
+describe('MaplibreAreaTransform quadrilateral mode', () => {
+    let ctx: SetupResponse
+
+    beforeEach(async () => {
+        ctx = await setup()
+    })
+    afterEach(() => {
+        ctx.map.remove()
+        ctx.container.remove()
+    })
+
+    it('moves one corner independently after being enabled at runtime', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const imageId = await control.addImage({
+            imageUrl: rotateUrl,
+            coordinates: control.createCoordinatesForLoadedImage(img),
+        })
+        const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+        const data = (await source.getData()) as GeoJSON.FeatureCollection
+        const corners = data.features
+            .filter(
+                f =>
+                    f.geometry.type === 'Point' &&
+                    f.properties?.['featureId'] === imageId &&
+                    f.properties?.['type'] === 'scale-handle',
+            )
+            .sort((a, b) => (a.properties?.['id'] < b.properties?.['id'] ? -1 : 1))
+            .map(f => (f.geometry as GeoJSON.Point).coordinates)
+        const originalPx = corners.map(c => projectPx(map, c))
+        const startPx = originalPx[0]!
+        const targetPx: PxPoint = [startPx[0] - 20, startPx[1] - 10]
+        let changed: GeoJSON.Position[] | undefined
+        control.on('change', event => (changed = event.coordinates))
+
+        expect(await control.isSelectedFeatureRectangle()).toBe(true)
+        control.setQuadrilateralMode(true)
+        await waitUntil(() =>
+            map
+                .queryRenderedFeatures(startPx)
+                .some(f => f.properties?.['type'] === 'scale-handle' && f.properties?.['featureId'] === imageId),
+        )
+        fireMouse(map, 'mousedown', startPx)
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', targetPx)
+            return changed !== undefined
+        })
+        fireMouse(map, 'mouseup', targetPx)
+
+        const changedPx = changed!.map(c => projectPx(map, c))
+        expect(changedPx[0]![0]).toBeCloseTo(targetPx[0], 1)
+        expect(changedPx[0]![1]).toBeCloseTo(targetPx[1], 1)
+        changedPx.slice(1).forEach((corner, index) => {
+            expect(corner[0]).toBeCloseTo(originalPx[index + 1]![0], 1)
+            expect(corner[1]).toBeCloseTo(originalPx[index + 1]![1], 1)
+        })
+        expect(await control.isSelectedFeatureRectangle()).toBe(false)
+
+        const beforeToggle = changed
+        control.setQuadrilateralMode(false)
+        expect(changed).toBe(beforeToggle)
+        expect(await control.isSelectedFeatureRectangle()).toBe(false)
+    })
+
+    it('resets a warped native image source to its initial placement', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const initialCoordinates = control.createCoordinatesForLoadedImage(img)
+        const imageId = await control.addImage({imageUrl: rotateUrl, coordinates: initialCoordinates})
+        const source = map.getSource(IMAGE_SOURCE_PREFIX + imageId) as maplibregl.ImageSource
+        const setCoordinates = vi.spyOn(source, 'setCoordinates')
+        let changed = false
+        control.on('change', () => (changed = true))
+
+        control.setQuadrilateralMode(true)
+        const data = (await (
+            map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+        ).getData()) as GeoJSON.FeatureCollection
+        const firstCorner = data.features.find(
+            f =>
+                f.geometry.type === 'Point' &&
+                f.properties?.['featureId'] === imageId &&
+                f.properties?.['id'] === `scale-0-${imageId}`,
+        ) as GeoJSON.Feature<GeoJSON.Point>
+        const startPx = projectPx(map, firstCorner.geometry.coordinates)
+        fireMouse(map, 'mousedown', startPx)
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', [startPx[0] - 20, startPx[1] - 10])
+            return changed
+        })
+        fireMouse(map, 'mouseup', startPx)
+
+        await control.resetSelectedFeaturePlacement(rotateUrl)
+
+        expect(await control.isSelectedFeatureRectangle()).toBe(true)
+        expect(setCoordinates).toHaveBeenLastCalledWith(initialCoordinates)
+    })
+})
+
 describe('MaplibreAreaTransform icon preparation', () => {
     it('loads the base assets once across concurrent colors', async () => {
         const loadImage = vi.spyOn(maplibregl.Map.prototype, 'loadImage')
