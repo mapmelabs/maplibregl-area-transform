@@ -11,6 +11,8 @@ import {
     pxMidpoint,
     pxProjectOntoNormal,
     pxMovePoints,
+    pxMoveCorner,
+    pxIsRectangle,
     sortPoints,
     type PxPoint,
 } from './pixel-utils'
@@ -157,6 +159,42 @@ describe('pxMovePoints', () => {
             [5, -3],
             [15, 7],
         ])
+    })
+})
+
+describe('pxMoveCorner', () => {
+    it('moves only the selected corner', () => {
+        expect(pxMoveCorner(SQUARE, 0, [-5, -3])).toEqual([
+            [-5, -3],
+            [10, 0],
+            [10, 10],
+            [0, 10],
+        ])
+    })
+
+    it('prevents a corner from crossing the opposite edges', () => {
+        const moved = pxMoveCorner(SQUARE, 0, [20, 20])
+
+        expect(moved[0]).not.toEqual([20, 20])
+        expect(moved.slice(1)).toEqual(SQUARE.slice(1))
+    })
+})
+
+describe('pxIsRectangle', () => {
+    it('recognizes axis-aligned and rotated rectangles', () => {
+        expect(pxIsRectangle(SQUARE)).toBe(true)
+        expect(
+            pxIsRectangle([
+                [5, 0],
+                [10, 5],
+                [5, 10],
+                [0, 5],
+            ]),
+        ).toBe(true)
+    })
+
+    it('rejects an independently adjusted quadrilateral', () => {
+        expect(pxIsRectangle(pxMoveCorner(SQUARE, 0, [-5, -3]))).toBe(false)
     })
 })
 

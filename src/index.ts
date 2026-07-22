@@ -10,6 +10,8 @@ import {
     type PxPoint,
     pxResizePolygon,
     pxAngle,
+    pxMoveCorner,
+    pxIsRectangle,
 } from './pixel-utils'
 import {recolor} from './image-recolor'
 import rotateImageUrl from '../assets/rotate.png'
@@ -75,6 +77,11 @@ export type MaplibreAreaTransformOptions = {
      * @default 0.1
      */
     areaOpacity?: number
+    /**
+     * Allow each corner to be moved independently.
+     * @default false
+     */
+    quadrilateralMode?: boolean
 }
 
 export type AddImageOptions = {
@@ -127,9 +134,16 @@ export type MaplibreAreaTransformEventMap = {
     selected: [featureId: string | null]
 }
 
-type MaplibreAreaTransformState = 'rotating' | 'scaling' | 'resizing' | 'adding-polygon' | 'moving' | 'deleting' | ''
+type MaplibreAreaTransformState =
+    'rotating' | 'scaling' | 'resizing' | 'moving-corner' | 'adding-polygon' | 'moving' | 'deleting' | ''
 
-const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>(['moving', 'resizing', 'rotating', 'scaling'])
+const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>([
+    'moving',
+    'moving-corner',
+    'resizing',
+    'rotating',
+    'scaling',
+])
 
 type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[]
@@ -182,6 +196,7 @@ const defaultOptions: MaplibreAreaTransformOptions = {
     areaBackgroundColor: 'orange',
     areaOpacity: 0.1,
     borderWidth: 2,
+    quadrilateralMode: false,
 }
 
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle'
@@ -228,6 +243,7 @@ export class MaplibreAreaTransform implements IControl {
     private _polygonPoints: PxPoint[] = []
     private _startPx: PxPoint | null = null
     private _startCornersPx: PxPoint[] | undefined = undefined // corners at drag start
+    private _dragCornerIndex: number | undefined = undefined
     private _baseHandleImagesPromise: Promise<BaseHandleImages> | null = null
     private _coloredImageCache = new globalThis.Map<string, ImageData>()
     private _coloredImagePromises = new globalThis.Map<string, Promise<void>>()
@@ -422,6 +438,7 @@ export class MaplibreAreaTransform implements IControl {
         this._polygonPoints = []
         this._startPx = null
         this._startCornersPx = undefined
+        this._dragCornerIndex = undefined
         this._baseHandleImagesPromise = null
         this._coloredImageCache.clear()
         this._coloredImagePromises.clear()
@@ -640,6 +657,37 @@ export class MaplibreAreaTransform implements IControl {
     public async setAreaColor(color: string) {
         this.options.areaBackgroundColor = color
         await this.addColoredImages(color)
+    }
+
+    /**
+     * Enables or disables independent corner placement without changing the
+     * selected feature's current coordinates.
+     */
+    public setQuadrilateralMode(enabled: boolean): void {
+        this.options.quadrilateralMode = enabled
+    }
+
+    /** Whether the selected feature currently forms a rectangle on screen. */
+    public async isSelectedFeatureRectangle(): Promise<boolean> {
+        const featureId = this.transformState.selectedFeatureId
+        if (!featureId) return false
+        const corners = this.getFeatureCornerCoordinates(featureId)
+        return corners.length === 4 && pxIsRectangle(this.projectAll(corners))
+    }
+
+    /**
+     * Resets the selected image to its initial centered placement and aspect ratio.
+     */
+    public async resetSelectedFeaturePlacement(imageUrl: string): Promise<void> {
+        const featureId = this.transformState.selectedFeatureId
+        if (!featureId) return
+
+        const image = new Image()
+        image.src = imageUrl
+        await image.decode()
+        const coordinates = this.createCoordinatesForLoadedImage(image)
+        this.setImageCoordinates(featureId, coordinates)
+        await this.updateCoordinates(featureId, coordinates)
     }
 
     /**
@@ -1050,13 +1098,21 @@ export class MaplibreAreaTransform implements IControl {
         }
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates)
-        if (
-            closestFeature.properties?.['type'] === 'scale-handle' &&
-            this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)
-        ) {
-            this.setState('resizing')
-        } else {
-            this.setState('scaling')
+        if (closestFeature.properties?.['type'] === 'scale-handle') {
+            if (this.options.quadrilateralMode) {
+                this._dragCornerIndex = this._startCornersPx.reduce(
+                    (closestIndex, point, index, points) =>
+                        pxDistance(point, this._startPx!) < pxDistance(points[closestIndex]!, this._startPx!)
+                            ? index
+                            : closestIndex,
+                    0,
+                )
+                this.setState('moving-corner')
+            } else if (this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
+                this.setState('resizing')
+            } else {
+                this.setState('scaling')
+            }
         }
     }
 
@@ -1075,6 +1131,10 @@ export class MaplibreAreaTransform implements IControl {
             case 'resizing':
                 newCornersPx = pxResizePolygon(this._startCornersPx!, this._startPx, currentPx)
                 break
+            case 'moving-corner':
+                if (this._dragCornerIndex == null) return
+                newCornersPx = pxMoveCorner(this._startCornersPx!, this._dragCornerIndex, currentPx)
+                break
             default:
             case 'moving': {
                 newCornersPx = pxMovePoints(this._startCornersPx!, this._startPx, currentPx)
@@ -1083,14 +1143,14 @@ export class MaplibreAreaTransform implements IControl {
         }
         const newCoordinates = this.unprojectAll(newCornersPx)
 
-        const {sourceId} = this.getImageResourceIds(this.transformState.selectedFeatureId)
-        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(newCoordinates as Coordinates)
+        this.setImageCoordinates(this.transformState.selectedFeatureId, newCoordinates)
         this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates)
     }
 
     private onMouseUp = () => {
         this._startPx = null
         this._startCornersPx = undefined
+        this._dragCornerIndex = undefined
         if (TRANSFORMING_STATES.has(this._state)) this.setState('')
     }
 
@@ -1314,6 +1374,23 @@ export class MaplibreAreaTransform implements IControl {
         const coords = corners.map(f => f.geometry.coordinates)
         data.features.push(this.getRotateHandlePoint(coords, featureId, color))
         await this.renderFeatures()
+    }
+
+    private getFeatureCornerCoordinates(featureId: string): GeoJSON.Position[] {
+        return this.transformState.features.features
+            .filter(
+                feature =>
+                    feature.geometry.type === 'Point' &&
+                    feature.properties?.['featureId'] === featureId &&
+                    feature.properties?.['type'] === 'scale-handle',
+            )
+            .sort((a, b) => (a.properties?.['id'] < b.properties?.['id'] ? -1 : 1))
+            .map(feature => (feature.geometry as GeoJSON.Point).coordinates)
+    }
+
+    private setImageCoordinates(featureId: string, coordinates: GeoJSON.Position[]): void {
+        const {sourceId} = this.getImageResourceIds(featureId)
+        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(coordinates as Coordinates)
     }
 
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
