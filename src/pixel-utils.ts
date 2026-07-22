@@ -143,6 +143,64 @@ export function pxMovePoints(cornersPx: PxPoint[], startPx: PxPoint, currentPx: 
 }
 
 /**
+ * Move corner `idx` to `currentPx`, clamped outside the triangle of the other three
+ * corners. Walks the segment from the original corner so every half-plane margin is
+ * satisfied at once (sequential edge clamps can re-violate earlier constraints).
+ */
+export function pxMoveCorner(cornersPx: PxPoint[], idx: number, currentPx: PxPoint, marginPx = 2): PxPoint[] {
+    if (cornersPx.length !== 4 || idx < 0 || idx >= 4) return [...cornersPx]
+    const original = cornersPx[idx]!
+    const otherIndices = [(idx + 1) % 4, (idx + 2) % 4, (idx + 3) % 4]
+    let maxT = 1
+    for (let i = 0; i < otherIndices.length; i++) {
+        const a = cornersPx[otherIndices[i]!]!
+        const b = cornersPx[otherIndices[(i + 1) % otherIndices.length]!]!
+        const edgeLength = pxDistance(a, b)
+        if (edgeLength === 0) return [...cornersPx]
+        const originalCross = pxCross(a, b, original)
+        const candidateCross = pxCross(a, b, currentPx)
+        const side = Math.sign(originalCross)
+        if (side === 0) return [...cornersPx]
+        const originalDistance = (side * originalCross) / edgeLength
+        const candidateDistance = (side * candidateCross) / edgeLength
+        const requiredDistance = Math.min(marginPx, originalDistance)
+        if (candidateDistance < requiredDistance) {
+            const denominator = originalDistance - candidateDistance
+            const edgeT = denominator <= 0 ? 0 : (originalDistance - requiredDistance) / denominator
+            maxT = Math.min(maxT, Math.max(0, edgeT))
+        }
+    }
+    const result = [...cornersPx] as PxPoint[]
+    result[idx] = [
+        original[0] + (currentPx[0] - original[0]) * maxT,
+        original[1] + (currentPx[1] - original[1]) * maxT,
+    ]
+    return result
+}
+
+/** Signed cross of edge a→b with a→p. Positive means p is to the left of the edge. */
+function pxCross(a: PxPoint, b: PxPoint, p: PxPoint): number {
+    return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+}
+
+/** True if adjacent edges are perpendicular (axis-aligned or rotated rectangle). */
+export function pxIsRectangle(cornersPx: PxPoint[], epsilon = 0.02): boolean {
+    if (cornersPx.length !== 4) return false
+    for (let i = 0; i < 4; i++) {
+        const curr = cornersPx[i]!
+        const prev = cornersPx[(i + 3) % 4]!
+        const next = cornersPx[(i + 1) % 4]!
+        const v1x = prev[0] - curr[0],
+            v1y = prev[1] - curr[1]
+        const v2x = next[0] - curr[0],
+            v2y = next[1] - curr[1]
+        const mag = Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)
+        if (mag === 0 || Math.abs((v1x * v2x + v1y * v2y) / mag) > epsilon) return false
+    }
+    return true
+}
+
+/**
  * Sort points in clockwise order starting from the top-left corner.
  * @param corners The corners of the rectangle.
  * @returns The sorted corners of the rectangle.

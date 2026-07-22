@@ -250,6 +250,19 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ctx.container.remove()
     })
 
+    it('rejects coordinates that are not exactly four points', async () => {
+        const {control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+
+        await expect(control.addImage({imageUrl: rotateUrl, coordinates: coordinates.slice(0, 3)})).rejects.toBe(
+            'Image coordinates must contain exactly four points',
+        )
+        await expect(
+            control.addImage({imageUrl: rotateUrl, coordinates: [...coordinates, coordinates[0]!]}),
+        ).rejects.toBe('Image coordinates must contain exactly four points')
+    })
+
     it('shares one promise between concurrent calls with the same URL and coordinates', async () => {
         const {map, control} = ctx
         const created: string[] = []
@@ -548,6 +561,39 @@ describe('MaplibreAreaTransform style replacement', () => {
         expect(data.features.some(f => f.properties?.['featureId'] === imageId)).toBe(true)
     })
 
+    it('waits for style readiness after a delayed loadImage before attaching sources', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+
+        const originalLoadImage = map.loadImage.bind(map)
+        let releaseLoad!: () => void
+        const loadGate = new Promise<void>(resolve => {
+            releaseLoad = resolve
+        })
+        const loadImageSpy = vi.spyOn(map, 'loadImage').mockImplementation(async url => {
+            const loaded = await originalLoadImage(url)
+            await loadGate
+            return loaded
+        })
+
+        try {
+            const imagePromise = control.addImage({imageUrl: rotateUrl, coordinates})
+            await waitUntil(() => loadImageSpy.mock.calls.length > 0)
+
+            const loaded = map.once('style.load')
+            map.setStyle({version: 8, sources: {}, layers: []}, {diff: false})
+            releaseLoad()
+            const [, imageId] = await Promise.all([loaded, imagePromise])
+
+            expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
+            expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
+            expect(rasterLayers(map)).toHaveLength(1)
+        } finally {
+            loadImageSpy.mockRestore()
+        }
+    })
+
     it('keeps queued image work behind rapid consecutive style replacements', async () => {
         const {map, control} = ctx
         const img = await loadImage(rotateUrl)
@@ -733,5 +779,166 @@ describe('MaplibreAreaTransform rotation', () => {
         // Sanity: the rotation actually moved the corners.
         const movedPx = projectPx(map, rotated[0]!)
         expect(Math.hypot(movedPx[0] - origCornersPx[0]![0], movedPx[1] - origCornersPx[0]![1])).toBeGreaterThan(5)
+    })
+})
+
+describe('MaplibreAreaTransform quadrilateralMode', () => {
+    let ctx: SetupResponse
+
+    beforeEach(async () => {
+        ctx = await setup({quadrilateralMode: true})
+    })
+    afterEach(() => {
+        ctx.map.remove()
+        ctx.container.remove()
+    })
+
+    it('moves only the dragged corner', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const imageId = await control.addImage({
+            imageUrl: rotateUrl,
+            coordinates: control.createCoordinatesForLoadedImage(img),
+        })
+
+        const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+        const data = (await source.getData()) as GeoJSON.FeatureCollection
+        const cornerCoords = (
+            data.features.filter(
+                f =>
+                    f.geometry.type === 'Point' &&
+                    f.properties?.['featureId'] === imageId &&
+                    f.properties?.['type'] === 'scale-handle',
+            ) as GeoJSON.Feature<GeoJSON.Point>[]
+        ).map(f => f.geometry.coordinates)
+
+        const origCornersPx = cornerCoords.map(c => projectPx(map, c))
+        const startPx = origCornersPx[0]!
+        const currentPx: PxPoint = [startPx[0] - 40, startPx[1] - 40]
+
+        await waitUntil(() =>
+            map
+                .queryRenderedFeatures([startPx[0], startPx[1]])
+                .some(f => f.properties?.['type'] === 'scale-handle' && f.properties?.['featureId'] === imageId),
+        )
+
+        let lastChange: {id: string; coordinates: number[][]} | null = null
+        control.on('change', e => {
+            lastChange = e as typeof lastChange
+        })
+
+        fireMouse(map, 'mousedown', startPx)
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', currentPx)
+            return lastChange !== null
+        })
+        fireMouse(map, 'mouseup', currentPx)
+
+        const next = lastChange!.coordinates.map(c => projectPx(map, c))
+        expect(Math.abs(next[0]![0] - currentPx[0])).toBeLessThan(1.5)
+        expect(Math.abs(next[0]![1] - currentPx[1])).toBeLessThan(1.5)
+        for (let i = 1; i < 4; i++) {
+            expect(Math.abs(next[i]![0] - origCornersPx[i]![0])).toBeLessThan(1.5)
+            expect(Math.abs(next[i]![1] - origCornersPx[i]![1])).toBeLessThan(1.5)
+        }
+    })
+})
+
+describe('MaplibreAreaTransform resetSelectedFeaturePlacement', () => {
+    let ctx: SetupResponse
+
+    beforeEach(async () => {
+        ctx = await setup()
+    })
+    afterEach(() => {
+        ctx.map.remove()
+        ctx.container.remove()
+    })
+
+    async function withDelayedDecode(run: (release: () => void) => Promise<void>) {
+        const original = HTMLImageElement.prototype.decode
+        let release!: () => void
+        const gate = new Promise<void>(resolve => {
+            release = resolve
+        })
+        const spy = vi.spyOn(HTMLImageElement.prototype, 'decode').mockImplementation(async function (
+            this: HTMLImageElement,
+        ) {
+            await gate
+            return original.call(this)
+        })
+        try {
+            await run(release)
+        } finally {
+            spy.mockRestore()
+        }
+    }
+
+    it('does not recreate geometry if the image is deleted while decoding', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const coordinates = control.createCoordinatesForLoadedImage(img)
+        const imageId = await control.addImage({imageUrl: rotateUrl, coordinates})
+
+        await withDelayedDecode(async release => {
+            const resetPromise = control.resetSelectedFeaturePlacement(rotateUrl)
+            await control.deleteFeature(imageId)
+            release()
+            await resetPromise
+
+            const data = (await (
+                map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+            ).getData()) as GeoJSON.FeatureCollection
+            expect(data.features.some(f => f.properties?.['featureId'] === imageId)).toBe(false)
+            expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeUndefined()
+        })
+    })
+
+    it('does not update the previous image if selection changes while decoding', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const firstCoords = control.createCoordinatesForLoadedImage(img)
+        // Keep the two images well apart so clicks hit distinct features.
+        const secondCoords = firstCoords.map(c => [c[0]! + 40, c[1]!] as GeoJSON.Position)
+        const firstId = await control.addImage({imageUrl: rotateUrl, coordinates: firstCoords})
+        const secondId = await control.addImage({imageUrl: rotateUrl, coordinates: secondCoords})
+        const selected: (string | null)[] = []
+        control.on('selected', id => selected.push(id))
+
+        const firstCenter = new maplibregl.LngLat(
+            firstCoords.reduce((s, c) => s + c[0]!, 0) / firstCoords.length,
+            firstCoords.reduce((s, c) => s + c[1]!, 0) / firstCoords.length,
+        )
+        const secondCenter = new maplibregl.LngLat(
+            secondCoords.reduce((s, c) => s + c[0]!, 0) / secondCoords.length,
+            secondCoords.reduce((s, c) => s + c[1]!, 0) / secondCoords.length,
+        )
+        clickAt(map, firstCenter)
+        await waitUntil(() => selected.at(-1) === firstId)
+
+        await withDelayedDecode(async release => {
+            const resetPromise = control.resetSelectedFeaturePlacement(rotateUrl)
+            clickAt(map, secondCenter)
+            await waitUntil(() => selected.at(-1) === secondId)
+            release()
+            await resetPromise
+
+            expect(selected.at(-1)).toBe(secondId)
+            const data = (await (
+                map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+            ).getData()) as GeoJSON.FeatureCollection
+            const firstPolygon = data.features.find(
+                f => f.geometry.type === 'Polygon' && f.properties?.['featureId'] === firstId,
+            ) as GeoJSON.Feature<GeoJSON.Polygon>
+            expect(firstPolygon.geometry.coordinates[0]!.slice(0, -1)).toEqual(firstCoords)
+        })
+    })
+
+    it('rejects reset when the selected feature is not an image', async () => {
+        const {control} = ctx
+        await control.addRectangle()
+        await expect(control.resetSelectedFeaturePlacement(rotateUrl)).rejects.toThrow(
+            'The selected feature is not an image',
+        )
     })
 })

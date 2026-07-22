@@ -11,6 +11,8 @@ import {
     pxMidpoint,
     pxProjectOntoNormal,
     pxMovePoints,
+    pxMoveCorner,
+    pxIsRectangle,
     sortPoints,
     type PxPoint,
 } from './pixel-utils'
@@ -157,6 +159,61 @@ describe('pxMovePoints', () => {
             [5, -3],
             [15, 7],
         ])
+    })
+})
+
+describe('pxMoveCorner', () => {
+    it('moves only the dragged corner', () => {
+        const moved = pxMoveCorner(SQUARE, 0, [-5, -5])
+        expect(moved[0]![0]).toBeCloseTo(-5)
+        expect(moved[0]![1]).toBeCloseTo(-5)
+        expect(moved.slice(1)).toEqual([
+            [10, 0],
+            [10, 10],
+            [0, 10],
+        ])
+    })
+
+    it('clamps a corner that would enter the opposite triangle', () => {
+        const moved = pxMoveCorner(SQUARE, 0, [6, 6])
+        expect(moved[0]![0] + moved[0]![1]).toBeLessThan(10)
+        expect(moved.slice(1)).toEqual([
+            [10, 0],
+            [10, 10],
+            [0, 10],
+        ])
+    })
+
+    it('keeps a skewed quadrilateral convex', () => {
+        const corners: PxPoint[] = [
+            [0, 0],
+            [10, -10],
+            [0, 10],
+            [-10, 15],
+        ]
+        const moved = pxMoveCorner(corners, 1, [-30, -5])
+        const cross = (a: PxPoint, b: PxPoint, c: PxPoint) =>
+            (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        for (let i = 0; i < 4; i++) {
+            const a = moved[i]!
+            const b = moved[(i + 1) % 4]!
+            const c = moved[(i + 2) % 4]!
+            expect(cross(a, b, c)).toBeGreaterThan(0)
+        }
+    })
+})
+
+describe('pxIsRectangle', () => {
+    it('accepts rectangles and rejects warped quads', () => {
+        expect(pxIsRectangle(SQUARE)).toBe(true)
+        expect(
+            pxIsRectangle([
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [2, 8],
+            ]),
+        ).toBe(false)
     })
 })
 
