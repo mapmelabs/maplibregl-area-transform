@@ -141,3 +141,6 @@ docs
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# chatgpt/codex output dir
+output/
