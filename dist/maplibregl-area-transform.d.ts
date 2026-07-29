@@ -1,6 +1,412 @@
 import { mat2, mat4, vec3, vec4 } from "gl-matrix";
 
+//#region node_modules/@mapbox/point-geometry/index.d.ts
+/**
+ * A standalone point geometry with useful accessor, comparison, and
+ * modification methods.
+ *
+ * @class
+ * @param {number} x the x-coordinate. This could be longitude or screen pixels, or any other sort of unit.
+ * @param {number} y the y-coordinate. This could be latitude or screen pixels, or any other sort of unit.
+ *
+ * @example
+ * const point = new Point(-77, 38);
+ */
+declare function Point(x: number, y: number): void;
+declare class Point {
+  /**
+   * A standalone point geometry with useful accessor, comparison, and
+   * modification methods.
+   *
+   * @class
+   * @param {number} x the x-coordinate. This could be longitude or screen pixels, or any other sort of unit.
+   * @param {number} y the y-coordinate. This could be latitude or screen pixels, or any other sort of unit.
+   *
+   * @example
+   * const point = new Point(-77, 38);
+   */
+  constructor(x: number, y: number);
+  x: number;
+  y: number;
+  /**
+   * Clone this point, returning a new point that can be modified
+   * without affecting the old one.
+   * @return {Point} the clone
+   */
+  clone(): Point;
+  /**
+   * Add this point's x & y coordinates to another point,
+   * yielding a new point.
+   * @param {Point} p the other point
+   * @return {Point} output point
+   */
+  add(p: Point): Point;
+  /**
+   * Subtract this point's x & y coordinates to from point,
+   * yielding a new point.
+   * @param {Point} p the other point
+   * @return {Point} output point
+   */
+  sub(p: Point): Point;
+  /**
+   * Multiply this point's x & y coordinates by point,
+   * yielding a new point.
+   * @param {Point} p the other point
+   * @return {Point} output point
+   */
+  multByPoint(p: Point): Point;
+  /**
+   * Divide this point's x & y coordinates by point,
+   * yielding a new point.
+   * @param {Point} p the other point
+   * @return {Point} output point
+   */
+  divByPoint(p: Point): Point;
+  /**
+   * Multiply this point's x & y coordinates by a factor,
+   * yielding a new point.
+   * @param {number} k factor
+   * @return {Point} output point
+   */
+  mult(k: number): Point;
+  /**
+   * Divide this point's x & y coordinates by a factor,
+   * yielding a new point.
+   * @param {number} k factor
+   * @return {Point} output point
+   */
+  div(k: number): Point;
+  /**
+   * Rotate this point around the 0, 0 origin by an angle a,
+   * given in radians
+   * @param {number} a angle to rotate around, in radians
+   * @return {Point} output point
+   */
+  rotate(a: number): Point;
+  /**
+   * Rotate this point around p point by an angle a,
+   * given in radians
+   * @param {number} a angle to rotate around, in radians
+   * @param {Point} p Point to rotate around
+   * @return {Point} output point
+   */
+  rotateAround(a: number, p: Point): Point;
+  /**
+   * Multiply this point by a 4x1 transformation matrix
+   * @param {[number, number, number, number]} m transformation matrix
+   * @return {Point} output point
+   */
+  matMult(m: [number, number, number, number]): Point;
+  /**
+   * Calculate this point but as a unit vector from 0, 0, meaning
+   * that the distance from the resulting point to the 0, 0
+   * coordinate will be equal to 1 and the angle from the resulting
+   * point to the 0, 0 coordinate will be the same as before.
+   * @return {Point} unit vector point
+   */
+  unit(): Point;
+  /**
+   * Compute a perpendicular point, where the new y coordinate
+   * is the old x coordinate and the new x coordinate is the old y
+   * coordinate multiplied by -1
+   * @return {Point} perpendicular point
+   */
+  perp(): Point;
+  /**
+   * Return a version of this point with the x & y coordinates
+   * rounded to integers.
+   * @return {Point} rounded point
+   */
+  round(): Point;
+  /**
+   * Return the magnitude of this point: this is the Euclidean
+   * distance from the 0, 0 coordinate to this point's x and y
+   * coordinates.
+   * @return {number} magnitude
+   */
+  mag(): number;
+  /**
+   * Judge whether this point is equal to another point, returning
+   * true or false.
+   * @param {Point} other the other point
+   * @return {boolean} whether the points are equal
+   */
+  equals(other: Point): boolean;
+  /**
+   * Calculate the distance from this point to another point
+   * @param {Point} p the other point
+   * @return {number} distance
+   */
+  dist(p: Point): number;
+  /**
+   * Calculate the distance from this point to another point,
+   * without the square root step. Useful if you're comparing
+   * relative distances.
+   * @param {Point} p the other point
+   * @return {number} distance
+   */
+  distSqr(p: Point): number;
+  /**
+   * Get the angle from the 0, 0 coordinate to this point, in radians
+   * coordinates.
+   * @return {number} angle
+   */
+  angle(): number;
+  /**
+   * Get the angle from this point to another point, in radians
+   * @param {Point} b the other point
+   * @return {number} angle
+   */
+  angleTo(b: Point): number;
+  /**
+   * Get the angle between this point and another point, in radians
+   * @param {Point} b the other point
+   * @return {number} angle
+   */
+  angleWith(b: Point): number;
+  /**
+   * Find the angle of the two vectors, solving the formula for
+   * the cross product a x b = |a||b|sin(θ) for θ.
+   * @param {number} x the x-coordinate
+   * @param {number} y the y-coordinate
+   * @return {number} the angle in radians
+   */
+  angleWithSep(x: number, y: number): number;
+  /** @param {[number, number, number, number]} m */
+  _matMult(m: [number, number, number, number]): this;
+  /** @param {Point} p */
+  _add(p: Point): this;
+  /** @param {Point} p */
+  _sub(p: Point): this;
+  /** @param {number} k */
+  _mult(k: number): this;
+  /** @param {number} k */
+  _div(k: number): this;
+  /** @param {Point} p */
+  _multByPoint(p: Point): this;
+  /** @param {Point} p */
+  _divByPoint(p: Point): this;
+  _unit(): this;
+  _perp(): this;
+  /** @param {number} angle */
+  _rotate(angle: number): this;
+  /**
+   * @param {number} angle
+   * @param {Point} p
+   */
+  _rotateAround(angle: number, p: Point): this;
+  _round(): this;
+}
+declare namespace Point {
+  /**
+   * Construct a point from an array if necessary, otherwise if the input
+   * is already a Point, return it unchanged.
+   * @param {Point | [number, number] | {x: number, y: number}} p input value
+   * @return {Point} constructed point.
+   * @example
+   * // this
+   * var point = Point.convert([0, 1]);
+   * // is equivalent to
+   * var point = new Point(0, 1);
+   */
+  function convert(p: Point | [number, number] | {
+    x: number;
+    y: number;
+  }): Point;
+}
+//#endregion
+//#region node_modules/@maplibre/geojson-vt/dist/definitions.d.ts
+type GeoJSONVTOptions = {
+  /**
+   * Max zoom to preserve detail on
+   * @default 14
+   */
+  maxZoom?: number;
+  /**
+   * Max zoom in the tile index
+   * @default 5
+   */
+  indexMaxZoom?: number;
+  /**
+   * Max number of points per tile in the tile index
+   * @default 100000
+   */
+  indexMaxPoints?: number;
+  /**
+   * Simplification tolerance (higher means simpler)
+   * @default 3
+   */
+  tolerance?: number;
+  /**
+   * Tile extent
+   * @default 4096
+   */
+  extent?: number;
+  /**
+   * Tile buffer on each side
+   * @default 64
+   */
+  buffer?: number;
+  /**
+   * Whether to calculate line metrics
+   * @default false
+   */
+  lineMetrics?: boolean;
+  /**
+   * Name of a feature property to be promoted to feature.id
+   */
+  promoteId?: string | null;
+  /**
+   * Whether to generate feature ids. Cannot be used with promoteId
+   * @default false
+   */
+  generateId?: boolean;
+  /**
+   * Whether geojson can be updated (with caveat of a stored simplified copy)
+   * @default false
+   */
+  updateable?: boolean;
+  /**
+   * Logging level (0, 1 or 2)
+   * @default 0
+   */
+  debug?: number;
+  /**
+   * Enable Supercluster for point features.
+   * @default false
+   */
+  cluster?: boolean;
+  /**
+   * Options for the Supercluster point clustering algorithm.
+   * @see {@link SuperclusterOptions}
+   */
+  clusterOptions?: SuperclusterOptions;
+};
+type SuperclusterOptions = {
+  /**
+   * Min zoom to generate clusters on
+   * @default 0
+   */
+  minZoom?: number;
+  /**
+   * Max zoom level to cluster the points on
+   * @default 16
+   */
+  maxZoom?: number;
+  /**
+   * Minimum points to form a cluster
+   * @default 2
+   */
+  minPoints?: number;
+  /**
+   * Cluster radius in pixels
+   * @default 40
+   */
+  radius?: number;
+  /**
+   * Tile extent (radius is calculated relative to it)
+   * @default 512
+   */
+  extent?: number;
+  /**
+   * Size of the KD-tree leaf node, affects performance
+   * @default 64
+   */
+  nodeSize?: number;
+  /**
+   * Whether to log timing info
+   * @default false
+   */
+  log?: boolean;
+  /**
+   * Whether to generate numeric ids for input features (in vector tiles)
+   * @default false
+   */
+  generateId?: boolean;
+  /**
+   * A reduce function for calculating custom cluster properties
+   * @default null
+   */
+  reduce?: ((accumulated: Record<string, unknown>, props: Record<string, unknown>) => void) | null;
+  /**
+   * Properties to use for individual points when running the reducer
+   * @default props => props
+   */
+  map?: (props: GeoJSON.GeoJsonProperties) => Record<string, unknown>;
+};
+//#endregion
+//#region node_modules/kdbush/index.d.ts
+declare class KDBush {
+  /**
+   * Creates an index from raw `ArrayBuffer` data.
+   * @param {ArrayBufferLike} data
+   */
+  static from(data: ArrayBufferLike): KDBush;
+  /**
+   * Creates an index that will hold a given number of items.
+   * @param {number} numItems
+   * @param {number} [nodeSize=64] Size of the KD-tree node (64 by default).
+   * @param {TypedArrayConstructor} [ArrayType=Float64Array] The array type used for coordinates storage (`Float64Array` by default).
+   * @param {ArrayBufferConstructor | SharedArrayBufferConstructor} [ArrayBufferType=ArrayBuffer] The array buffer type used for storage (`ArrayBuffer` by default).
+   * @param {ArrayBufferLike} [data] (For internal use only)
+   */
+  constructor(numItems: number, nodeSize?: number, ArrayType?: TypedArrayConstructor, ArrayBufferType?: ArrayBufferConstructor | SharedArrayBufferConstructor, data?: ArrayBufferLike);
+  numItems: number;
+  nodeSize: number;
+  ArrayType: TypedArrayConstructor;
+  IndexArrayType: Uint16ArrayConstructor | Uint32ArrayConstructor;
+  data: ArrayBufferLike;
+  ids: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer>;
+  coords: Int8Array<ArrayBuffer> | Uint8Array<ArrayBuffer> | Uint8ClampedArray<ArrayBuffer> | Int16Array<ArrayBuffer> | Uint16Array<ArrayBuffer> | Int32Array<ArrayBuffer> | Uint32Array<ArrayBuffer> | Float32Array<ArrayBuffer> | Float64Array<ArrayBuffer>;
+  _pos: number;
+  _finished: boolean;
+  /**
+   * Add a point to the index.
+   * @param {number} x
+   * @param {number} y
+   * @returns {number} An incremental index associated with the added item (starting from `0`).
+   */
+  add(x: number, y: number): number;
+  /**
+   * Perform indexing of the added points.
+   */
+  finish(): this;
+  /**
+   * Search the index for items within a given bounding box.
+   * @param {number} minX
+   * @param {number} minY
+   * @param {number} maxX
+   * @param {number} maxY
+   * @returns {number[]} An array of indices correponding to the found items.
+   */
+  range(minX: number, minY: number, maxX: number, maxY: number): number[];
+  /**
+   * Search the index for items within a given radius.
+   * @param {number} qx
+   * @param {number} qy
+   * @param {number} r Query radius.
+   * @returns {number[]} An array of indices correponding to the found items.
+   */
+  within(qx: number, qy: number, r: number): number[];
+  /**
+   * Search the index for items within a given radius, writing matching ids into `out`
+   * via indexed assignment (`out[i] = id`). Accepts any indexed-writable container —
+   * a typed array sized to the expected upper bound (allocation-free, fast) or a plain
+   * `Array` (which will grow as needed). Returns the number of matches written.
+   * @param {number} qx
+   * @param {number} qy
+   * @param {number} r Query radius.
+   * @param {number[] | TypedArray} out Container to write matching ids into.
+   * @returns {number} The number of matches written to `out`.
+   */
+  withinInto(qx: number, qy: number, r: number, out: number[] | TypedArray): number;
+}
+type TypedArrayConstructor = Int8ArrayConstructor | Uint8ArrayConstructor | Uint8ClampedArrayConstructor | Int16ArrayConstructor | Uint16ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor | Float64ArrayConstructor;
+type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+//#endregion
 //#region node_modules/@maplibre/maplibre-gl-style-spec/dist/index.d.ts
+//#endregion
+//#region src/types.g.d.ts
 type ColorSpecification = string;
 type ProjectionDefinitionT = [string, string, number];
 type ProjectionDefinitionSpecification = string | ProjectionDefinitionT | PropertyValueSpecification<ProjectionDefinitionT>;
@@ -18,67 +424,67 @@ type PromoteIdSpecification = {
   [_: string]: string;
 } | string;
 type ExpressionInputType = string | number | boolean;
-type VariableExpressionSpecification = ["var", string];
-type CollatorExpressionSpecification = ["collator", {
-  "case-sensitive"?: boolean | ExpressionSpecification;
-  "diacritic-sensitive"?: boolean | ExpressionSpecification;
+type VariableExpressionSpecification = ['var', string];
+type CollatorExpressionSpecification = ['collator', {
+  'case-sensitive'?: boolean | ExpressionSpecification;
+  'diacritic-sensitive'?: boolean | ExpressionSpecification;
   locale?: string | ExpressionSpecification;
 }];
-type InterpolationSpecification = ["linear"] | ["exponential", number] | ["cubic-bezier", number, number, number, number];
-type ExpressionSpecification = ["array", ExpressionSpecification] | ["array", "string" | "number" | "boolean", ExpressionSpecification] | ["array", "string" | "number" | "boolean", number, ExpressionSpecification] | ["boolean", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | CollatorExpressionSpecification | ["format", ...(string | ["image", ExpressionSpecification] | ExpressionSpecification | {
-  "font-scale"?: number | ExpressionSpecification;
-  "text-font"?: ExpressionSpecification;
-  "text-color"?: ColorSpecification | ExpressionSpecification;
-  "vertical-align"?: "bottom" | "center" | "top";
-})[]] | ["image", string | ExpressionSpecification] | ["literal", unknown] | ["number", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ["number-format", number | ExpressionSpecification, {
-  "locale"?: string | ExpressionSpecification;
-  "currency"?: string | ExpressionSpecification;
-  "min-fraction-digits"?: number | ExpressionSpecification;
-  "max-fraction-digits"?: number | ExpressionSpecification;
-}] | ["number-format", number | ExpressionSpecification, {
-  "locale"?: string | ExpressionSpecification;
-  "unit"?: string | ExpressionSpecification;
-  "min-fraction-digits"?: number | ExpressionSpecification;
-  "max-fraction-digits"?: number | ExpressionSpecification;
-}] | ["object", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ["string", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ["to-boolean", unknown | ExpressionSpecification] | ["to-color", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ["to-number", unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ["to-string", unknown | ExpressionSpecification] | ["typeof", unknown | ExpressionSpecification] | ["accumulated"] | ["feature-state", string | ExpressionSpecification] | ["geometry-type"] | ["id"] | ["line-progress"] | ["properties"] | ["at", number | ExpressionSpecification, ExpressionSpecification] | ["get", string | ExpressionSpecification, ExpressionSpecification?] | ["global-state", string] | ["has", string | ExpressionSpecification, ExpressionSpecification?] | ["in", null | ExpressionInputType | ExpressionSpecification, string | ExpressionSpecification] | ["index-of", null | ExpressionInputType | ExpressionSpecification, string | ExpressionSpecification, (number | ExpressionSpecification)?] | ["length", string | ExpressionSpecification] | ["slice", string | ExpressionSpecification, number | ExpressionSpecification, (number | ExpressionSpecification)?] | ["!", boolean | ExpressionSpecification] | ["!=", null | ExpressionInputType | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ["<", string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ["<=", string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ["==", null | ExpressionInputType | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | [">", string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | [">=", string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ["all", ...(boolean | ExpressionSpecification)[]] | ["any", ...(boolean | ExpressionSpecification)[]] | ["case", boolean | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, ...(boolean | null | ExpressionInputType | ExpressionSpecification)[], null | ExpressionInputType | ExpressionSpecification] | ["coalesce", ...(ExpressionInputType | ExpressionSpecification)[]] | ["match", string | number | ExpressionSpecification, string | number | string[] | number[], null | ExpressionInputType | ExpressionSpecification, ...(string | number | string[] | number[] | null | ExpressionInputType | ExpressionSpecification)[], // repeated as above
-null | ExpressionInputType | ExpressionSpecification] | ["within", GeoJSON.GeoJSON] | ["interpolate", InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification | ProjectionDefinitionSpecification)[]] | ["interpolate-hcl", InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification)[]] | ["interpolate-lab", InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification)[]] | ["step", number | ExpressionSpecification, ExpressionInputType | ExpressionSpecification, ...(number | ExpressionInputType | ExpressionSpecification)[]] | ["let", string, ExpressionInputType | ExpressionSpecification, ...(string | ExpressionInputType | ExpressionSpecification)[]] | VariableExpressionSpecification | ["concat", ...(ExpressionInputType | ExpressionSpecification)[]] | ["downcase", string | ExpressionSpecification] | ["is-supported-script", string | ExpressionSpecification] | ["join", string[] | ExpressionSpecification, string | ExpressionSpecification] | ["resolved-locale", CollatorExpressionSpecification] | ["split", string | ExpressionSpecification, string | ExpressionSpecification] | ["upcase", string | ExpressionSpecification] | ["rgb", number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification] | ["rgba", number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification] | ["to-rgba", ColorSpecification | ExpressionSpecification] | ["-", number | ExpressionSpecification, (number | ExpressionSpecification)?] | ["*", number | ExpressionSpecification, number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ["/", number | ExpressionSpecification, number | ExpressionSpecification] | ["%", number | ExpressionSpecification, number | ExpressionSpecification] | ["^", number | ExpressionSpecification, number | ExpressionSpecification] | ["+", ...(number | ExpressionSpecification)[]] | ["abs", number | ExpressionSpecification] | ["acos", number | ExpressionSpecification] | ["asin", number | ExpressionSpecification] | ["atan", number | ExpressionSpecification] | ["ceil", number | ExpressionSpecification] | ["cos", number | ExpressionSpecification] | ["distance", GeoJSON.GeoJSON] | ["e"] | ["floor", number | ExpressionSpecification] | ["ln", number | ExpressionSpecification] | ["ln2"] | ["log10", number | ExpressionSpecification] | ["log2", number | ExpressionSpecification] | ["max", number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ["min", number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ["pi"] | ["round", number | ExpressionSpecification] | ["sin", number | ExpressionSpecification] | ["sqrt", number | ExpressionSpecification] | ["tan", number | ExpressionSpecification] | ["zoom"] | ["heatmap-density"] | ["elevation"] | ["global-state", string];
+type InterpolationSpecification = ['linear'] | ['exponential', number] | ['cubic-bezier', number, number, number, number];
+type ExpressionSpecification = ['array', ExpressionSpecification] | ['array', 'string' | 'number' | 'boolean', ExpressionSpecification] | ['array', 'string' | 'number' | 'boolean', number, ExpressionSpecification] | ['boolean', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | CollatorExpressionSpecification | ['format', ...(string | ['image', ExpressionSpecification] | ExpressionSpecification | {
+  'font-scale'?: number | ExpressionSpecification;
+  'text-font'?: ExpressionSpecification;
+  'text-color'?: ColorSpecification | ExpressionSpecification;
+  'vertical-align'?: 'bottom' | 'center' | 'top';
+})[]] | ['image', string | ExpressionSpecification] | ['literal', unknown] | ['number', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ['number-format', number | ExpressionSpecification, {
+  'locale'?: string | ExpressionSpecification;
+  'currency'?: string | ExpressionSpecification;
+  'min-fraction-digits'?: number | ExpressionSpecification;
+  'max-fraction-digits'?: number | ExpressionSpecification;
+}] | ['number-format', number | ExpressionSpecification, {
+  'locale'?: string | ExpressionSpecification;
+  'unit'?: string | ExpressionSpecification;
+  'min-fraction-digits'?: number | ExpressionSpecification;
+  'max-fraction-digits'?: number | ExpressionSpecification;
+}] | ['object', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ['string', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ['to-boolean', unknown | ExpressionSpecification] | ['to-color', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ['to-number', unknown | ExpressionSpecification, ...(unknown | ExpressionSpecification)[]] | ['to-string', unknown | ExpressionSpecification] | ['typeof', unknown | ExpressionSpecification] | ['accumulated'] | ['feature-state', string | ExpressionSpecification] | ['geometry-type'] | ['id'] | ['line-progress'] | ['properties'] | ['at', number | ExpressionSpecification, ExpressionSpecification] | ['get', string | ExpressionSpecification, ExpressionSpecification?] | ['global-state', string] | ['has', string | ExpressionSpecification, ExpressionSpecification?] | ['in', null | ExpressionInputType | ExpressionSpecification, string | ExpressionSpecification] | ['index-of', null | ExpressionInputType | ExpressionSpecification, string | ExpressionSpecification, (number | ExpressionSpecification)?] | ['length', string | ExpressionSpecification] | ['slice', string | ExpressionSpecification, number | ExpressionSpecification, (number | ExpressionSpecification)?] | ['!', boolean | ExpressionSpecification] | ['!=', null | ExpressionInputType | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['<', string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['<=', string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['==', null | ExpressionInputType | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['>', string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['>=', string | number | ExpressionSpecification, string | number | ExpressionSpecification, (CollatorExpressionSpecification | VariableExpressionSpecification)?] | ['all', ...(boolean | ExpressionSpecification)[]] | ['any', ...(boolean | ExpressionSpecification)[]] | ['case', boolean | ExpressionSpecification, null | ExpressionInputType | ExpressionSpecification, ...(boolean | null | ExpressionInputType | ExpressionSpecification)[], null | ExpressionInputType | ExpressionSpecification] | ['coalesce', ...(ExpressionInputType | ExpressionSpecification)[]] | ['match', string | number | ExpressionSpecification, string | number | string[] | number[], null | ExpressionInputType | ExpressionSpecification, ...(string | number | string[] | number[] | null | ExpressionInputType | ExpressionSpecification)[], // repeated as above
+null | ExpressionInputType | ExpressionSpecification] | ['within', GeoJSON.GeoJSON] | ['interpolate', InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification | ProjectionDefinitionSpecification)[]] | ['interpolate-hcl', InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification)[]] | ['interpolate-lab', InterpolationSpecification, number | ExpressionSpecification, ...(number | ColorSpecification | ExpressionSpecification)[]] | ['step', number | ExpressionSpecification, ExpressionInputType | ExpressionSpecification, ...(number | ExpressionInputType | ExpressionSpecification)[]] | ['let', string, ExpressionInputType | ExpressionSpecification, ...(string | ExpressionInputType | ExpressionSpecification)[]] | VariableExpressionSpecification | ['concat', ...(ExpressionInputType | ExpressionSpecification)[]] | ['downcase', string | ExpressionSpecification] | ['is-supported-script', string | ExpressionSpecification] | ['join', string[] | ExpressionSpecification, string | ExpressionSpecification] | ['resolved-locale', CollatorExpressionSpecification] | ['split', string | ExpressionSpecification, string | ExpressionSpecification] | ['upcase', string | ExpressionSpecification] | ['rgb', number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification] | ['rgba', number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification, number | ExpressionSpecification] | ['to-rgba', ColorSpecification | ExpressionSpecification] | ['-', number | ExpressionSpecification, (number | ExpressionSpecification)?] | ['*', number | ExpressionSpecification, number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ['/', number | ExpressionSpecification, number | ExpressionSpecification] | ['%', number | ExpressionSpecification, number | ExpressionSpecification] | ['^', number | ExpressionSpecification, number | ExpressionSpecification] | ['+', ...(number | ExpressionSpecification)[]] | ['abs', number | ExpressionSpecification] | ['acos', number | ExpressionSpecification] | ['asin', number | ExpressionSpecification] | ['atan', number | ExpressionSpecification] | ['ceil', number | ExpressionSpecification] | ['cos', number | ExpressionSpecification] | ['distance', GeoJSON.GeoJSON] | ['e'] | ['floor', number | ExpressionSpecification] | ['ln', number | ExpressionSpecification] | ['ln2'] | ['log10', number | ExpressionSpecification] | ['log2', number | ExpressionSpecification] | ['max', number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ['min', number | ExpressionSpecification, ...(number | ExpressionSpecification)[]] | ['pi'] | ['round', number | ExpressionSpecification] | ['sin', number | ExpressionSpecification] | ['sqrt', number | ExpressionSpecification] | ['tan', number | ExpressionSpecification] | ['zoom'] | ['heatmap-density'] | ['elevation'] | ['global-state', string];
 type ExpressionFilterSpecification = boolean | ExpressionSpecification;
-type LegacyFilterSpecification = ["has", string] | ["!has", string] | ["==", string, string | number | boolean] | ["!=", string, string | number | boolean] | [">", string, string | number | boolean] | [">=", string, string | number | boolean] | ["<", string, string | number | boolean] | ["<=", string, string | number | boolean] | ["in", string, ...(string | number | boolean)[]] | ["!in", string, ...(string | number | boolean)[]] | ["all", ...LegacyFilterSpecification[]] | ["any", ...LegacyFilterSpecification[]] | ["none", ...LegacyFilterSpecification[]];
+type LegacyFilterSpecification = ['has', string] | ['!has', string] | ['==', string, string | number | boolean] | ['!=', string, string | number | boolean] | ['>', string, string | number | boolean] | ['>=', string, string | number | boolean] | ['<', string, string | number | boolean] | ['<=', string, string | number | boolean] | ['in', string, ...(string | number | boolean)[]] | ['!in', string, ...(string | number | boolean)[]] | ['all', ...LegacyFilterSpecification[]] | ['any', ...LegacyFilterSpecification[]] | ['none', ...LegacyFilterSpecification[]];
 type FilterSpecification = ExpressionFilterSpecification | LegacyFilterSpecification;
-type VisibilitySpecification = "visible" | "none" | ExpressionSpecification;
+type VisibilitySpecification = 'visible' | 'none' | ExpressionSpecification;
 type TransitionSpecification = {
   duration?: number;
   delay?: number;
 };
 type CameraFunctionSpecification<T> = {
-  type: "exponential";
+  type: 'exponential';
   stops: Array<[number, T]>;
 } | {
-  type: "interval";
+  type: 'interval';
   stops: Array<[number, T]>;
 };
 type SourceFunctionSpecification<T> = {
-  type: "exponential";
+  type: 'exponential';
   stops: Array<[number, T]>;
   property: string;
   default?: T;
 } | {
-  type: "interval";
+  type: 'interval';
   stops: Array<[number, T]>;
   property: string;
   default?: T;
 } | {
-  type: "categorical";
+  type: 'categorical';
   stops: Array<[string | number | boolean, T]>;
   property: string;
   default?: T;
 } | {
-  type: "identity";
+  type: 'identity';
   property: string;
   default?: T;
 };
 type CompositeFunctionSpecification<T> = {
-  type: "exponential";
+  type: 'exponential';
   stops: Array<[{
     zoom: number;
     value: number;
@@ -86,7 +492,7 @@ type CompositeFunctionSpecification<T> = {
   property: string;
   default?: T;
 } | {
-  type: "interval";
+  type: 'interval';
   stops: Array<[{
     zoom: number;
     value: number;
@@ -94,7 +500,7 @@ type CompositeFunctionSpecification<T> = {
   property: string;
   default?: T;
 } | {
-  type: "categorical";
+  type: 'categorical';
   stops: Array<[{
     zoom: number;
     value: string | number | boolean;
@@ -434,7 +840,7 @@ type LightSpecification = {
    */
   "anchor"?: PropertyValueSpecification<"map" | "viewport">;
   /**
-   * Position of the light source relative to lit (extruded) geometries, in [r radial coordinate, a azimuthal angle, p polar angle] where r indicates the distance from the center of the base of an object to its light, a indicates the position of the light relative to 0° (0° when `light.anchor` is set to `viewport` corresponds to the top of the viewport, or 0° when `light.anchor` is set to `map` corresponds to due north, and degrees proceed clockwise), and p indicates the height of the light (from 0°, directly above, to 180°, directly below).
+   * Position of the light source relative to lit (extruded) geometries, in `[r radial coordinate, a azimuthal angle, p polar angle]` where r indicates the distance from the center of the base of an object to its light, a indicates the position of the light relative to 0° (0° when `light.anchor` is set to `viewport` corresponds to the top of the viewport, or 0° when `light.anchor` is set to `map` corresponds to due north, and degrees proceed clockwise), and p indicates the height of the light (from 0°, directly above, to 180°, directly below).
    *
    * @default
    * ```json
@@ -862,7 +1268,7 @@ type GeoJSONSourceSpecification = {
    */
   "clusterMinPoints"?: number;
   /**
-   * An object defining custom properties on the generated clusters if clustering is enabled, aggregating values from clustered points. Has the form `{"property_name": [operator, map_expression]}`. `operator` is any expression function that accepts at least 2 operands (e.g. `"+"` or `"max"`) — it accumulates the property value from clusters/points the cluster contains; `map_expression` produces the value of a single point.
+   * An object defining custom properties on the generated clusters if clustering is enabled, aggregating values from clustered points. Has the form `{"property_name": [operator, map_expression]}`. `operator` is any expression function that accepts at least 2 operands (e.g. `"+"` or `"max"`) - it accumulates the property value from clusters/points the cluster contains; `map_expression` produces the value of a single point.
    *
    * Example: `{"sum": ["+", ["get", "scalerank"]]}`.
    *
@@ -990,7 +1396,19 @@ type FillLayerSpecification = {
     "fill-opacity"?: DataDrivenPropertyValueSpecification<number>;
     "fill-opacity-transition"?: TransitionSpecification;
     /**
-     * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used.
+     * Opacity applied to the layer as a whole. Unlike `fill-opacity` and alpha values in `fill-color`, which are applied per feature and accumulate where fills overlap, `fill-layer-opacity` is applied once so overlapping fills appear as a single surface at the given opacity. When both `fill-opacity` and `fill-layer-opacity` are set, the per-feature, overlap accumulation is preserved, then `fill-layer-opacity` composites the result. This property affects only the layer it is set on and cannot be used to composite multiple layers together or control how this layer blends with layers above or below it.
+     *
+     * ![fill-opacity vs. fill-layer-opacity](assets/fill-layer-opacity.svg)
+     *
+     * @default
+     * ```json
+     * 1
+     * ```
+     */
+    "fill-layer-opacity"?: PropertyValueSpecification<number>;
+    "fill-layer-opacity-transition"?: TransitionSpecification;
+    /**
+     * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used. When used with an SDF fill pattern, this serves as the foreground color of the pattern.
      *
      * @default
      * ```json
@@ -1005,7 +1423,7 @@ type FillLayerSpecification = {
     "fill-outline-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
     "fill-outline-color-transition"?: TransitionSpecification;
     /**
-     * The geometry's offset. Values are [x, y] where negatives indicate left and up, respectively.
+     * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
      *
      * @default
      * ```json
@@ -1134,6 +1552,18 @@ type LineLayerSpecification = {
     "line-opacity"?: DataDrivenPropertyValueSpecification<number>;
     "line-opacity-transition"?: TransitionSpecification;
     /**
+     * Opacity applied to the layer as a whole. Unlike `line-opacity` and alpha values in `line-color`, which are applied per feature and accumulate where lines overlap, `line-layer-opacity` is applied once so overlapping lines appear as a single surface at the given opacity. When both `line-opacity` and `line-layer-opacity` are set, the per-feature, overlap accumulation is preserved, then layer-opacity composites the result. This property affects only the layer it is set on and cannot be used to composite multiple layers together or control how this layer blends with layers above or below it.
+     *
+     * ![line-opacity vs. line-layer-opacity](assets/line-layer-opacity.svg)
+     *
+     * @default
+     * ```json
+     * 1
+     * ```
+     */
+    "line-layer-opacity"?: PropertyValueSpecification<number>;
+    "line-layer-opacity-transition"?: TransitionSpecification;
+    /**
      * The color with which the line will be drawn.
      *
      * @default
@@ -1144,7 +1574,7 @@ type LineLayerSpecification = {
     "line-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
     "line-color-transition"?: TransitionSpecification;
     /**
-     * The geometry's offset. Values are [x, y] where negatives indicate left and up, respectively.
+     * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
      *
      * @default
      * ```json
@@ -1791,7 +2221,7 @@ type CircleLayerSpecification = {
     "circle-opacity"?: DataDrivenPropertyValueSpecification<number>;
     "circle-opacity-transition"?: TransitionSpecification;
     /**
-     * The geometry's offset. Values are [x, y] where negatives indicate left and up, respectively.
+     * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
      *
      * @default
      * ```json
@@ -2021,6 +2451,10 @@ type FillExtrusionLayerSpecification = {
      * ```
      */
     "visibility"?: VisibilitySpecification;
+    /**
+     * The distance from each fill extrusion corner, measured along the adjacent edges, that is replaced by a rounded corner. A value of `0` disables rounded corners.
+     */
+    "fill-extrusion-rounded-corner-distance"?: number;
   };
   /**
    * Default paint properties for this layer.
@@ -2047,7 +2481,7 @@ type FillExtrusionLayerSpecification = {
     "fill-extrusion-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
     "fill-extrusion-color-transition"?: TransitionSpecification;
     /**
-     * The geometry's offset. Values are [x, y] where negatives indicate left and up (on the flat plane), respectively.
+     * The geometry's offset. Values are `[x, y]` where negatives indicate left and up (on the flat plane), respectively.
      *
      * @default
      * ```json
@@ -2518,6 +2952,1101 @@ type BackgroundLayerSpecification = {
 };
 type LayerSpecification = FillLayerSpecification | LineLayerSpecification | SymbolLayerSpecification | CircleLayerSpecification | HeatmapLayerSpecification | FillExtrusionLayerSpecification | RasterLayerSpecification | HillshadeLayerSpecification | ColorReliefLayerSpecification | BackgroundLayerSpecification;
 /**
+ * Union of all paint properties across all layer types.
+ */
+type AllPaintProperties = {
+  /**
+   * Whether or not the fill should be antialiased.
+   *
+   * @default
+   * ```json
+   * true
+   * ```
+   */
+  "fill-antialias"?: PropertyValueSpecification<boolean>;
+  /**
+   * The opacity of the entire fill layer. In contrast to the `fill-color`, this value will also affect the 1px stroke around the fill, if the stroke is used.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "fill-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "fill-opacity-transition"?: TransitionSpecification;
+  /**
+   * Opacity applied to the layer as a whole. Unlike `fill-opacity` and alpha values in `fill-color`, which are applied per feature and accumulate where fills overlap, `fill-layer-opacity` is applied once so overlapping fills appear as a single surface at the given opacity. When both `fill-opacity` and `fill-layer-opacity` are set, the per-feature, overlap accumulation is preserved, then `fill-layer-opacity` composites the result. This property affects only the layer it is set on and cannot be used to composite multiple layers together or control how this layer blends with layers above or below it.
+   *
+   * ![fill-opacity vs. fill-layer-opacity](assets/fill-layer-opacity.svg)
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "fill-layer-opacity"?: PropertyValueSpecification<number>;
+  "fill-layer-opacity-transition"?: TransitionSpecification;
+  /**
+   * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used. When used with an SDF fill pattern, this serves as the foreground color of the pattern.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "fill-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "fill-color-transition"?: TransitionSpecification;
+  /**
+   * The outline color of the fill. Matches the value of `fill-color` if unspecified.
+   */
+  "fill-outline-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "fill-outline-color-transition"?: TransitionSpecification;
+  /**
+   * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "fill-translate"?: PropertyValueSpecification<[number, number]>;
+  "fill-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `fill-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "fill-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Name of image in sprite to use for drawing image fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   */
+  "fill-pattern"?: DataDrivenPropertyValueSpecification<ResolvedImageSpecification>;
+  "fill-pattern-transition"?: TransitionSpecification;
+  /**
+   * The opacity at which the line will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "line-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "line-opacity-transition"?: TransitionSpecification;
+  /**
+   * Opacity applied to the layer as a whole. Unlike `line-opacity` and alpha values in `line-color`, which are applied per feature and accumulate where lines overlap, `line-layer-opacity` is applied once so overlapping lines appear as a single surface at the given opacity. When both `line-opacity` and `line-layer-opacity` are set, the per-feature, overlap accumulation is preserved, then layer-opacity composites the result. This property affects only the layer it is set on and cannot be used to composite multiple layers together or control how this layer blends with layers above or below it.
+   *
+   * ![line-opacity vs. line-layer-opacity](assets/line-layer-opacity.svg)
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "line-layer-opacity"?: PropertyValueSpecification<number>;
+  "line-layer-opacity-transition"?: TransitionSpecification;
+  /**
+   * The color with which the line will be drawn.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "line-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "line-color-transition"?: TransitionSpecification;
+  /**
+   * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "line-translate"?: PropertyValueSpecification<[number, number]>;
+  "line-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `line-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "line-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Stroke thickness.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "line-width"?: DataDrivenPropertyValueSpecification<number>;
+  "line-width-transition"?: TransitionSpecification;
+  /**
+   * Draws a line casing outside of a line's actual path. Value indicates the width of the inner gap.
+   */
+  "line-gap-width"?: DataDrivenPropertyValueSpecification<number>;
+  "line-gap-width-transition"?: TransitionSpecification;
+  /**
+   * The line's offset. For linear features, a positive value offsets the line to the right, relative to the direction of the line, and a negative value to the left. For polygon features, a positive value results in an inset, and a negative value results in an outset.
+   */
+  "line-offset"?: DataDrivenPropertyValueSpecification<number>;
+  "line-offset-transition"?: TransitionSpecification;
+  /**
+   * Blur applied to the line, in pixels.
+   */
+  "line-blur"?: DataDrivenPropertyValueSpecification<number>;
+  "line-blur-transition"?: TransitionSpecification;
+  /**
+   * Specifies the lengths of the alternating dashes and gaps that form the dash pattern. The lengths are later scaled by the line width. To convert a dash length to pixels, multiply the length by the current line width. GeoJSON sources with `lineMetrics: true` specified won't render dashed lines to the expected scale. Zoom-dependent expressions will be evaluated only at integer zoom levels. The only way to create an array value is using `["literal", [...]]`; arrays cannot be read from or derived from feature properties.
+   */
+  "line-dasharray"?: DataDrivenPropertyValueSpecification<Array<number>>;
+  "line-dasharray-transition"?: TransitionSpecification;
+  /**
+   * Name of image in sprite to use for drawing image lines. For seamless patterns, image width must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   */
+  "line-pattern"?: DataDrivenPropertyValueSpecification<ResolvedImageSpecification>;
+  "line-pattern-transition"?: TransitionSpecification;
+  /**
+   * Defines a gradient with which to color a line feature. Can only be used with GeoJSON sources that specify `"lineMetrics": true`.
+   */
+  "line-gradient"?: ExpressionSpecification;
+  /**
+   * The opacity at which the icon will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "icon-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "icon-opacity-transition"?: TransitionSpecification;
+  /**
+   * The color of the icon. This can only be used with SDF icons.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "icon-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "icon-color-transition"?: TransitionSpecification;
+  /**
+   * The color of the icon's halo. Icon halos can only be used with SDF icons.
+   *
+   * @default
+   * ```json
+   * "rgba(0, 0, 0, 0)"
+   * ```
+   */
+  "icon-halo-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "icon-halo-color-transition"?: TransitionSpecification;
+  /**
+   * Distance of halo to the icon outline.
+   *
+   * The unit is in pixels only for SDF sprites that were created with a blur radius of 8, multiplied by the display density. I.e., the radius needs to be 16 for `@2x` sprites, etc.
+   */
+  "icon-halo-width"?: DataDrivenPropertyValueSpecification<number>;
+  "icon-halo-width-transition"?: TransitionSpecification;
+  /**
+   * Fade out the halo towards the outside.
+   */
+  "icon-halo-blur"?: DataDrivenPropertyValueSpecification<number>;
+  "icon-halo-blur-transition"?: TransitionSpecification;
+  /**
+   * Distance that the icon's anchor is moved from its original placement. Positive values indicate right and down, while negative values indicate left and up.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "icon-translate"?: PropertyValueSpecification<[number, number]>;
+  "icon-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `icon-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "icon-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * The opacity at which the text will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "text-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "text-opacity-transition"?: TransitionSpecification;
+  /**
+   * The color with which the text will be drawn.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "text-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "text-color-transition"?: TransitionSpecification;
+  /**
+   * The color of the text's halo, which helps it stand out from backgrounds.
+   *
+   * @default
+   * ```json
+   * "rgba(0, 0, 0, 0)"
+   * ```
+   */
+  "text-halo-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "text-halo-color-transition"?: TransitionSpecification;
+  /**
+   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size.
+   */
+  "text-halo-width"?: DataDrivenPropertyValueSpecification<number>;
+  "text-halo-width-transition"?: TransitionSpecification;
+  /**
+   * The halo's fadeout distance towards the outside.
+   */
+  "text-halo-blur"?: DataDrivenPropertyValueSpecification<number>;
+  "text-halo-blur-transition"?: TransitionSpecification;
+  /**
+   * Distance that the text's anchor is moved from its original placement. Positive values indicate right and down, while negative values indicate left and up.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "text-translate"?: PropertyValueSpecification<[number, number]>;
+  "text-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `text-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "text-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Circle radius.
+   *
+   * @default
+   * ```json
+   * 5
+   * ```
+   */
+  "circle-radius"?: DataDrivenPropertyValueSpecification<number>;
+  "circle-radius-transition"?: TransitionSpecification;
+  /**
+   * The fill color of the circle.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "circle-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "circle-color-transition"?: TransitionSpecification;
+  /**
+   * Amount to blur the circle. 1 blurs the circle such that only the centerpoint is full opacity.
+   */
+  "circle-blur"?: DataDrivenPropertyValueSpecification<number>;
+  "circle-blur-transition"?: TransitionSpecification;
+  /**
+   * The opacity at which the circle will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "circle-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "circle-opacity-transition"?: TransitionSpecification;
+  /**
+   * The geometry's offset. Values are `[x, y]` where negatives indicate left and up, respectively.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "circle-translate"?: PropertyValueSpecification<[number, number]>;
+  "circle-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `circle-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "circle-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Controls the scaling behavior of the circle when the map is pitched.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "circle-pitch-scale"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Orientation of circle when map is pitched.
+   *
+   * @default
+   * ```json
+   * "viewport"
+   * ```
+   */
+  "circle-pitch-alignment"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * The width of the circle's stroke. Strokes are placed outside of the `circle-radius`.
+   */
+  "circle-stroke-width"?: DataDrivenPropertyValueSpecification<number>;
+  "circle-stroke-width-transition"?: TransitionSpecification;
+  /**
+   * The stroke color of the circle.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "circle-stroke-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "circle-stroke-color-transition"?: TransitionSpecification;
+  /**
+   * The opacity of the circle's stroke.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "circle-stroke-opacity"?: DataDrivenPropertyValueSpecification<number>;
+  "circle-stroke-opacity-transition"?: TransitionSpecification;
+  /**
+   * Radius of influence of one heatmap point in pixels. Increasing the value makes the heatmap smoother, but less detailed.
+   *
+   * @default
+   * ```json
+   * 30
+   * ```
+   */
+  "heatmap-radius"?: DataDrivenPropertyValueSpecification<number>;
+  "heatmap-radius-transition"?: TransitionSpecification;
+  /**
+   * A measure of how much an individual point contributes to the heatmap. A value of 10 would be equivalent to having 10 points of weight 1 in the same spot. Especially useful when combined with clustering.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "heatmap-weight"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Similar to `heatmap-weight` but controls the intensity of the heatmap globally. Primarily used for adjusting the heatmap based on zoom level.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "heatmap-intensity"?: PropertyValueSpecification<number>;
+  "heatmap-intensity-transition"?: TransitionSpecification;
+  /**
+   * Defines the color of each pixel based on its density value in a heatmap.  Should be an expression that uses `["heatmap-density"]` as input.
+   *
+   * @default
+   * ```json
+   * [
+   *     "interpolate",
+   *     ["linear"],
+   *     ["heatmap-density"],
+   *     0,
+   *     "rgba(0, 0, 255, 0)",
+   *     0.1,
+   *     "royalblue",
+   *     0.3,
+   *     "cyan",
+   *     0.5,
+   *     "lime",
+   *     0.7,
+   *     "yellow",
+   *     1,
+   *     "red"
+   * ]
+   * ```
+   */
+  "heatmap-color"?: ExpressionSpecification;
+  /**
+   * The global opacity at which the heatmap layer will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "heatmap-opacity"?: PropertyValueSpecification<number>;
+  "heatmap-opacity-transition"?: TransitionSpecification;
+  /**
+   * The opacity of the entire fill extrusion layer. This is rendered on a per-layer, not per-feature, basis, and data-driven styling is not available.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "fill-extrusion-opacity"?: PropertyValueSpecification<number>;
+  "fill-extrusion-opacity-transition"?: TransitionSpecification;
+  /**
+   * The base color of the extruded fill. The extrusion's surfaces will be shaded differently based on this color in combination with the root `light` settings. If this color is specified as `rgba` with an alpha component, the alpha component will be ignored; use `fill-extrusion-opacity` to set layer opacity.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "fill-extrusion-color"?: DataDrivenPropertyValueSpecification<ColorSpecification>;
+  "fill-extrusion-color-transition"?: TransitionSpecification;
+  /**
+   * The geometry's offset. Values are `[x, y]` where negatives indicate left and up (on the flat plane), respectively.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "fill-extrusion-translate"?: PropertyValueSpecification<[number, number]>;
+  "fill-extrusion-translate-transition"?: TransitionSpecification;
+  /**
+   * Controls the frame of reference for `fill-extrusion-translate`.
+   *
+   * @default
+   * ```json
+   * "map"
+   * ```
+   */
+  "fill-extrusion-translate-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Name of image in sprite to use for drawing images on extruded fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   */
+  "fill-extrusion-pattern"?: DataDrivenPropertyValueSpecification<ResolvedImageSpecification>;
+  "fill-extrusion-pattern-transition"?: TransitionSpecification;
+  /**
+   * The height with which to extrude this layer.
+   */
+  "fill-extrusion-height"?: DataDrivenPropertyValueSpecification<number>;
+  "fill-extrusion-height-transition"?: TransitionSpecification;
+  /**
+   * The height with which to extrude the base of this layer. Must be less than or equal to `fill-extrusion-height`.
+   */
+  "fill-extrusion-base"?: DataDrivenPropertyValueSpecification<number>;
+  "fill-extrusion-base-transition"?: TransitionSpecification;
+  /**
+   * Whether to apply a vertical gradient to the sides of a fill-extrusion layer. If true, sides will be shaded slightly darker farther down.
+   *
+   * @default
+   * ```json
+   * true
+   * ```
+   */
+  "fill-extrusion-vertical-gradient"?: PropertyValueSpecification<boolean>;
+  /**
+   * The opacity at which the image will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "raster-opacity"?: PropertyValueSpecification<number>;
+  "raster-opacity-transition"?: TransitionSpecification;
+  /**
+   * Rotates hues around the color wheel.
+   */
+  "raster-hue-rotate"?: PropertyValueSpecification<number>;
+  "raster-hue-rotate-transition"?: TransitionSpecification;
+  /**
+   * Increase or reduce the brightness of the image. The value is the minimum brightness.
+   */
+  "raster-brightness-min"?: PropertyValueSpecification<number>;
+  "raster-brightness-min-transition"?: TransitionSpecification;
+  /**
+   * Increase or reduce the brightness of the image. The value is the maximum brightness.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "raster-brightness-max"?: PropertyValueSpecification<number>;
+  "raster-brightness-max-transition"?: TransitionSpecification;
+  /**
+   * Increase or reduce the saturation of the image.
+   */
+  "raster-saturation"?: PropertyValueSpecification<number>;
+  "raster-saturation-transition"?: TransitionSpecification;
+  /**
+   * Increase or reduce the contrast of the image.
+   */
+  "raster-contrast"?: PropertyValueSpecification<number>;
+  "raster-contrast-transition"?: TransitionSpecification;
+  /**
+   * The resampling/interpolation method to use for overscaling, also known as texture magnification filter.
+   * ![Visual comparison of linear resampling versus nearest resampling](assets/resampling.png)
+   *
+   * @default
+   * ```json
+   * "linear"
+   * ```
+   */
+  "resampling"?: PropertyValueSpecification<"linear" | "nearest">;
+  /**
+   * The resampling/interpolation method to use for overscaling, also known as texture magnification filter. It is advised to use the generic `resampling` paint property instead.
+   *
+   * @default
+   * ```json
+   * "linear"
+   * ```
+   */
+  "raster-resampling"?: PropertyValueSpecification<"linear" | "nearest">;
+  /**
+   * Fade duration when a new tile is added, or when a video is started or its coordinates are updated.
+   *
+   * @default
+   * ```json
+   * 300
+   * ```
+   */
+  "raster-fade-duration"?: PropertyValueSpecification<number>;
+  /**
+   * The direction of the light source(s) used to generate the hillshading with 0 as the top of the viewport if `hillshade-illumination-anchor` is set to `viewport` and due north if `hillshade-illumination-anchor` is set to `map`. Only when `hillshade-method` is set to `multidirectional` can you specify multiple light sources.
+   *
+   * @default
+   * ```json
+   * 335
+   * ```
+   */
+  "hillshade-illumination-direction"?: PropertyValueSpecification<NumberArraySpecification>;
+  /**
+   * The altitude of the light source(s) used to generate the hillshading with 0 as sunset and 90 as noon. Only when `hillshade-method` is set to `multidirectional` can you specify multiple light sources.
+   *
+   * @default
+   * ```json
+   * 45
+   * ```
+   */
+  "hillshade-illumination-altitude"?: PropertyValueSpecification<NumberArraySpecification>;
+  /**
+   * Direction of light source when map is rotated.
+   *
+   * @default
+   * ```json
+   * "viewport"
+   * ```
+   */
+  "hillshade-illumination-anchor"?: PropertyValueSpecification<"map" | "viewport">;
+  /**
+   * Intensity of the hillshade
+   *
+   * @default
+   * ```json
+   * 0.5
+   * ```
+   */
+  "hillshade-exaggeration"?: PropertyValueSpecification<number>;
+  "hillshade-exaggeration-transition"?: TransitionSpecification;
+  /**
+   * The shading color of areas that face away from the light source(s). Only when `hillshade-method` is set to `multidirectional` can you specify multiple light sources.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "hillshade-shadow-color"?: PropertyValueSpecification<ColorArraySpecification>;
+  "hillshade-shadow-color-transition"?: TransitionSpecification;
+  /**
+   * The shading color of areas that faces towards the light source(s). Only when `hillshade-method` is set to `multidirectional` can you specify multiple light sources.
+   *
+   * @default
+   * ```json
+   * "#FFFFFF"
+   * ```
+   */
+  "hillshade-highlight-color"?: PropertyValueSpecification<ColorArraySpecification>;
+  "hillshade-highlight-color-transition"?: TransitionSpecification;
+  /**
+   * The shading color used to accentuate rugged terrain like sharp cliffs and gorges.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "hillshade-accent-color"?: PropertyValueSpecification<ColorSpecification>;
+  "hillshade-accent-color-transition"?: TransitionSpecification;
+  /**
+   * The hillshade algorithm to use, one of `standard`, `basic`, `combined`, `igor`, or `multidirectional`.
+   * ![Visual comparison of standard, basic, igor, combined, and multidirectional hillshade-method](assets/hillshade_methods.png)
+   *
+   * @default
+   * ```json
+   * "standard"
+   * ```
+   */
+  "hillshade-method"?: PropertyValueSpecification<"standard" | "basic" | "combined" | "igor" | "multidirectional">;
+  /**
+   * The opacity at which the color-relief will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "color-relief-opacity"?: PropertyValueSpecification<number>;
+  "color-relief-opacity-transition"?: TransitionSpecification;
+  /**
+   * Defines the color of each pixel based on its elevation. Should be an expression that uses `["elevation"]` as input.
+   *
+   * @example
+   * ```json
+   * [
+   *     "interpolate",
+   *     ["linear"],
+   *     ["elevation"],
+   *     0,
+   *     "black",
+   *     8849,
+   *     "white"
+   * ]
+   * ```
+   */
+  "color-relief-color"?: ExpressionSpecification;
+  /**
+   * The color with which the background will be drawn.
+   *
+   * @default
+   * ```json
+   * "#000000"
+   * ```
+   */
+  "background-color"?: PropertyValueSpecification<ColorSpecification>;
+  "background-color-transition"?: TransitionSpecification;
+  /**
+   * Name of image in sprite to use for drawing an image background. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   */
+  "background-pattern"?: PropertyValueSpecification<ResolvedImageSpecification>;
+  "background-pattern-transition"?: TransitionSpecification;
+  /**
+   * The opacity at which the background will be drawn.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "background-opacity"?: PropertyValueSpecification<number>;
+  "background-opacity-transition"?: TransitionSpecification;
+};
+/**
+ * Union of all layout properties across all layer types.
+ */
+type AllLayoutProperties = {
+  /**
+   * Sorts features in ascending order based on this value. Features with a higher sort key will appear above features with a lower sort key.
+   */
+  "fill-sort-key"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Whether this layer is displayed.
+   *
+   * @default
+   * ```json
+   * "visible"
+   * ```
+   */
+  "visibility"?: VisibilitySpecification;
+  /**
+   * The display of line endings.
+   *
+   * @default
+   * ```json
+   * "butt"
+   * ```
+   */
+  "line-cap"?: DataDrivenPropertyValueSpecification<"butt" | "round" | "square">;
+  /**
+   * The display of lines when joining.
+   *
+   * @default
+   * ```json
+   * "miter"
+   * ```
+   */
+  "line-join"?: DataDrivenPropertyValueSpecification<"bevel" | "round" | "miter">;
+  /**
+   * Used to automatically convert miter joins to bevel joins for sharp angles.
+   *
+   * @default
+   * ```json
+   * 2
+   * ```
+   */
+  "line-miter-limit"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Used to automatically convert round joins to miter joins for shallow angles.
+   *
+   * @default
+   * ```json
+   * 1.05
+   * ```
+   */
+  "line-round-limit"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Sorts features in ascending order based on this value. Features with a higher sort key will appear above features with a lower sort key.
+   */
+  "line-sort-key"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Label placement relative to its geometry.
+   *
+   * @default
+   * ```json
+   * "point"
+   * ```
+   */
+  "symbol-placement"?: PropertyValueSpecification<"point" | "line" | "line-center">;
+  /**
+   * Distance between two symbol anchors.
+   *
+   * @default
+   * ```json
+   * 250
+   * ```
+   */
+  "symbol-spacing"?: PropertyValueSpecification<number>;
+  /**
+   * If true, the symbols will not cross tile edges to avoid mutual collisions. Recommended in layers that don't have enough padding in the vector tile to prevent collisions, or if it is a point symbol layer placed after a line symbol layer. When using a client that supports global collision detection, like MapLibre GL JS version 0.42.0 or greater, enabling this property is not needed to prevent clipped labels at tile boundaries.
+   */
+  "symbol-avoid-edges"?: PropertyValueSpecification<boolean>;
+  /**
+   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first.  When `icon-allow-overlap` or `text-allow-overlap` is `false`, features with a lower sort key will have priority during placement. When `icon-allow-overlap` or `text-allow-overlap` is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
+   */
+  "symbol-sort-key"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Determines whether overlapping symbols in the same layer are rendered in the order that they appear in the data source or by their y-position relative to the viewport. To control the order and prioritization of symbols otherwise, use `symbol-sort-key`.
+   *
+   * @default
+   * ```json
+   * "auto"
+   * ```
+   */
+  "symbol-z-order"?: PropertyValueSpecification<"auto" | "viewport-y" | "source">;
+  /**
+   * If true, the icon will be visible even if it collides with other previously drawn symbols.
+   */
+  "icon-allow-overlap"?: PropertyValueSpecification<boolean>;
+  /**
+   * Allows for control over whether to show an icon when it overlaps other symbols on the map. If `icon-overlap` is not set, `icon-allow-overlap` is used instead.
+   */
+  "icon-overlap"?: PropertyValueSpecification<"never" | "always" | "cooperative">;
+  /**
+   * If true, other symbols can be visible even if they collide with the icon.
+   */
+  "icon-ignore-placement"?: PropertyValueSpecification<boolean>;
+  /**
+   * If true, text will display without their corresponding icons when the icon collides with other symbols and the text does not.
+   */
+  "icon-optional"?: PropertyValueSpecification<boolean>;
+  /**
+   * In combination with `symbol-placement`, determines the rotation behavior of icons.
+   *
+   * @default
+   * ```json
+   * "auto"
+   * ```
+   */
+  "icon-rotation-alignment"?: PropertyValueSpecification<"map" | "viewport" | "auto">;
+  /**
+   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by `icon-size`. 1 is the original size; 3 triples the size of the image.
+   *
+   * @default
+   * ```json
+   * 1
+   * ```
+   */
+  "icon-size"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Scales the icon to fit around the associated text.
+   *
+   * @default
+   * ```json
+   * "none"
+   * ```
+   */
+  "icon-text-fit"?: PropertyValueSpecification<"none" | "width" | "height" | "both">;
+  /**
+   * Size of the additional area added to dimensions determined by `icon-text-fit`, in clockwise order: top, right, bottom, left.
+   *
+   * @default
+   * ```json
+   * [0, 0, 0, 0]
+   * ```
+   */
+  "icon-text-fit-padding"?: PropertyValueSpecification<[number, number, number, number]>;
+  /**
+   * Name of image in sprite to use for drawing an image background.
+   */
+  "icon-image"?: DataDrivenPropertyValueSpecification<ResolvedImageSpecification>;
+  /**
+   * Rotates the icon clockwise.
+   */
+  "icon-rotate"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Size of additional area round the icon bounding box used for detecting symbol collisions.
+   *
+   * @default
+   * ```json
+   * [2]
+   * ```
+   */
+  "icon-padding"?: DataDrivenPropertyValueSpecification<PaddingSpecification>;
+  /**
+   * If true, the icon may be flipped to prevent it from being rendered upside-down.
+   */
+  "icon-keep-upright"?: PropertyValueSpecification<boolean>;
+  /**
+   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of `icon-size` to obtain the final offset in pixels. When combined with `icon-rotate` the offset will be as if the rotated direction was up.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "icon-offset"?: DataDrivenPropertyValueSpecification<[number, number]>;
+  /**
+   * Part of the icon placed closest to the anchor.
+   *
+   * @default
+   * ```json
+   * "center"
+   * ```
+   */
+  "icon-anchor"?: DataDrivenPropertyValueSpecification<"center" | "left" | "right" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right">;
+  /**
+   * Orientation of icon when map is pitched.
+   *
+   * @default
+   * ```json
+   * "auto"
+   * ```
+   */
+  "icon-pitch-alignment"?: PropertyValueSpecification<"map" | "viewport" | "auto">;
+  /**
+   * Orientation of text when map is pitched.
+   *
+   * @default
+   * ```json
+   * "auto"
+   * ```
+   */
+  "text-pitch-alignment"?: PropertyValueSpecification<"map" | "viewport" | "auto">;
+  /**
+   * In combination with `symbol-placement`, determines the rotation behavior of the individual glyphs forming the text.
+   *
+   * @default
+   * ```json
+   * "auto"
+   * ```
+   */
+  "text-rotation-alignment"?: PropertyValueSpecification<"map" | "viewport" | "viewport-glyph" | "auto">;
+  /**
+   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options.
+   */
+  "text-field"?: DataDrivenPropertyValueSpecification<FormattedSpecification>;
+  /**
+   * Fonts to use for displaying text. If the `glyphs` root property is specified, this array is joined together and interpreted as a font stack name. Otherwise, it is interpreted as a cascading fallback list of local font names.
+   *
+   * @default
+   * ```json
+   * ["Open Sans Regular", "Arial Unicode MS Regular"]
+   * ```
+   */
+  "text-font"?: DataDrivenPropertyValueSpecification<Array<string>>;
+  /**
+   * Font size.
+   *
+   * @default
+   * ```json
+   * 16
+   * ```
+   */
+  "text-size"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * The maximum line width for text wrapping.
+   *
+   * @default
+   * ```json
+   * 10
+   * ```
+   */
+  "text-max-width"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Text leading value for multi-line text.
+   *
+   * @default
+   * ```json
+   * 1.2
+   * ```
+   */
+  "text-line-height"?: PropertyValueSpecification<number>;
+  /**
+   * Text tracking amount.
+   */
+  "text-letter-spacing"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Text justification options.
+   *
+   * @default
+   * ```json
+   * "center"
+   * ```
+   */
+  "text-justify"?: DataDrivenPropertyValueSpecification<"auto" | "left" | "center" | "right">;
+  /**
+   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with `text-variable-anchor`, which defaults to using the two-dimensional `text-offset` if present.
+   */
+  "text-radial-offset"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * To increase the chance of placing high-priority labels on the map, you can provide an array of `text-anchor` locations: the renderer will attempt to place the label at each location, in order, before moving onto the next label. Use `text-justify: auto` to choose justification based on anchor position. To apply an offset, use the `text-radial-offset` or the two-dimensional `text-offset`.
+   *
+   * @example
+   * ```json
+   * ["center", "left", "right"]
+   * ```
+   */
+  "text-variable-anchor"?: PropertyValueSpecification<Array<"center" | "left" | "right" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right">>;
+  /**
+   * To increase the chance of placing high-priority labels on the map, you can provide an array of `text-anchor` locations, each paired with an offset value. The renderer will attempt to place the label at each location, in order, before moving on to the next location+offset. Use `text-justify: auto` to choose justification based on anchor position.
+   *
+   *  The length of the array must be even, and must alternate between enum and point entries. i.e., each anchor location must be accompanied by a point, and that point defines the offset when the corresponding anchor location is used. Positive offset values indicate right and down, while negative values indicate left and up. Anchor locations may repeat, allowing the renderer to try multiple offsets to try and place a label using the same anchor.
+   *
+   *  When present, this property takes precedence over `text-anchor`, `text-variable-anchor`, `text-offset`, and `text-radial-offset`.
+   *
+   *  ```json
+   *
+   *  { "text-variable-anchor-offset": ["top", [0, 4], "left", [3,0], "bottom", [1, 1]] }
+   *
+   *  ```
+   *
+   *  When the renderer chooses the `top` anchor, `[0, 4]` will be used for `text-offset`; the text will be shifted down by 4 ems.
+   *
+   *  When the renderer chooses the `left` anchor, `[3, 0]` will be used for `text-offset`; the text will be shifted right by 3 ems.
+   *
+   * @example
+   * ```json
+   * ["top", [0, 4], "left", [3, 0], "bottom", [1, 1]]
+   * ```
+   */
+  "text-variable-anchor-offset"?: DataDrivenPropertyValueSpecification<VariableAnchorOffsetCollectionSpecification>;
+  /**
+   * Part of the text placed closest to the anchor.
+   *
+   * @default
+   * ```json
+   * "center"
+   * ```
+   */
+  "text-anchor"?: DataDrivenPropertyValueSpecification<"center" | "left" | "right" | "top" | "bottom" | "top-left" | "top-right" | "bottom-left" | "bottom-right">;
+  /**
+   * Maximum angle change between adjacent characters.
+   *
+   * @default
+   * ```json
+   * 45
+   * ```
+   */
+  "text-max-angle"?: PropertyValueSpecification<number>;
+  /**
+   * The property allows control over a symbol's orientation. Note that the property values act as a hint, so that a symbol whose language doesn’t support the provided orientation will be laid out in its natural orientation. Example: English point symbol will be rendered horizontally even if array value contains single 'vertical' enum value. The order of elements in an array define priority order for the placement of an orientation variant.
+   */
+  "text-writing-mode"?: PropertyValueSpecification<Array<"horizontal" | "vertical">>;
+  /**
+   * Rotates the text clockwise.
+   */
+  "text-rotate"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * Size of the additional area around the text bounding box used for detecting symbol collisions.
+   *
+   * @default
+   * ```json
+   * 2
+   * ```
+   */
+  "text-padding"?: PropertyValueSpecification<number>;
+  /**
+   * If true, the text may be flipped vertically to prevent it from being rendered upside-down.
+   *
+   * @default
+   * ```json
+   * true
+   * ```
+   */
+  "text-keep-upright"?: PropertyValueSpecification<boolean>;
+  /**
+   * Specifies how to capitalize text, similar to the CSS `text-transform` property.
+   *
+   * @default
+   * ```json
+   * "none"
+   * ```
+   */
+  "text-transform"?: DataDrivenPropertyValueSpecification<"none" | "uppercase" | "lowercase">;
+  /**
+   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position.
+   *
+   * @default
+   * ```json
+   * [0, 0]
+   * ```
+   */
+  "text-offset"?: DataDrivenPropertyValueSpecification<[number, number]>;
+  /**
+   * If true, the text will be visible even if it collides with other previously drawn symbols.
+   */
+  "text-allow-overlap"?: PropertyValueSpecification<boolean>;
+  /**
+   * Allows for control over whether to show symbol text when it overlaps other symbols on the map. If `text-overlap` is not set, `text-allow-overlap` is used instead
+   */
+  "text-overlap"?: PropertyValueSpecification<"never" | "always" | "cooperative">;
+  /**
+   * If true, other symbols can be visible even if they collide with the text.
+   */
+  "text-ignore-placement"?: PropertyValueSpecification<boolean>;
+  /**
+   * If true, icons will display without their corresponding text when the text collides with other symbols and the icon does not.
+   */
+  "text-optional"?: PropertyValueSpecification<boolean>;
+  /**
+   * Sorts features in ascending order based on this value. Features with a higher sort key will appear above features with a lower sort key.
+   */
+  "circle-sort-key"?: DataDrivenPropertyValueSpecification<number>;
+  /**
+   * The distance from each fill extrusion corner, measured along the adjacent edges, that is replaced by a rounded corner. A value of `0` disables rounded corners.
+   */
+  "fill-extrusion-rounded-corner-distance"?: number;
+}; //#endregion
+//#region src/deref.d.ts
+//#endregion
+//#region src/diff.d.ts
+/**
  * Operations that can be performed by the diff.
  * Below are the operations and their arguments, the arguments should be aligned with the style methods in maplibre-gl-js.
  */
@@ -2554,6 +4083,47 @@ type DiffCommand<T extends DiffOperations> = {
   args: DiffOperationsMap[T];
 };
 /**
+ * Diff two stylesheet
+ *
+ * Creates semanticly aware diffs that can easily be applied at runtime.
+ * Operations produced by the diff closely resemble the maplibre-gl-js API. Any
+ * error creating the diff will fall back to the 'setStyle' operation.
+ *
+ * Example diff:
+ * [
+ *     { command: 'setConstant', args: ['@water', '#0000FF'] },
+ *     { command: 'setPaintProperty', args: ['background', 'background-color', 'black'] }
+ * ]
+ *
+ * @private
+ * @param {*} [before] stylesheet to compare from
+ * @param {*} after stylesheet to compare to
+ * @returns Array list of changes
+ */
+//#endregion
+//#region src/error/validation_error.d.ts
+/**
+ * How badly a style is broken.
+ *
+ * - `error`: the style is invalid and cannot be rendered as written.
+ * - `warning`: the style renders, but almost certainly not as its author intended -- for
+ *   example a filter that mixes deprecated syntax into an expression tree. Consumers should
+ *   surface these (a style editor lists them; a map logs them) but must keep rendering.
+ */
+type ValidationSeverity = 'error' | 'warning';
+declare class ValidationError {
+  message: string;
+  identifier: string;
+  line: number;
+  severity: ValidationSeverity;
+  constructor(key: string, value: any & {
+    __line__: number;
+  }, message: string, identifier?: string | null, severity?: ValidationSeverity);
+} //#endregion
+//#region src/error/parsing_error.d.ts
+//#endregion
+//#region src/expression/types/color_spaces.d.ts
+/**
  * @param r Red component 0..1
  * @param g Green component 0..1
  * @param b Blue component 0..1
@@ -2573,8 +4143,9 @@ type HCLColor = [h: number, c: number, l: number, alpha: number];
  * @param b B axis value -125..125
  * @param alpha Alpha component 0..1
  */
-type LABColor = [l: number, a: number, b: number, alpha: number];
-type InterpolationColorSpace = "rgb" | "hcl" | "lab";
+type LABColor = [l: number, a: number, b: number, alpha: number]; //#endregion
+//#region src/expression/types/color.d.ts
+type InterpolationColorSpace = 'rgb' | 'hcl' | 'lab';
 /**
  * Color representation used by WebGL.
  * Defined in sRGB color space and pre-blended with alpha.
@@ -2663,7 +4234,8 @@ declare class Color {
    */
   toString(): string;
   static interpolate(from: Color, to: Color, t: number, spaceKey?: InterpolationColorSpace): Color;
-}
+} //#endregion
+//#region src/expression/types/resolved_image.d.ts
 type ResolvedImageOptions = {
   name: string;
   available: boolean;
@@ -2674,7 +4246,8 @@ declare class ResolvedImage {
   constructor(options: ResolvedImageOptions);
   toString(): string;
   static fromString(name: string): ResolvedImage | null;
-}
+} //#endregion
+//#region src/expression/types/formatted.d.ts
 declare const VERTICAL_ALIGN_OPTIONS: readonly ["bottom", "center", "top"];
 type VerticalAlign = (typeof VERTICAL_ALIGN_OPTIONS)[number];
 declare class FormattedSection {
@@ -2693,11 +4266,13 @@ declare class Formatted {
   isEmpty(): boolean;
   static factory(text: Formatted | string): Formatted;
   toString(): string;
-}
+} //#endregion
+//#region src/point2d.d.ts
 interface Point2D$1 {
   x: number;
   y: number;
-}
+} //#endregion
+//#region src/tiles_and_coordinates.d.ts
 interface ICanonicalTileID {
   z: number;
   x: number;
@@ -2725,14 +4300,17 @@ interface ILngLat {
   distanceTo(lngLat: ILngLat): number;
   toString(): string;
 }
+//#endregion
+//#region src/expression/types/collator.d.ts
 declare class Collator {
   locale: string | null;
-  sensitivity: "base" | "accent" | "case" | "variant";
+  sensitivity: 'base' | 'accent' | 'case' | 'variant';
   collator: Intl.Collator;
   constructor(caseSensitive: boolean, diacriticSensitive: boolean, locale: string | null);
   compare(lhs: string, rhs: string): number;
   resolvedLocale(): string;
-}
+} //#endregion
+//#region src/expression/types/padding.d.ts
 /**
  * A set of four numbers representing padding around a box. Create instances from
  * bare arrays or numeric values using the static method `Padding.parse`.
@@ -2750,7 +4328,8 @@ declare class Padding {
   static parse(input?: number | number[] | Padding | null): Padding | undefined;
   toString(): string;
   static interpolate(from: Padding, to: Padding, t: number): Padding;
-}
+} //#endregion
+//#region src/expression/types/number_array.d.ts
 /**
  * An array of numbers. Create instances from
  * bare arrays or numeric values using the static method `NumberArray.parse`.
@@ -2767,7 +4346,8 @@ declare class NumberArray {
   static parse(input?: number | number[] | NumberArray | null): NumberArray | undefined;
   toString(): string;
   static interpolate(from: NumberArray, to: NumberArray, t: number): NumberArray;
-}
+} //#endregion
+//#region src/expression/types/color_array.d.ts
 /**
  * An array of colors. Create instances from
  * bare arrays or strings using the static method `ColorArray.parse`.
@@ -2784,7 +4364,8 @@ declare class ColorArray {
   static parse(input?: string | string[] | ColorArray | null): ColorArray | undefined;
   toString(): string;
   static interpolate(from: ColorArray, to: ColorArray, t: number, spaceKey?: InterpolationColorSpace): ColorArray;
-}
+} //#endregion
+//#region src/expression/types/variable_anchor_offset_collection.d.ts
 /**
  * Utility class to assist managing values for text-variable-anchor-offset property. Create instances from
  * bare arrays using the static method `VariableAnchorOffsetCollection.parse`.
@@ -2796,30 +4377,37 @@ declare class VariableAnchorOffsetCollection {
   constructor(values: VariableAnchorOffsetCollectionSpecification);
   static parse(input?: VariableAnchorOffsetCollectionSpecification | VariableAnchorOffsetCollection): VariableAnchorOffsetCollection | undefined;
   toString(): string;
-  static interpolate(from: VariableAnchorOffsetCollection, to: VariableAnchorOffsetCollection, t: number): VariableAnchorOffsetCollection;
-}
+  static interpolate(from: VariableAnchorOffsetCollection, to: VariableAnchorOffsetCollection, t: number, key: string): VariableAnchorOffsetCollection;
+} //#endregion
+//#region src/expression/types/projection_definition.d.ts
 declare class ProjectionDefinition {
   readonly from: string;
   readonly to: string;
   readonly transition: number;
   constructor(from: string, to: string, transition: number);
+  toString(): string;
   static interpolate(from: string, to: string, t: number): ProjectionDefinition;
   static parse(input?: any): ProjectionDefinition;
-}
+} //#endregion
+//#region src/expression/values.d.ts
 type Value = null | string | boolean | number | Color | ProjectionDefinition | Collator | Formatted | Padding | NumberArray | ColorArray | ResolvedImage | VariableAnchorOffsetCollection | ReadonlyArray<Value> | {
   readonly [x: string]: Value;
 };
+//#endregion
+//#region src/expression/definitions/interpolate.d.ts
 type InterpolationType = {
-  name: "linear";
+  name: 'linear';
 } | {
-  name: "exponential";
+  name: 'exponential';
   base: number;
 } | {
-  name: "cubic-bezier";
+  name: 'cubic-bezier';
   controlPoints: [number, number, number, number];
 };
+//#endregion
+//#region src/expression/index.d.ts
 type Feature = {
-  readonly type: 0 | 1 | 2 | 3 | "Unknown" | "Point" | "MultiPoint" | "LineString" | "MultiLineString" | "Polygon" | "MultiPolygon";
+  readonly type: 0 | 1 | 2 | 3 | 'Unknown' | 'Point' | 'MultiPoint' | 'LineString' | 'MultiLineString' | 'Polygon' | 'MultiPolygon';
   readonly id?: any;
   readonly properties: {
     [_: string]: any;
@@ -2853,20 +4441,20 @@ type GlobalProperties = Readonly<{
   globalState?: Record<string, any>;
 }>;
 type ConstantExpression = {
-  kind: "constant";
+  kind: 'constant';
   globalStateRefs: Set<string>;
   readonly _globalState: Record<string, any>;
   readonly evaluate: (globals: GlobalProperties, feature?: Feature, featureState?: FeatureState, canonical?: ICanonicalTileID, availableImages?: Array<string>) => any;
 };
 type SourceExpression = {
-  kind: "source";
+  kind: 'source';
   isStateDependent: boolean;
   globalStateRefs: Set<string>;
   readonly _globalState: Record<string, any>;
   readonly evaluate: (globals: GlobalProperties, feature?: Feature, featureState?: FeatureState, canonical?: ICanonicalTileID, availableImages?: Array<string>, formattedSection?: FormattedSection) => any;
 };
 type CameraExpression = {
-  kind: "camera";
+  kind: 'camera';
   globalStateRefs: Set<string>;
   readonly _globalState: Record<string, any>;
   readonly evaluate: (globals: GlobalProperties, feature?: Feature, featureState?: FeatureState, canonical?: ICanonicalTileID, availableImages?: Array<string>) => any;
@@ -2875,7 +4463,7 @@ type CameraExpression = {
   interpolationType: InterpolationType;
 };
 type CompositeExpression = {
-  kind: "composite";
+  kind: 'composite';
   isStateDependent: boolean;
   globalStateRefs: Set<string>;
   readonly _globalState: Record<string, any>;
@@ -2885,17 +4473,21 @@ type CompositeExpression = {
   interpolationType: InterpolationType;
 };
 type StylePropertyExpression = ConstantExpression | SourceExpression | CameraExpression | CompositeExpression;
+//#endregion
+//#region src/feature_filter/index.d.ts
 type FilterExpression = (globalProperties: GlobalProperties, feature: Feature, canonical?: ICanonicalTileID) => boolean;
 type FeatureFilter = {
   filter: FilterExpression;
   needGeometry: boolean;
   getGlobalStateRefs: () => Set<string>;
 };
+//#endregion
+//#region src/expression/visibility.d.ts
 interface VisibilityExpression {
   /**
    * Evaluates the visibility expression and returns either 'visible' or 'none'.
    */
-  evaluate: () => "visible" | "none";
+  evaluate: () => 'visible' | 'none';
   /**
    * Updates the visibility specification.
    */
@@ -2905,34 +4497,44 @@ interface VisibilityExpression {
    */
   getGlobalStateRefs: () => Set<string>;
 }
-type ExpressionType = "data-driven" | "cross-faded" | "cross-faded-data-driven" | "color-ramp" | "data-constant" | "constant";
-type ExpressionParameters = Array<"zoom" | "feature" | "feature-state" | "heatmap-density" | "elevation" | "line-progress" | "global-state">;
+/**
+ * Creates a visibility expression from a visibility specification.
+ * @param visibility - the visibility specification, literal or expression
+ * @param rootKey - location of the visibility value in the style JSON
+ * (e.g. `layers[3].layout.visibility`), used to prefix runtime warnings
+ * @param globalState - the global state object
+ * @returns visibility expression object
+ */
+//#endregion
+//#region src/index.d.ts
+type ExpressionType = 'data-driven' | 'cross-faded' | 'cross-faded-data-driven' | 'color-ramp' | 'data-constant' | 'constant';
+type ExpressionParameters = Array<'zoom' | 'feature' | 'feature-state' | 'heatmap-density' | 'elevation' | 'line-progress' | 'global-state'>;
 type ExpressionSpecificationDefinition = {
   interpolated: boolean;
   parameters: ExpressionParameters;
 };
 type StylePropertySpecification = {
-  type: "number";
-  "property-type": ExpressionType;
+  type: 'number';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: number;
 } | {
-  type: "string";
-  "property-type": ExpressionType;
+  type: 'string';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: string;
   tokens?: boolean;
 } | {
-  type: "boolean";
-  "property-type": ExpressionType;
+  type: 'boolean';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: boolean;
 } | {
-  type: "enum";
-  "property-type": ExpressionType;
+  type: 'enum';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   values: {
     [_: string]: {};
@@ -2940,474 +4542,59 @@ type StylePropertySpecification = {
   transition: boolean;
   default?: string;
 } | {
-  type: "color";
-  "property-type": ExpressionType;
+  type: 'color';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: ColorSpecification;
   overridable: boolean;
 } | {
-  type: "array";
-  value: "number";
-  "property-type": ExpressionType;
+  type: 'array';
+  value: 'number';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   length?: number;
   transition: boolean;
   default?: Array<number>;
 } | {
-  type: "array";
-  value: "string";
-  "property-type": ExpressionType;
+  type: 'array';
+  value: 'string';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   length?: number;
   transition: boolean;
   default?: Array<string>;
 } | {
-  type: "padding";
-  "property-type": ExpressionType;
+  type: 'padding';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: PaddingSpecification;
 } | {
-  type: "numberArray";
-  "property-type": ExpressionType;
+  type: 'numberArray';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: NumberArraySpecification;
 } | {
-  type: "colorArray";
-  "property-type": ExpressionType;
+  type: 'colorArray';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: ColorArraySpecification;
 } | {
-  type: "variableAnchorOffsetCollection";
-  "property-type": ExpressionType;
+  type: 'variableAnchorOffsetCollection';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: VariableAnchorOffsetCollectionSpecification;
 } | {
-  type: "projectionDefinition";
-  "property-type": ExpressionType;
+  type: 'projectionDefinition';
+  'property-type': ExpressionType;
   expression?: ExpressionSpecificationDefinition;
   transition: boolean;
   default?: ProjectionDefinitionSpecification;
 };
-//#endregion
-//#region node_modules/@mapbox/point-geometry/index.d.ts
-/**
- * A standalone point geometry with useful accessor, comparison, and
- * modification methods.
- *
- * @class
- * @param {number} x the x-coordinate. This could be longitude or screen pixels, or any other sort of unit.
- * @param {number} y the y-coordinate. This could be latitude or screen pixels, or any other sort of unit.
- *
- * @example
- * const point = new Point(-77, 38);
- */
-declare function Point(x: number, y: number): void;
-declare class Point {
-  /**
-   * A standalone point geometry with useful accessor, comparison, and
-   * modification methods.
-   *
-   * @class
-   * @param {number} x the x-coordinate. This could be longitude or screen pixels, or any other sort of unit.
-   * @param {number} y the y-coordinate. This could be latitude or screen pixels, or any other sort of unit.
-   *
-   * @example
-   * const point = new Point(-77, 38);
-   */
-  constructor(x: number, y: number);
-  x: number;
-  y: number;
-  /**
-   * Clone this point, returning a new point that can be modified
-   * without affecting the old one.
-   * @return {Point} the clone
-   */
-  clone(): Point;
-  /**
-   * Add this point's x & y coordinates to another point,
-   * yielding a new point.
-   * @param {Point} p the other point
-   * @return {Point} output point
-   */
-  add(p: Point): Point;
-  /**
-   * Subtract this point's x & y coordinates to from point,
-   * yielding a new point.
-   * @param {Point} p the other point
-   * @return {Point} output point
-   */
-  sub(p: Point): Point;
-  /**
-   * Multiply this point's x & y coordinates by point,
-   * yielding a new point.
-   * @param {Point} p the other point
-   * @return {Point} output point
-   */
-  multByPoint(p: Point): Point;
-  /**
-   * Divide this point's x & y coordinates by point,
-   * yielding a new point.
-   * @param {Point} p the other point
-   * @return {Point} output point
-   */
-  divByPoint(p: Point): Point;
-  /**
-   * Multiply this point's x & y coordinates by a factor,
-   * yielding a new point.
-   * @param {number} k factor
-   * @return {Point} output point
-   */
-  mult(k: number): Point;
-  /**
-   * Divide this point's x & y coordinates by a factor,
-   * yielding a new point.
-   * @param {number} k factor
-   * @return {Point} output point
-   */
-  div(k: number): Point;
-  /**
-   * Rotate this point around the 0, 0 origin by an angle a,
-   * given in radians
-   * @param {number} a angle to rotate around, in radians
-   * @return {Point} output point
-   */
-  rotate(a: number): Point;
-  /**
-   * Rotate this point around p point by an angle a,
-   * given in radians
-   * @param {number} a angle to rotate around, in radians
-   * @param {Point} p Point to rotate around
-   * @return {Point} output point
-   */
-  rotateAround(a: number, p: Point): Point;
-  /**
-   * Multiply this point by a 4x1 transformation matrix
-   * @param {[number, number, number, number]} m transformation matrix
-   * @return {Point} output point
-   */
-  matMult(m: [number, number, number, number]): Point;
-  /**
-   * Calculate this point but as a unit vector from 0, 0, meaning
-   * that the distance from the resulting point to the 0, 0
-   * coordinate will be equal to 1 and the angle from the resulting
-   * point to the 0, 0 coordinate will be the same as before.
-   * @return {Point} unit vector point
-   */
-  unit(): Point;
-  /**
-   * Compute a perpendicular point, where the new y coordinate
-   * is the old x coordinate and the new x coordinate is the old y
-   * coordinate multiplied by -1
-   * @return {Point} perpendicular point
-   */
-  perp(): Point;
-  /**
-   * Return a version of this point with the x & y coordinates
-   * rounded to integers.
-   * @return {Point} rounded point
-   */
-  round(): Point;
-  /**
-   * Return the magnitude of this point: this is the Euclidean
-   * distance from the 0, 0 coordinate to this point's x and y
-   * coordinates.
-   * @return {number} magnitude
-   */
-  mag(): number;
-  /**
-   * Judge whether this point is equal to another point, returning
-   * true or false.
-   * @param {Point} other the other point
-   * @return {boolean} whether the points are equal
-   */
-  equals(other: Point): boolean;
-  /**
-   * Calculate the distance from this point to another point
-   * @param {Point} p the other point
-   * @return {number} distance
-   */
-  dist(p: Point): number;
-  /**
-   * Calculate the distance from this point to another point,
-   * without the square root step. Useful if you're comparing
-   * relative distances.
-   * @param {Point} p the other point
-   * @return {number} distance
-   */
-  distSqr(p: Point): number;
-  /**
-   * Get the angle from the 0, 0 coordinate to this point, in radians
-   * coordinates.
-   * @return {number} angle
-   */
-  angle(): number;
-  /**
-   * Get the angle from this point to another point, in radians
-   * @param {Point} b the other point
-   * @return {number} angle
-   */
-  angleTo(b: Point): number;
-  /**
-   * Get the angle between this point and another point, in radians
-   * @param {Point} b the other point
-   * @return {number} angle
-   */
-  angleWith(b: Point): number;
-  /**
-   * Find the angle of the two vectors, solving the formula for
-   * the cross product a x b = |a||b|sin(θ) for θ.
-   * @param {number} x the x-coordinate
-   * @param {number} y the y-coordinate
-   * @return {number} the angle in radians
-   */
-  angleWithSep(x: number, y: number): number;
-  /** @param {[number, number, number, number]} m */
-  _matMult(m: [number, number, number, number]): this;
-  /** @param {Point} p */
-  _add(p: Point): this;
-  /** @param {Point} p */
-  _sub(p: Point): this;
-  /** @param {number} k */
-  _mult(k: number): this;
-  /** @param {number} k */
-  _div(k: number): this;
-  /** @param {Point} p */
-  _multByPoint(p: Point): this;
-  /** @param {Point} p */
-  _divByPoint(p: Point): this;
-  _unit(): this;
-  _perp(): this;
-  /** @param {number} angle */
-  _rotate(angle: number): this;
-  /**
-   * @param {number} angle
-   * @param {Point} p
-   */
-  _rotateAround(angle: number, p: Point): this;
-  _round(): this;
-}
-declare namespace Point {
-  /**
-   * Construct a point from an array if necessary, otherwise if the input
-   * is already a Point, return it unchanged.
-   * @param {Point | [number, number] | {x: number, y: number}} p input value
-   * @return {Point} constructed point.
-   * @example
-   * // this
-   * var point = Point.convert([0, 1]);
-   * // is equivalent to
-   * var point = new Point(0, 1);
-   */
-  function convert(p: Point | [number, number] | {
-    x: number;
-    y: number;
-  }): Point;
-}
-//#endregion
-//#region node_modules/@mapbox/tiny-sdf/index.d.ts
-declare type TinySDFOptions = {
-  fontSize?: number;
-  buffer?: number;
-  radius?: number;
-  cutoff?: number;
-  fontFamily?: string;
-  fontWeight?: string;
-  fontStyle?: string;
-  lang?: string;
-};
-declare class TinySDF {
-  constructor(options: TinySDFOptions);
-  draw(char: string): {
-    data: Uint8ClampedArray;
-    width: number;
-    height: number;
-    glyphWidth: number;
-    glyphHeight: number;
-    glyphTop: number;
-    glyphLeft: number;
-    glyphAdvance: number;
-  };
-}
-//#endregion
-//#region node_modules/@maplibre/geojson-vt/dist/definitions.d.ts
-type GeoJSONVTOptions = {
-  /**
-   * Max zoom to preserve detail on
-   * @default 14
-   */
-  maxZoom?: number;
-  /**
-   * Max zoom in the tile index
-   * @default 5
-   */
-  indexMaxZoom?: number;
-  /**
-   * Max number of points per tile in the tile index
-   * @default 100000
-   */
-  indexMaxPoints?: number;
-  /**
-   * Simplification tolerance (higher means simpler)
-   * @default 3
-   */
-  tolerance?: number;
-  /**
-   * Tile extent
-   * @default 4096
-   */
-  extent?: number;
-  /**
-   * Tile buffer on each side
-   * @default 64
-   */
-  buffer?: number;
-  /**
-   * Whether to calculate line metrics
-   * @default false
-   */
-  lineMetrics?: boolean;
-  /**
-   * Name of a feature property to be promoted to feature.id
-   */
-  promoteId?: string | null;
-  /**
-   * Whether to generate feature ids. Cannot be used with promoteId
-   * @default false
-   */
-  generateId?: boolean;
-  /**
-   * Whether geojson can be updated (with caveat of a stored simplified copy)
-   * @default false
-   */
-  updateable?: boolean;
-  /**
-   * Logging level (0, 1 or 2)
-   * @default 0
-   */
-  debug?: number;
-  /**
-   * Enable Supercluster for point features.
-   * @default false
-   */
-  cluster?: boolean;
-  /**
-   * Options for the Supercluster point clustering algorithm.
-   * @see {@link SuperclusterOptions}
-   */
-  clusterOptions?: SuperclusterOptions;
-};
-type SuperclusterOptions = {
-  /**
-   * Min zoom to generate clusters on
-   * @default 0
-   */
-  minZoom?: number;
-  /**
-   * Max zoom level to cluster the points on
-   * @default 16
-   */
-  maxZoom?: number;
-  /**
-   * Minimum points to form a cluster
-   * @default 2
-   */
-  minPoints?: number;
-  /**
-   * Cluster radius in pixels
-   * @default 40
-   */
-  radius?: number;
-  /**
-   * Tile extent (radius is calculated relative to it)
-   * @default 512
-   */
-  extent?: number;
-  /**
-   * Size of the KD-tree leaf node, affects performance
-   * @default 64
-   */
-  nodeSize?: number;
-  /**
-   * Whether to log timing info
-   * @default false
-   */
-  log?: boolean;
-  /**
-   * Whether to generate numeric ids for input features (in vector tiles)
-   * @default false
-   */
-  generateId?: boolean;
-  /**
-   * A reduce function for calculating custom cluster properties
-   * @default null
-   */
-  reduce?: ((accumulated: Record<string, unknown>, props: Record<string, unknown>) => void) | null;
-  /**
-   * Properties to use for individual points when running the reducer
-   * @default props => props
-   */
-  map?: (props: GeoJSON.GeoJsonProperties) => Record<string, unknown>;
-};
-//#endregion
-//#region node_modules/kdbush/index.d.ts
-declare class KDBush {
-  /**
-   * Creates an index from raw `ArrayBuffer` data.
-   * @param {ArrayBuffer} data
-   */
-  static from(data: ArrayBuffer): KDBush;
-  /**
-   * Creates an index that will hold a given number of items.
-   * @param {number} numItems
-   * @param {number} [nodeSize=64] Size of the KD-tree node (64 by default).
-   * @param {TypedArrayConstructor} [ArrayType=Float64Array] The array type used for coordinates storage (`Float64Array` by default).
-   * @param {ArrayBuffer} [data] (For internal use only)
-   */
-  constructor(numItems: number, nodeSize?: number | undefined, ArrayType?: TypedArrayConstructor | undefined, data?: ArrayBuffer | undefined);
-  numItems: number;
-  nodeSize: number;
-  ArrayType: TypedArrayConstructor;
-  IndexArrayType: Uint16ArrayConstructor | Uint32ArrayConstructor;
-  data: ArrayBuffer;
-  ids: Uint16Array | Uint32Array;
-  coords: Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
-  _pos: number;
-  _finished: boolean;
-  /**
-   * Add a point to the index.
-   * @param {number} x
-   * @param {number} y
-   * @returns {number} An incremental index associated with the added item (starting from `0`).
-   */
-  add(x: number, y: number): number;
-  /**
-   * Perform indexing of the added points.
-   */
-  finish(): KDBush;
-  /**
-   * Search the index for items within a given bounding box.
-   * @param {number} minX
-   * @param {number} minY
-   * @param {number} maxX
-   * @param {number} maxY
-   * @returns {number[]} An array of indices correponding to the found items.
-   */
-  range(minX: number, minY: number, maxX: number, maxY: number): number[];
-  /**
-   * Search the index for items within a given radius.
-   * @param {number} qx
-   * @param {number} qy
-   * @param {number} r Query radius.
-   * @returns {number[]} An array of indices correponding to the found items.
-   */
-  within(qx: number, qy: number, r: number): number[];
-}
-type TypedArrayConstructor = Int8ArrayConstructor | Uint8ArrayConstructor | Uint8ClampedArrayConstructor | Int16ArrayConstructor | Uint16ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor | Float64ArrayConstructor;
 //#endregion
 //#region node_modules/@maplibre/vt-pbf/dist/lib/types.d.ts
 interface VectorTileFeatureLike {
@@ -3445,7 +4632,33 @@ type PotpackBox = {
   y?: number | undefined;
 };
 //#endregion
+//#region node_modules/@mapbox/tiny-sdf/index.d.ts
+declare type TinySDFOptions = {
+  fontSize?: number;
+  buffer?: number;
+  radius?: number;
+  cutoff?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  lang?: string;
+};
+declare class TinySDF {
+  constructor(options: TinySDFOptions);
+  draw(char: string): {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+    glyphWidth: number;
+    glyphHeight: number;
+    glyphTop: number;
+    glyphLeft: number;
+    glyphAdvance: number;
+  };
+}
+//#endregion
 //#region node_modules/maplibre-gl/dist/maplibre-gl.d.ts
+//#region src/util/ajax.d.ts
 /**
  * A type used to store the tile's expiration date and cache control definition
  */
@@ -3514,10 +4727,26 @@ type RequestParameters = {
 type GetResourceResponse<T> = ExpiryData & {
   data: T;
 };
+/**
+ * An error thrown when a HTTP request results in an error response.
+ */
+//#endregion
+//#region src/util/web_worker_transfer.d.ts
+/**
+ * A class that is serialized to and json, that can be constructed back to the original class in the worker or in the main thread
+ */
 type SerializedObject<S extends Serialized = any> = {
   [_: string]: S;
 };
-type Serialized = null | void | boolean | number | string | Boolean | Number | String | Date | RegExp | ArrayBuffer | ArrayBufferView | ImageData | ImageBitmap | Blob | Array<Serialized> | SerializedObject;
+/**
+ * All the possible values that can be serialized and sent to and from the worker
+ */
+type Serialized = null | void | boolean | number | string | Boolean | Number | String | Date | RegExp | ArrayBuffer | ArrayBufferView | ImageData | ImageBitmap | Blob | Serialized[] | SerializedObject; //#endregion
+//#region src/util/throttled_invoker.d.ts
+/**
+ * Invokes the wrapped function in a non-blocking way when trigger() is called.
+ * Invocation requests are ignored until the function was actually invoked.
+ */
 declare class ThrottledInvoker {
   _channel: MessageChannel | undefined;
   _triggered: boolean;
@@ -3525,7 +4754,12 @@ declare class ThrottledInvoker {
   constructor(methodToThrottle: Function);
   trigger(): void;
   remove(): void;
-}
+} //#endregion
+//#region src/util/struct_array.d.ts
+/**
+ * @internal
+ * A view type size
+ */
 declare const viewTypes: {
   Int8: Int8ArrayConstructor;
   Uint8: Uint8ArrayConstructor;
@@ -3535,7 +4769,12 @@ declare const viewTypes: {
   Uint32: Uint32ArrayConstructor;
   Float32: Float32ArrayConstructor;
 };
+/**
+ * @internal
+ * A view type size
+ */
 type ViewType = keyof typeof viewTypes;
+/** @internal */
 declare class Struct {
   _pos1: number;
   _pos2: number;
@@ -3549,34 +4788,63 @@ declare class Struct {
    */
   constructor(structArray: StructArray, index: number);
 }
+/**
+ * @internal
+ * A struct array member
+ */
 type StructArrayMember = {
   name: string;
   type: ViewType;
   components: number;
   offset: number;
 };
+/**
+ * An array that can be deserialized
+ */
 type SerializedStructArray = {
   length: number;
   arrayBuffer: ArrayBuffer;
 };
+/**
+ * @internal
+ * `StructArray` provides an abstraction over `ArrayBuffer` and `TypedArray`
+ * making it behave like an array of typed structs.
+ *
+ * Conceptually, a StructArray is comprised of elements, i.e., instances of its
+ * associated struct type. Each particular struct type, together with an
+ * alignment size, determines the memory layout of a StructArray whose elements
+ * are of that type.  Thus, for each such layout that we need, we have
+ * a corresponding StructArrayLayout class, inheriting from StructArray and
+ * implementing `emplaceBack()` and `_refreshViews()`.
+ *
+ * In some cases, where we need to access particular elements of a StructArray,
+ * we implement a more specific subclass that inherits from one of the
+ * StructArrayLayouts and adds a `get(i): T` accessor that returns a structured
+ * object whose properties are proxies into the underlying memory space for the
+ * i-th element.  This affords the convenience of working with (seemingly) plain
+ * Javascript objects without the overhead of serializing/deserializing them
+ * into ArrayBuffers for efficient web worker transfer.
+ */
 declare abstract class StructArray {
   capacity: number;
   length: number;
   isTransferred: boolean;
   arrayBuffer: ArrayBuffer;
   uint8: Uint8Array;
-  members: Array<StructArrayMember>;
+  members: StructArrayMember[];
   bytesPerElement: number;
-  abstract emplaceBack(...v: number[]): any;
-  abstract emplace(i: number, ...v: number[]): any;
+  abstract emplaceBack(...v: number[]): number;
+  abstract emplace(i: number, ...v: number[]): number;
   constructor();
   /**
    * Serialize a StructArray instance.  Serializes both the raw data and the
    * metadata needed to reconstruct the StructArray base class during
    * deserialization.
    */
-  static serialize(array: StructArray, transferables?: Array<Transferable>): SerializedStructArray;
-  static deserialize(input: SerializedStructArray): any;
+  static serialize(array: StructArray, transferables?: Transferable[]): SerializedStructArray;
+  static deserialize<T extends StructArray>(this: {
+    prototype: T;
+  } & (new () => T), input: SerializedStructArray): T;
   /**
    * Resize the array to discard unused capacity.
    */
@@ -3606,7 +4874,14 @@ declare abstract class StructArray {
    * Replace the buffer with an empty one so typed views release the original ArrayBuffer for GC.
    */
   freeBufferAfterUpload(): void;
-}
+} //#endregion
+//#region src/data/array_types.g.d.ts
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[2]
+ *
+ */
 declare class StructArrayLayout2i4 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3614,6 +4889,12 @@ declare class StructArrayLayout2i4 extends StructArray {
   emplaceBack(v0: number, v1: number): number;
   emplace(i: number, v0: number, v1: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[3]
+ *
+ */
 declare class StructArrayLayout3i6 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3621,6 +4902,13 @@ declare class StructArrayLayout3i6 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number): number;
   emplace(i: number, v0: number, v1: number, v2: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[2]
+ * [4] - Int16[4]
+ *
+ */
 declare class StructArrayLayout2i4i12 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3628,6 +4916,13 @@ declare class StructArrayLayout2i4i12 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[2]
+ * [4] - Uint8[4]
+ *
+ */
 declare class StructArrayLayout2i4ub8 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3635,6 +4930,12 @@ declare class StructArrayLayout2i4ub8 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Float32[2]
+ *
+ */
 declare class StructArrayLayout2f8 extends StructArray {
   uint8: Uint8Array;
   float32: Float32Array;
@@ -3642,6 +4943,14 @@ declare class StructArrayLayout2f8 extends StructArray {
   emplaceBack(v0: number, v1: number): number;
   emplace(i: number, v0: number, v1: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[4]
+ * [8] - Uint16[4]
+ * [16] - Int16[4]
+ *
+ */
 declare class StructArrayLayout4i4ui4i24 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3650,6 +4959,12 @@ declare class StructArrayLayout4i4ui4i24 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Float32[3]
+ *
+ */
 declare class StructArrayLayout3f12 extends StructArray {
   uint8: Uint8Array;
   float32: Float32Array;
@@ -3657,6 +4972,12 @@ declare class StructArrayLayout3f12 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number): number;
   emplace(i: number, v0: number, v1: number, v2: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint32[1]
+ *
+ */
 declare class StructArrayLayout1ul4 extends StructArray {
   uint8: Uint8Array;
   uint32: Uint32Array;
@@ -3664,6 +4985,14 @@ declare class StructArrayLayout1ul4 extends StructArray {
   emplaceBack(v0: number): number;
   emplace(i: number, v0: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[6]
+ * [12] - Uint32[1]
+ * [16] - Uint16[2]
+ *
+ */
 declare class StructArrayLayout6i1ul2ui20 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3673,6 +5002,14 @@ declare class StructArrayLayout6i1ul2ui20 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint8[2]
+ * [4] - Float32[2]
+ * [12] - Int16[2]
+ *
+ */
 declare class StructArrayLayout2ub2f2i16 extends StructArray {
   uint8: Uint8Array;
   float32: Float32Array;
@@ -3681,6 +5018,12 @@ declare class StructArrayLayout2ub2f2i16 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint16[3]
+ *
+ */
 declare class StructArrayLayout3ui6 extends StructArray {
   uint8: Uint8Array;
   uint16: Uint16Array;
@@ -3688,6 +5031,19 @@ declare class StructArrayLayout3ui6 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number): number;
   emplace(i: number, v0: number, v1: number, v2: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[2]
+ * [4] - Uint16[2]
+ * [8] - Uint32[3]
+ * [20] - Uint16[3]
+ * [28] - Float32[2]
+ * [36] - Uint8[3]
+ * [40] - Uint32[1]
+ * [44] - Int16[1]
+ *
+ */
 declare class StructArrayLayout2i2ui3ul3ui2f3ub1ul1i48 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3698,6 +5054,16 @@ declare class StructArrayLayout2i2ui3ul3ui2f3ub1ul1i48 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number, v12: number, v13: number, v14: number, v15: number, v16: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number, v12: number, v13: number, v14: number, v15: number, v16: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Int16[8]
+ * [16] - Uint16[15]
+ * [48] - Uint32[1]
+ * [52] - Float32[2]
+ * [60] - Uint16[2]
+ *
+ */
 declare class StructArrayLayout8i15ui1ul2f2ui64 extends StructArray {
   uint8: Uint8Array;
   int16: Int16Array;
@@ -3708,6 +5074,12 @@ declare class StructArrayLayout8i15ui1ul2f2ui64 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number, v12: number, v13: number, v14: number, v15: number, v16: number, v17: number, v18: number, v19: number, v20: number, v21: number, v22: number, v23: number, v24: number, v25: number, v26: number, v27: number): number;
   emplace(i: number, v0: number, v1: number, v2: number, v3: number, v4: number, v5: number, v6: number, v7: number, v8: number, v9: number, v10: number, v11: number, v12: number, v13: number, v14: number, v15: number, v16: number, v17: number, v18: number, v19: number, v20: number, v21: number, v22: number, v23: number, v24: number, v25: number, v26: number, v27: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Float32[1]
+ *
+ */
 declare class StructArrayLayout1f4 extends StructArray {
   uint8: Uint8Array;
   float32: Float32Array;
@@ -3715,6 +5087,13 @@ declare class StructArrayLayout1f4 extends StructArray {
   emplaceBack(v0: number): number;
   emplace(i: number, v0: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint16[1]
+ * [4] - Float32[2]
+ *
+ */
 declare class StructArrayLayout1ui2f12 extends StructArray {
   uint8: Uint8Array;
   uint16: Uint16Array;
@@ -3723,6 +5102,13 @@ declare class StructArrayLayout1ui2f12 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number): number;
   emplace(i: number, v0: number, v1: number, v2: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint32[1]
+ * [4] - Uint16[2]
+ *
+ */
 declare class StructArrayLayout1ul2ui8 extends StructArray {
   uint8: Uint8Array;
   uint32: Uint32Array;
@@ -3731,6 +5117,12 @@ declare class StructArrayLayout1ul2ui8 extends StructArray {
   emplaceBack(v0: number, v1: number, v2: number): number;
   emplace(i: number, v0: number, v1: number, v2: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint16[2]
+ *
+ */
 declare class StructArrayLayout2ui4 extends StructArray {
   uint8: Uint8Array;
   uint16: Uint16Array;
@@ -3738,6 +5130,12 @@ declare class StructArrayLayout2ui4 extends StructArray {
   emplaceBack(v0: number, v1: number): number;
   emplace(i: number, v0: number, v1: number): number;
 }
+/**
+ * @internal
+ * Implementation of the StructArray layout:
+ * [0] - Uint16[1]
+ *
+ */
 declare class StructArrayLayout1ui2 extends StructArray {
   uint8: Uint8Array;
   uint16: Uint16Array;
@@ -3745,6 +5143,7 @@ declare class StructArrayLayout1ui2 extends StructArray {
   emplaceBack(v0: number): number;
   emplace(i: number, v0: number): number;
 }
+/** @internal */
 declare class CollisionBoxStruct extends Struct {
   _structArray: CollisionBoxArray;
   get anchorPointX(): number;
@@ -3766,6 +5165,7 @@ declare class CollisionBoxArray extends StructArrayLayout6i1ul2ui20 {
    */
   get(index: number): CollisionBoxStruct;
 }
+/** @internal */
 declare class PlacedSymbolStruct extends Struct {
   _structArray: PlacedSymbolArray;
   get anchorX(): number;
@@ -3790,6 +5190,7 @@ declare class PlacedSymbolStruct extends Struct {
   get associatedIconIndex(): number;
 }
 type PlacedSymbol = PlacedSymbolStruct;
+/** @internal */
 declare class PlacedSymbolArray extends StructArrayLayout2i2ui3ul3ui2f3ub1ul1i48 {
   /**
    * Return the PlacedSymbolStruct at the given location in the array.
@@ -3797,6 +5198,7 @@ declare class PlacedSymbolArray extends StructArrayLayout2i2ui3ul3ui2f3ub1ul1i48
    */
   get(index: number): PlacedSymbolStruct;
 }
+/** @internal */
 declare class SymbolInstanceStruct extends Struct {
   _structArray: SymbolInstanceArray;
   get anchorX(): number;
@@ -3830,6 +5232,7 @@ declare class SymbolInstanceStruct extends Struct {
   get textAnchorOffsetEndIndex(): number;
 }
 type SymbolInstance = SymbolInstanceStruct;
+/** @internal */
 declare class SymbolInstanceArray extends StructArrayLayout8i15ui1ul2f2ui64 {
   /**
    * Return the SymbolInstanceStruct at the given location in the array.
@@ -3837,14 +5240,17 @@ declare class SymbolInstanceArray extends StructArrayLayout8i15ui1ul2f2ui64 {
    */
   get(index: number): SymbolInstanceStruct;
 }
+/** @internal */
 declare class GlyphOffsetArray extends StructArrayLayout1f4 {
   getoffsetX(index: number): number;
 }
+/** @internal */
 declare class SymbolLineVertexArray extends StructArrayLayout3i6 {
   getx(index: number): number;
   gety(index: number): number;
   gettileUnitDistanceFromAnchor(index: number): number;
 }
+/** @internal */
 declare class TextAnchorOffsetStruct extends Struct {
   _structArray: TextAnchorOffsetArray;
   get textAnchor(): number;
@@ -3852,6 +5258,7 @@ declare class TextAnchorOffsetStruct extends Struct {
   get textOffset1(): number;
 }
 type TextAnchorOffset = TextAnchorOffsetStruct;
+/** @internal */
 declare class TextAnchorOffsetArray extends StructArrayLayout1ui2f12 {
   /**
    * Return the TextAnchorOffsetStruct at the given location in the array.
@@ -3859,12 +5266,14 @@ declare class TextAnchorOffsetArray extends StructArrayLayout1ui2f12 {
    */
   get(index: number): TextAnchorOffsetStruct;
 }
+/** @internal */
 declare class FeatureIndexStruct extends Struct {
   _structArray: FeatureIndexArray;
   get featureIndex(): number;
   get sourceLayerIndex(): number;
   get bucketIndex(): number;
 }
+/** @internal */
 declare class FeatureIndexArray extends StructArrayLayout1ul2ui8 {
   /**
    * Return the FeatureIndexStruct at the given location in the array.
@@ -3873,6 +5282,7 @@ declare class FeatureIndexArray extends StructArrayLayout1ul2ui8 {
   get(index: number): FeatureIndexStruct;
 }
 declare class PosArray extends StructArrayLayout2i4 {}
+declare class Pos3dArray extends StructArrayLayout3i6 {}
 declare class CircleLayoutArray extends StructArrayLayout2i4 {}
 declare class FillLayoutArray extends StructArrayLayout2i4 {}
 declare class FillExtrusionLayoutArray extends StructArrayLayout2i4i12 {}
@@ -3884,7 +5294,8 @@ declare class SymbolOpacityArray extends StructArrayLayout1ul4 {}
 declare class CollisionVertexArray extends StructArrayLayout2ub2f2i16 {}
 declare class TriangleIndexArray extends StructArrayLayout3ui6 {}
 declare class LineIndexArray extends StructArrayLayout2ui4 {}
-declare class LineStripIndexArray extends StructArrayLayout1ui2 {}
+declare class LineStripIndexArray extends StructArrayLayout1ui2 {} //#endregion
+//#region src/geo/lng_lat.d.ts
 /**
  * A {@link LngLat} object, an array of two numbers representing longitude and latitude,
  * or an object with `lng` and `lat` or `lon` and `lat` properties.
@@ -3923,9 +5334,7 @@ type LngLatLike = LngLat | {
  * let ll = new LngLat(-123.9749, 40.7736);
  * ll.lng; // = -123.9749
  * ```
- * @see [Get coordinates of the mouse pointer](https://maplibre.org/maplibre-gl-js/docs/examples/mouse-position/)
- * @see [Display a popup](https://maplibre.org/maplibre-gl-js/docs/examples/popup/)
- * @see [Create a timeline animation](https://maplibre.org/maplibre-gl-js/docs/examples/timeline-animation/)
+ * @see [Get coordinates of the mouse pointer](https://maplibre.org/maplibre-gl-js/docs/examples/get-coordinates-of-the-mouse-pointer/)
  */
 declare class LngLat {
   /**
@@ -4005,7 +5414,8 @@ declare class LngLat {
    * ```
    */
   static convert(input: LngLatLike): LngLat;
-}
+} //#endregion
+//#region src/geo/mercator_coordinate.d.ts
 /**
  * A `MercatorCoordinate` object represents a projected three dimensional position.
  *
@@ -4027,7 +5437,9 @@ declare class LngLat {
  * ```ts
  * let nullIsland = new MercatorCoordinate(0.5, 0.5, 0);
  * ```
- * @see [Add a custom style layer](https://maplibre.org/maplibre-gl-js/docs/examples/custom-style-layer/)
+ * @see [Add a custom style layer](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-custom-style-layer/)
+ * @see [Add a 3D model using three.js](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-3d-model-using-threejs/)
+ * @see [Add a simple custom layer on a globe](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-simple-custom-layer-on-a-globe/)
  */
 declare class MercatorCoordinate implements IMercatorCoordinate {
   x: number;
@@ -4083,7 +5495,11 @@ declare class MercatorCoordinate implements IMercatorCoordinate {
    * @returns Distance of 1 meter in `MercatorCoordinate` units.
    */
   meterInMercatorCoordinateUnits(): number;
-}
+} //#endregion
+//#region src/tile/tile_id.d.ts
+/**
+ * A canonical way to define a tile ID
+ */
 declare class CanonicalTileID implements ICanonicalTileID {
   z: number;
   x: number;
@@ -4094,11 +5510,15 @@ declare class CanonicalTileID implements ICanonicalTileID {
   /**
    * given a list of urls, choose a url template and return a tile URL
    */
-  url(urls: Array<string>, pixelRatio: number, scheme?: string | null): string;
+  url(urls: string[], pixelRatio: number, scheme?: string | null): string;
   isChildOf(parent: ICanonicalTileID): boolean;
   getTilePoint(coord: IMercatorCoordinate): Point;
   toString(): string;
 }
+/**
+ * @internal
+ * An unwrapped tile identifier
+ */
 declare class UnwrappedTileID {
   wrap: number;
   canonical: CanonicalTileID;
@@ -4119,7 +5539,7 @@ declare class OverscaledTileID {
    * and should be used, otherwise this matrix will be null.
    * The matrix should be float32 in order to avoid slow WebGL calls in Chrome.
    */
-  terrainRttPosMatrix32f: mat4 | null;
+  terrainRttPosMatrix32f: Mat4f32 | null;
   constructor(overscaledZ: number, wrap: number, z: number, x: number, y: number);
   clone(): OverscaledTileID;
   equals(id: OverscaledTileID): boolean;
@@ -4165,19 +5585,23 @@ declare class OverscaledTileID {
     x: number;
     y: number;
   } | null;
-}
+} //#endregion
+//#region src/util/evented.d.ts
 /**
  * A listener method used as a callback to events
  */
 type Listener = (a: any) => any;
-type Listeners = {
-  [_: string]: Array<Listener>;
-};
+type Listeners<EventType extends Record<string, any>> = { [_ in keyof EventType]?: Listener[] };
 /**
  * The event class
  */
 declare class Event$1 {
   readonly type: string;
+  /**
+   * The object that fired the event. Set when the event is fired, and narrowed to a more
+   * specific type (e.g. `Map`, `Marker`) by the event subclasses.
+   */
+  target?: unknown;
   constructor(type: string, data?: any);
 }
 /**
@@ -4185,9 +5609,9 @@ declare class Event$1 {
  *
  * @group Event Related
  */
-declare class Evented {
-  _listeners: Listeners;
-  _oneTimeListeners: Listeners;
+declare abstract class Evented<EventType extends Record<string, any> = Record<string, any>> {
+  _listeners: Listeners<EventType>;
+  _oneTimeListeners: Listeners<EventType>;
   _eventedParent: Evented;
   _eventedParentData: any | (() => any);
   /**
@@ -4198,14 +5622,23 @@ declare class Evented {
    * The listener function is called with the data object passed to `fire`,
    * extended with `target` and `type` properties.
    */
-  on(type: string, listener: Listener): Subscription;
+  on<T extends keyof EventType>(type: T, listener: (event: EventType[T]) => void): Subscription;
   /**
    * Removes a previously registered event listener.
    *
    * @param type - The event type to remove listeners for.
    * @param listener - The listener function to remove.
    */
-  off(type: string, listener: Listener): this;
+  off<T extends keyof EventType>(type: T, listener: (event: EventType[T]) => void): this;
+  /**
+   * Adds a listener that will be called only once to a specified event type.
+   *
+   * The listener will be called first time the event fires after the listener is registered.
+   *
+   * @param type - The event type to listen for.
+   * @returns a promise that resolves with the event
+   */
+  once<T extends keyof EventType>(type: T): Promise<EventType[T]>;
   /**
    * Adds a listener that will be called only once to a specified event type.
    *
@@ -4213,9 +5646,9 @@ declare class Evented {
    *
    * @param type - The event type to listen for.
    * @param listener - The function to be called when the event is fired the first time.
-   * @returns `this` or a promise if a listener is not provided
+   * @returns `this` when a listener is provided
    */
-  once(type: string, listener?: Listener): this | Promise<any>;
+  once<T extends keyof EventType>(type: T, listener: (event: EventType[T]) => void): this;
   fire(event: Event$1 | string, properties?: any): this;
   /**
    * Returns a true if this instance of Evented or any forwardeed instances of Evented have a listener for the specified type.
@@ -4228,757 +5661,8 @@ declare class Evented {
    * Bubble all events fired by this instance of Evented to this parent instance of Evented.
    */
   setEventedParent(parent?: Evented | null, data?: any | (() => any)): this;
-}
-declare class ZoomHistory {
-  lastZoom: number;
-  lastFloorZoom: number;
-  lastIntegerZoom: number;
-  lastIntegerZoomTime: number;
-  first: boolean;
-  constructor();
-  update(z: number, now: number): boolean;
-}
-type CrossfadeParameters = {
-  fromScale: number;
-  toScale: number;
-  t: number;
-};
-declare class EvaluationParameters implements GlobalProperties {
-  zoom: number;
-  now: number;
-  fadeDuration: number;
-  zoomHistory: ZoomHistory;
-  transition: TransitionSpecification;
-  isSupportedScript: (_: string) => boolean;
-  constructor(zoom: number, options?: any);
-  crossFadingFactor(): number;
-  getCrossfadeParameters(): CrossfadeParameters;
-}
-type TimePoint = number;
-type CrossFaded<T> = {
-  to: T;
-  from: T;
-};
-interface Property<T, R> {
-  specification: StylePropertySpecification;
-  possiblyEvaluate(value: PropertyValue<T, R>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): R;
-  interpolate(a: R, b: R, t: number): R;
-}
-declare class PropertyValue<T, R> {
-  property: Property<T, R>;
-  value: PropertyValueSpecification<T> | void;
-  expression: StylePropertyExpression;
-  constructor(property: Property<T, R>, value: PropertyValueSpecification<T> | void, globalState: Record<string, any>);
-  isDataDriven(): boolean;
-  getGlobalStateRefs(): Set<string>;
-  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): R;
-}
-type TransitionParameters = {
-  now: TimePoint;
-  transition: TransitionSpecification;
-};
-declare class TransitionablePropertyValue<T, R> {
-  property: Property<T, R>;
-  value: PropertyValue<T, R>;
-  transition: TransitionSpecification | void;
-  constructor(property: Property<T, R>, globalState: Record<string, any>);
-  transitioned(parameters: TransitionParameters, prior: TransitioningPropertyValue<T, R>): TransitioningPropertyValue<T, R>;
-  untransitioned(): TransitioningPropertyValue<T, R>;
-}
-declare class Transitionable<Props> {
-  _properties: Properties<Props>;
-  _values: { [K in keyof Props]: TransitionablePropertyValue<any, unknown> };
-  private _globalState;
-  constructor(properties: Properties<Props>, globalState: Record<string, any>);
-  hasProperty(name: string): boolean;
-  getValue<S extends keyof Props, T>(name: S): PropertyValueSpecification<T> | void;
-  setValue<S extends keyof Props, T>(name: S, value: PropertyValueSpecification<T> | void): void;
-  getTransition<S extends keyof Props>(name: S): TransitionSpecification | void;
-  setTransition<S extends keyof Props>(name: S, value: TransitionSpecification | void): void;
-  serialize(): any;
-  transitioned(parameters: TransitionParameters, prior: Transitioning<Props>): Transitioning<Props>;
-  untransitioned(): Transitioning<Props>;
-}
-declare class TransitioningPropertyValue<T, R> {
-  property: Property<T, R>;
-  value: PropertyValue<T, R>;
-  prior: TransitioningPropertyValue<T, R>;
-  begin: TimePoint;
-  end: TimePoint;
-  constructor(property: Property<T, R>, value: PropertyValue<T, R>, prior: TransitioningPropertyValue<T, R>, transition: TransitionSpecification, now: TimePoint);
-  possiblyEvaluate(parameters: EvaluationParameters, canonical: CanonicalTileID, availableImages: Array<string>): R;
-}
-declare class Transitioning<Props> {
-  _properties: Properties<Props>;
-  _values: { [K in keyof Props]: PossiblyEvaluatedPropertyValue<unknown> };
-  constructor(properties: Properties<Props>);
-  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): PossiblyEvaluated<Props, any>;
-  hasTransition(): boolean;
-}
-declare class Layout<Props> {
-  _properties: Properties<Props>;
-  _values: { [K in keyof Props]: PropertyValue<any, PossiblyEvaluatedPropertyValue<any>> };
-  private _globalState;
-  constructor(properties: Properties<Props>, globalState: Record<string, any>);
-  hasValue<S extends keyof Props>(name: S): boolean;
-  hasProperty(name: string): boolean;
-  getValue<S extends keyof Props>(name: S): any;
-  setValue<S extends keyof Props>(name: S, value: any): void;
-  serialize(): any;
-  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): PossiblyEvaluated<Props, any>;
-}
-type PossiblyEvaluatedValue<T> = {
-  kind: "constant";
-  value: T;
-} | SourceExpression | CompositeExpression;
-declare class PossiblyEvaluatedPropertyValue<T> {
-  property: DataDrivenProperty<T>;
-  value: PossiblyEvaluatedValue<T>;
-  parameters: EvaluationParameters;
-  constructor(property: DataDrivenProperty<T>, value: PossiblyEvaluatedValue<T>, parameters: EvaluationParameters);
-  isConstant(): boolean;
-  constantOr(value: T): T;
-  evaluate(feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: Array<string>): T;
-}
-declare class PossiblyEvaluated<Props, PossibleEvaluatedProps> {
-  _properties: Properties<Props>;
-  _values: PossibleEvaluatedProps;
-  constructor(properties: Properties<Props>);
-  get<S extends keyof PossibleEvaluatedProps>(name: S): PossibleEvaluatedProps[S];
-}
-declare class DataConstantProperty<T> implements Property<T, T> {
-  specification: StylePropertySpecification;
-  constructor(specification: StylePropertySpecification);
-  possiblyEvaluate(value: PropertyValue<T, T>, parameters: EvaluationParameters): T;
-  interpolate(a: T, b: T, t: number): T;
-}
-declare class DataDrivenProperty<T> implements Property<T, PossiblyEvaluatedPropertyValue<T>> {
-  specification: StylePropertySpecification;
-  overrides: any;
-  constructor(specification: StylePropertySpecification, overrides?: any);
-  possiblyEvaluate(value: PropertyValue<T, PossiblyEvaluatedPropertyValue<T>>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): PossiblyEvaluatedPropertyValue<T>;
-  interpolate(a: PossiblyEvaluatedPropertyValue<T>, b: PossiblyEvaluatedPropertyValue<T>, t: number): PossiblyEvaluatedPropertyValue<T>;
-  evaluate(value: PossiblyEvaluatedValue<T>, parameters: EvaluationParameters, feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: Array<string>): T;
-}
-declare class CrossFadedDataDrivenProperty<T> extends DataDrivenProperty<CrossFaded<T>> {
-  possiblyEvaluate(value: PropertyValue<CrossFaded<T>, PossiblyEvaluatedPropertyValue<CrossFaded<T>>>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): PossiblyEvaluatedPropertyValue<CrossFaded<T>>;
-  evaluate(value: PossiblyEvaluatedValue<CrossFaded<T>>, globals: EvaluationParameters, feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: Array<string>): CrossFaded<T>;
-  _calculate(min: T, mid: T, max: T, parameters: EvaluationParameters): CrossFaded<T>;
-  interpolate(a: PossiblyEvaluatedPropertyValue<CrossFaded<T>>): PossiblyEvaluatedPropertyValue<CrossFaded<T>>;
-}
-declare class ColorRampProperty implements Property<Color, boolean> {
-  specification: StylePropertySpecification;
-  constructor(specification: StylePropertySpecification);
-  possiblyEvaluate(value: PropertyValue<Color, boolean>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: Array<string>): boolean;
-  interpolate(): boolean;
-}
-declare class Properties<Props> {
-  properties: Props;
-  defaultPropertyValues: { [K in keyof Props]: PropertyValue<unknown, any> };
-  defaultTransitionablePropertyValues: { [K in keyof Props]: TransitionablePropertyValue<unknown, unknown> };
-  defaultTransitioningPropertyValues: { [K in keyof Props]: TransitioningPropertyValue<unknown, unknown> };
-  defaultPossiblyEvaluatedValues: { [K in keyof Props]: PossiblyEvaluatedPropertyValue<unknown> };
-  overridableProperties: Array<string>;
-  constructor(properties: Props);
-}
-type Size = {
-  width: number;
-  height: number;
-};
-type Point2D = {
-  x: number;
-  y: number;
-};
-/**
- * An image with alpha color value
- */
-declare class AlphaImage {
-  width: number;
-  height: number;
-  data: Uint8Array;
-  constructor(size: Size, data?: Uint8Array | Uint8ClampedArray);
-  resize(size: Size): void;
-  clone(): AlphaImage;
-  static copy(srcImg: AlphaImage, dstImg: AlphaImage, srcPt: Point2D, dstPt: Point2D, size: Size): void;
-}
-declare class RGBAImage {
-  width: number;
-  height: number;
-  /**
-   * data must be a Uint8Array instead of Uint8ClampedArray because texImage2D does not support Uint8ClampedArray in all browsers.
-   */
-  data: Uint8Array;
-  constructor(size: Size, data?: Uint8Array | Uint8ClampedArray);
-  resize(size: Size): void;
-  replace(data: Uint8Array | Uint8ClampedArray, copy?: boolean): void;
-  clone(): RGBAImage;
-  static copy(srcImg: RGBAImage | ImageData, dstImg: RGBAImage, srcPt: Point2D, dstPt: Point2D, size: Size): void;
-  setPixel(row: number, col: number, value: Color): void;
-}
-type SpriteOnDemandStyleImage = {
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  context: CanvasRenderingContext2D;
-};
-/**
- * The style's image metadata
- */
-type StyleImageData = {
-  data: RGBAImage;
-  version?: number;
-  hasRenderCallback?: boolean;
-  userImage?: StyleImageInterface;
-  spriteData?: SpriteOnDemandStyleImage;
-};
-/**
- * Enumeration of possible values for StyleImageMetadata.textFitWidth and textFitHeight.
- */
-declare const enum TextFit {
-  /**
-   * The image will be resized on the specified axis to tightly fit the content rectangle to target text.
-   * This is the same as not being defined.
-   */
-  stretchOrShrink = "stretchOrShrink",
-  /**
-   * The image will be resized on the specified axis to fit the content rectangle to the target text, but will not
-   * fall below the aspect ratio of the original content rectangle if the other axis is set to proportional.
-   */
-  stretchOnly = "stretchOnly",
-  /**
-   * The image will be resized on the specified axis to fit the content rectangle to the target text and
-   * will resize the other axis to maintain the aspect ratio of the content rectangle.
-   */
-  proportional = "proportional"
-}
-/**
- * The style's image metadata
- */
-type StyleImageMetadata = {
-  /**
-   * The ratio of pixels in the image to physical pixels on the screen
-   */
-  pixelRatio: number;
-  /**
-   * Whether the image should be interpreted as an SDF image
-   */
-  sdf: boolean;
-  /**
-   * If `icon-text-fit` is used in a layer with this image, this option defines the part(s) of the image that can be stretched horizontally.
-   */
-  stretchX?: Array<[number, number]>;
-  /**
-   * If `icon-text-fit` is used in a layer with this image, this option defines the part(s) of the image that can be stretched vertically.
-   */
-  stretchY?: Array<[number, number]>;
-  /**
-   * If `icon-text-fit` is used in a layer with this image, this option defines the part of the image that can be covered by the content in `text-field`.
-   */
-  content?: [number, number, number, number];
-  /**
-   * If `icon-text-fit` is used in a layer with this image, this option defines constraints on the horizontal scaling of the image.
-   */
-  textFitWidth?: TextFit;
-  /**
-   * If `icon-text-fit` is used in a layer with this image, this option defines constraints on the vertical scaling of the image.
-   */
-  textFitHeight?: TextFit;
-};
-/**
- * the style's image, including data and metedata
- */
-type StyleImage = StyleImageData & StyleImageMetadata;
-/**
- * Interface for dynamically generated style images. This is a specification for
- * implementers to model: it is not an exported method or class.
- *
- * Images implementing this interface can be redrawn for every frame. They can be used to animate
- * icons and patterns or make them respond to user input. Style images can implement a
- * {@link StyleImageInterface.render} method. The method is called every frame and
- * can be used to update the image.
- *
- * @see [Add an animated icon to the map.](https://maplibre.org/maplibre-gl-js/docs/examples/add-image-animated/)
- *
- * @example
- * ```ts
- * let flashingSquare = {
- *     width: 64,
- *     height: 64,
- *     data: new Uint8Array(64 * 64 * 4),
- *
- *     onAdd: function(map) {
- *         this.map = map;
- *     },
- *
- *     render: function() {
- *         // keep repainting while the icon is on the map
- *         this.map.triggerRepaint();
- *
- *         // alternate between black and white based on the time
- *         let value = Math.round(Date.now() / 1000) % 2 === 0  ? 255 : 0;
- *
- *         // check if image needs to be changed
- *         if (value !== this.previousValue) {
- *             this.previousValue = value;
- *
- *             let bytesPerPixel = 4;
- *             for (let x = 0; x < this.width; x++) {
- *                 for (let y = 0; y < this.height; y++) {
- *                     let offset = (y * this.width + x) * bytesPerPixel;
- *                     this.data[offset + 0] = value;
- *                     this.data[offset + 1] = value;
- *                     this.data[offset + 2] = value;
- *                     this.data[offset + 3] = 255;
- *                 }
- *             }
- *
- *             // return true to indicate that the image changed
- *             return true;
- *         }
- *     }
- *  }
- *
- *  map.addImage('flashing_square', flashingSquare);
- * ```
- */
-interface StyleImageInterface {
-  width: number;
-  height: number;
-  data: Uint8Array | Uint8ClampedArray;
-  /**
-   * This method is called once before every frame where the icon will be used.
-   * The method can optionally update the image's `data` member with a new image.
-   *
-   * If the method updates the image it must return `true` to commit the change.
-   * If the method returns `false` or nothing the image is assumed to not have changed.
-   *
-   * If updates are infrequent it maybe easier to use {@link Map.updateImage} to update
-   * the image instead of implementing this method.
-   *
-   * @returns `true` if this method updated the image. `false` if the image was not changed.
-   */
-  render?: () => boolean;
-  /**
-   * Optional method called when the layer has been added to the Map with {@link Map.addImage}.
-   *
-   * @param map - The Map this custom layer was just added to.
-   */
-  onAdd?: (map: Map$1, id: string) => void;
-  /**
-   * Optional method called when the icon is removed from the map with {@link Map.removeImage}.
-   * This gives the image a chance to clean up resources and event listeners.
-   */
-  onRemove?: () => void;
-}
-declare class IndexBuffer {
-  context: Context;
-  buffer: WebGLBuffer;
-  dynamicDraw: boolean;
-  constructor(context: Context, array: TriangleIndexArray | LineIndexArray | LineStripIndexArray, dynamicDraw?: boolean);
-  bind(): void;
-  updateData(array: StructArray): void;
-  destroy(): void;
-}
-type PreparedShader = {
-  fragmentSource: string;
-  vertexSource: string;
-  staticAttributes: Array<string>;
-  staticUniforms: Array<string>;
-};
-type SerializedFeaturePositionMap = {
-  ids: Float64Array;
-  positions: Uint32Array;
-};
-type FeaturePosition = {
-  index: number;
-  start: number;
-  end: number;
-};
-declare class FeaturePositionMap {
-  ids: Array<number>;
-  positions: Array<number>;
-  indexed: boolean;
-  constructor();
-  add(id: unknown, index: number, start: number, end: number): void;
-  getPositions(id: unknown): Array<FeaturePosition>;
-  static serialize(map: FeaturePositionMap, transferables: Array<ArrayBuffer>): SerializedFeaturePositionMap;
-  static deserialize(obj: SerializedFeaturePositionMap): FeaturePositionMap;
-}
-type $ObjMap<T extends {}, F extends (v: any) => any> = { [K in keyof T]: F extends ((v: T[K]) => infer R) ? R : never };
-type UniformValues<Us extends {}> = $ObjMap<Us, <V>(u: Uniform<V>) => V>;
-type UniformLocations = {
-  [_: string]: WebGLUniformLocation;
-};
-declare abstract class Uniform<T> {
-  gl: WebGLRenderingContext | WebGL2RenderingContext;
-  location: WebGLUniformLocation;
-  current: T;
-  constructor(context: Context, location: WebGLUniformLocation);
-  abstract set(v: T): void;
-}
-declare class Uniform1i extends Uniform<number> {
-  constructor(context: Context, location: WebGLUniformLocation);
-  set(v: number): void;
-}
-declare class Uniform1f extends Uniform<number> {
-  constructor(context: Context, location: WebGLUniformLocation);
-  set(v: number): void;
-}
-declare class Uniform4f extends Uniform<vec4> {
-  constructor(context: Context, location: WebGLUniformLocation);
-  set(v: vec4): void;
-}
-declare class UniformMatrix4f extends Uniform<mat4> {
-  constructor(context: Context, location: WebGLUniformLocation);
-  set(v: mat4): void;
-}
-type UniformBindings = {
-  [_: string]: Uniform<any>;
-};
-declare class VertexArrayObject {
-  context: Context;
-  boundProgram: Program<any>;
-  boundLayoutVertexBuffer: VertexBuffer;
-  boundPaintVertexBuffers: Array<VertexBuffer>;
-  boundIndexBuffer: IndexBuffer;
-  boundVertexOffset: number;
-  boundDynamicVertexBuffer: VertexBuffer;
-  boundDynamicVertexBuffer2: VertexBuffer;
-  boundDynamicVertexBuffer3: VertexBuffer;
-  vao: any;
-  constructor();
-  bind(context: Context, program: Program<any>, layoutVertexBuffer: VertexBuffer, paintVertexBuffers: Array<VertexBuffer>, indexBuffer?: IndexBuffer | null, vertexOffset?: number | null, dynamicVertexBuffer?: VertexBuffer | null, dynamicVertexBuffer2?: VertexBuffer | null, dynamicVertexBuffer3?: VertexBuffer | null): void;
-  freshBind(program: Program<any>, layoutVertexBuffer: VertexBuffer, paintVertexBuffers: Array<VertexBuffer>, indexBuffer?: IndexBuffer | null, vertexOffset?: number | null, dynamicVertexBuffer?: VertexBuffer | null, dynamicVertexBuffer2?: VertexBuffer | null, dynamicVertexBuffer3?: VertexBuffer | null): void;
-  destroy(): void;
-}
-type Segment = {
-  sortKey?: number;
-  vertexOffset: number;
-  primitiveOffset: number;
-  vertexLength: number;
-  primitiveLength: number;
-  vaos: {
-    [_: string]: VertexArrayObject;
-  };
-};
-declare class SegmentVector {
-  static MAX_VERTEX_ARRAY_LENGTH: number;
-  segments: Array<Segment>;
-  private _forceNewSegmentOnNextPrepare;
-  constructor(segments?: Array<Segment>);
-  /**
-   * Returns the last segment if `numVertices` fits into it.
-   * If there are no segments yet or `numVertices` doesn't fit into the last one, creates a new empty segment and returns it.
-   */
-  prepareSegment(numVertices: number, layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
-  /**
-   * Creates a new empty segment and returns it.
-   */
-  createNewSegment(layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
-  /**
-   * Returns the last segment, or creates a new segments if there are no segments yet.
-   */
-  getOrCreateLatestSegment(layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
-  /**
-   * Causes the next call to {@link prepareSegment} to always return a new segment,
-   * not reusing the current segment even if the new geometry would fit it.
-   */
-  forceNewSegmentOnNextPrepare(): void;
-  get(): Segment[];
-  destroy(): void;
-  static simpleSegment(vertexOffset: number, primitiveOffset: number, vertexLength: number, primitiveLength: number): SegmentVector;
-}
-declare class HeatmapBucket extends CircleBucket<HeatmapStyleLayer> {
-  layers: Array<HeatmapStyleLayer>;
-}
-type HeatmapPaintProps = {
-  "heatmap-radius": DataDrivenProperty<number>;
-  "heatmap-weight": DataDrivenProperty<number>;
-  "heatmap-intensity": DataConstantProperty<number>;
-  "heatmap-color": ColorRampProperty;
-  "heatmap-opacity": DataConstantProperty<number>;
-};
-type HeatmapPaintPropsPossiblyEvaluated = {
-  "heatmap-radius": PossiblyEvaluatedPropertyValue<number>;
-  "heatmap-weight": PossiblyEvaluatedPropertyValue<number>;
-  "heatmap-intensity": number;
-  "heatmap-color": ColorRampProperty;
-  "heatmap-opacity": number;
-};
-type BlendFuncConstant = WebGLRenderingContextBase["ZERO"] | WebGLRenderingContextBase["ONE"] | WebGLRenderingContextBase["SRC_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_SRC_COLOR"] | WebGLRenderingContextBase["DST_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_DST_COLOR"] | WebGLRenderingContextBase["SRC_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_SRC_ALPHA"] | WebGLRenderingContextBase["DST_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_DST_ALPHA"] | WebGLRenderingContextBase["CONSTANT_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_CONSTANT_COLOR"] | WebGLRenderingContextBase["CONSTANT_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_CONSTANT_ALPHA"] | WebGLRenderingContextBase["BLEND_COLOR"];
-type BlendFuncType = [BlendFuncConstant, BlendFuncConstant];
-type BlendEquationType = WebGLRenderingContextBase["FUNC_ADD"] | WebGLRenderingContextBase["FUNC_SUBTRACT"] | WebGLRenderingContextBase["FUNC_REVERSE_SUBTRACT"];
-type ColorMaskType = [boolean, boolean, boolean, boolean];
-type CompareFuncType = WebGLRenderingContextBase["NEVER"] | WebGLRenderingContextBase["LESS"] | WebGLRenderingContextBase["EQUAL"] | WebGLRenderingContextBase["LEQUAL"] | WebGLRenderingContextBase["GREATER"] | WebGLRenderingContextBase["NOTEQUAL"] | WebGLRenderingContextBase["GEQUAL"] | WebGLRenderingContextBase["ALWAYS"];
-type DepthMaskType = boolean;
-type DepthRangeType = [number, number];
-type DepthFuncType = CompareFuncType;
-type StencilFuncType = {
-  func: CompareFuncType;
-  ref: number;
-  mask: number;
-};
-type StencilOpConstant = WebGLRenderingContextBase["KEEP"] | WebGLRenderingContextBase["ZERO"] | WebGLRenderingContextBase["REPLACE"] | WebGLRenderingContextBase["INCR"] | WebGLRenderingContextBase["INCR_WRAP"] | WebGLRenderingContextBase["DECR"] | WebGLRenderingContextBase["DECR_WRAP"] | WebGLRenderingContextBase["INVERT"];
-type StencilOpType = [StencilOpConstant, StencilOpConstant, StencilOpConstant];
-type TextureUnitType = number;
-type ViewportType = [number, number, number, number];
-type StencilTestGL = {
-  func: WebGLRenderingContextBase["NEVER"];
-  mask: 0;
-} | {
-  func: WebGLRenderingContextBase["LESS"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["EQUAL"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["LEQUAL"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["GREATER"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["NOTEQUAL"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["GEQUAL"];
-  mask: number;
-} | {
-  func: WebGLRenderingContextBase["ALWAYS"];
-  mask: 0;
-};
-type CullFaceModeType = WebGLRenderingContextBase["FRONT"] | WebGLRenderingContextBase["BACK"] | WebGLRenderingContextBase["FRONT_AND_BACK"];
-type FrontFaceType = WebGLRenderingContextBase["CW"] | WebGLRenderingContextBase["CCW"];
-interface IValue<T> {
-  current: T;
-  default: T;
-  dirty: boolean;
-  get(): T;
-  setDefault(): void;
-  set(value: T): void;
-}
-declare class BaseValue<T> implements IValue<T> {
-  gl: WebGLRenderingContext | WebGL2RenderingContext;
-  current: T;
-  default: T;
-  dirty: boolean;
-  constructor(context: Context);
-  get(): T;
-  set(value: T): void;
-  getDefault(): T;
-  setDefault(): void;
-}
-declare class ClearColor extends BaseValue<Color> {
-  getDefault(): Color;
-  set(v: Color): void;
-}
-declare class ClearDepth extends BaseValue<number> {
-  getDefault(): number;
-  set(v: number): void;
-}
-declare class ClearStencil extends BaseValue<number> {
-  getDefault(): number;
-  set(v: number): void;
-}
-declare class ColorMask extends BaseValue<ColorMaskType> {
-  getDefault(): ColorMaskType;
-  set(v: ColorMaskType): void;
-}
-declare class DepthMask extends BaseValue<DepthMaskType> {
-  getDefault(): DepthMaskType;
-  set(v: DepthMaskType): void;
-}
-declare class StencilMask extends BaseValue<number> {
-  getDefault(): number;
-  set(v: number): void;
-}
-declare class StencilFunc extends BaseValue<StencilFuncType> {
-  getDefault(): StencilFuncType;
-  set(v: StencilFuncType): void;
-}
-declare class StencilOp extends BaseValue<StencilOpType> {
-  getDefault(): StencilOpType;
-  set(v: StencilOpType): void;
-}
-declare class StencilTest extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class DepthRange extends BaseValue<DepthRangeType> {
-  getDefault(): DepthRangeType;
-  set(v: DepthRangeType): void;
-}
-declare class DepthTest extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class DepthFunc extends BaseValue<DepthFuncType> {
-  getDefault(): DepthFuncType;
-  set(v: DepthFuncType): void;
-}
-declare class Blend extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class BlendFunc extends BaseValue<BlendFuncType> {
-  getDefault(): BlendFuncType;
-  set(v: BlendFuncType): void;
-}
-declare class BlendColor extends BaseValue<Color> {
-  getDefault(): Color;
-  set(v: Color): void;
-}
-declare class BlendEquation extends BaseValue<BlendEquationType> {
-  getDefault(): BlendEquationType;
-  set(v: BlendEquationType): void;
-}
-declare class CullFace extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class CullFaceSide extends BaseValue<CullFaceModeType> {
-  getDefault(): CullFaceModeType;
-  set(v: CullFaceModeType): void;
-}
-declare class FrontFace extends BaseValue<FrontFaceType> {
-  getDefault(): FrontFaceType;
-  set(v: FrontFaceType): void;
-}
-declare class ProgramValue extends BaseValue<WebGLProgram> {
-  getDefault(): WebGLProgram;
-  set(v?: WebGLProgram | null): void;
-}
-declare class ActiveTextureUnit extends BaseValue<TextureUnitType> {
-  getDefault(): TextureUnitType;
-  set(v: TextureUnitType): void;
-}
-declare class Viewport extends BaseValue<ViewportType> {
-  getDefault(): ViewportType;
-  set(v: ViewportType): void;
-}
-declare class BindFramebuffer extends BaseValue<WebGLFramebuffer> {
-  getDefault(): WebGLFramebuffer;
-  set(v?: WebGLFramebuffer | null): void;
-}
-declare class BindRenderbuffer extends BaseValue<WebGLRenderbuffer> {
-  getDefault(): WebGLRenderbuffer;
-  set(v?: WebGLRenderbuffer | null): void;
-}
-declare class BindTexture extends BaseValue<WebGLTexture> {
-  getDefault(): WebGLTexture;
-  set(v?: WebGLTexture | null): void;
-}
-declare class BindVertexBuffer extends BaseValue<WebGLBuffer> {
-  getDefault(): WebGLBuffer;
-  set(v?: WebGLBuffer | null): void;
-}
-declare class BindElementBuffer extends BaseValue<WebGLBuffer> {
-  getDefault(): WebGLBuffer;
-  set(v?: WebGLBuffer | null): void;
-}
-declare class BindVertexArray extends BaseValue<WebGLVertexArrayObject | null> {
-  getDefault(): WebGLVertexArrayObject | null;
-  set(v: WebGLVertexArrayObject | null): void;
-}
-declare class PixelStoreUnpack extends BaseValue<number> {
-  getDefault(): number;
-  set(v: number): void;
-}
-declare class PixelStoreUnpackPremultiplyAlpha extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class PixelStoreUnpackFlipY extends BaseValue<boolean> {
-  getDefault(): boolean;
-  set(v: boolean): void;
-}
-declare class FramebufferAttachment<T> extends BaseValue<T> {
-  parent: WebGLFramebuffer;
-  context: Context;
-  constructor(context: Context, parent: WebGLFramebuffer);
-  getDefault(): any;
-}
-declare class ColorAttachment extends FramebufferAttachment<WebGLTexture> {
-  setDirty(): void;
-  set(v?: WebGLTexture | null): void;
-}
-declare class DepthAttachment extends FramebufferAttachment<WebGLRenderbuffer> {
-  set(v?: WebGLRenderbuffer | null): void;
-}
-declare class Framebuffer {
-  context: Context;
-  width: number;
-  height: number;
-  framebuffer: WebGLFramebuffer;
-  colorAttachment: ColorAttachment;
-  depthAttachment: DepthAttachment;
-  constructor(context: Context, width: number, height: number, hasDepth: boolean, hasStencil: boolean);
-  destroy(): void;
-}
-declare class HeatmapStyleLayer extends StyleLayer {
-  heatmapFbos: Map<string, Framebuffer>;
-  colorRamp: RGBAImage;
-  colorRampTexture: Texture;
-  _transitionablePaint: Transitionable<HeatmapPaintProps>;
-  _transitioningPaint: Transitioning<HeatmapPaintProps>;
-  paint: PossiblyEvaluated<HeatmapPaintProps, HeatmapPaintPropsPossiblyEvaluated>;
-  createBucket(options: any): HeatmapBucket;
-  constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  _handleSpecialPaintPropertyUpdate(name: string): void;
-  _updateColorRamp(): void;
-  resize(): void;
-  queryRadius(bucket: Bucket): number;
-  queryIntersectsFeature({
-    queryGeometry,
-    feature,
-    featureState,
-    geometry,
-    transform,
-    pixelsToTileUnits,
-    unwrappedTileID,
-    getElevation
-  }: QueryIntersectsFeatureParams): boolean;
-  hasOffscreenPass(): boolean;
-}
-type SerializedGrid = {
-  buffer: ArrayBuffer;
-};
-declare class TransferableGridIndex {
-  cells: number[][];
-  arrayBuffer: ArrayBuffer;
-  d: number;
-  keys: number[];
-  bboxes: number[];
-  n: number;
-  extent: number;
-  padding: number;
-  scale: any;
-  uid: number;
-  min: number;
-  max: number;
-  constructor(extent: number | ArrayBuffer, n?: number, padding?: number);
-  insert(key: number, x1: number, y1: number, x2: number, y2: number): void;
-  _insertReadonly(): void;
-  _insertCell(x1: number, y1: number, x2: number, y2: number, cellIndex: number, uid: number): void;
-  query(x1: number, y1: number, x2: number, y2: number, intersectionTest?: Function): number[];
-  _queryCell(x1: number, y1: number, x2: number, y2: number, cellIndex: number, result: any, seenUids: any, intersectionTest: Function): void;
-  _forEachCell(x1: number, y1: number, x2: number, y2: number, fn: Function, arg1: any, arg2: any, intersectionTest: any): void;
-  _convertFromCellCoord(x: any): number;
-  _convertToCellCoord(x: any): number;
-  toArrayBuffer(): ArrayBuffer;
-  static serialize(grid: TransferableGridIndex, transferables?: Array<Transferable>): SerializedGrid;
-  static deserialize(serialized: SerializedGrid): TransferableGridIndex;
-}
-declare class DictionaryCoder {
-  _stringToNumber: {
-    [_: string]: number;
-  };
-  _numberToString: Array<string>;
-  constructor(strings: Array<string>);
-  encode(string: string): number;
-  decode(n: number): string;
-}
+} //#endregion
+//#region src/util/vectortile_to_geojson.d.ts
 /**
  * A helper for type to omit a property from a type
  */
@@ -5019,11 +5703,12 @@ declare class GeoJSONFeature {
   private projectLine;
   get geometry(): GeoJSON.Geometry;
   set geometry(g: GeoJSON.Geometry);
-  toJSON(): any;
-}
+  toJSON(): GeoJSON.Feature;
+} //#endregion
+//#region src/geo/lng_lat_bounds.d.ts
 /**
- * A {@link LngLatBounds} object, an array of {@link LngLatLike} objects in [sw, ne] order,
- * or an array of numbers in [west, south, east, north] order.
+ * A {@link LngLatBounds} object, an array of {@link LngLatLike} objects in `[sw, ne]` order,
+ * or an array of numbers in `[west, south, east, north]` order.
  *
  * @group Geography and Geometry
  *
@@ -5044,7 +5729,7 @@ type LngLatBoundsLike = LngLatBounds | [LngLatLike, LngLatLike] | [number, numbe
  *
  * If no arguments are provided to the constructor, a `null` bounding box is created.
  *
- * Note that any Mapbox GL method that accepts a `LngLatBounds` object as an argument or option
+ * Note that any MapLibre GL method that accepts a `LngLatBounds` object as an argument or option
  * can also accept an `Array` of two {@link LngLatLike} constructs and will perform an implicit conversion.
  * This flexible type is documented as {@link LngLatBoundsLike}.
  *
@@ -5056,6 +5741,7 @@ type LngLatBoundsLike = LngLatBounds | [LngLatLike, LngLatLike] | [number, numbe
  * let ne = new LngLat(-73.9397, 40.8002);
  * let llb = new LngLatBounds(sw, ne);
  * ```
+ * @see [Fit to the bounds of a LineString](https://maplibre.org/maplibre-gl-js/docs/examples/fit-to-the-bounds-of-a-linestring/)
  */
 declare class LngLatBounds {
   _ne: LngLat;
@@ -5063,7 +5749,7 @@ declare class LngLatBounds {
   /**
    * @param sw - The southwest corner of the bounding box.
    * OR array of 4 numbers in the order of  west, south, east, north
-   * OR array of 2 LngLatLike: [sw,ne]
+   * OR array of 2 LngLatLike: `[sw, ne]`
    * @param ne - The northeast corner of the bounding box.
    * @example
    * ```ts
@@ -5257,49 +5943,108 @@ declare class LngLatBounds {
    * ```
    */
   adjustAntiMeridian(): LngLatBounds;
+} //#endregion
+//#region src/util/worker_pool.d.ts
+/**
+ * Constructs a worker pool.
+ */
+declare class WorkerPool {
+  static workerCount: number;
+  active: { [_ in number | string]: boolean };
+  workersPromise: Promise<ActorTarget[]> | null;
+  constructor();
+  acquire(mapId: number | string): Promise<ActorTarget[]>;
+  release(mapId: number | string): void;
+  isPreloaded(): boolean;
+  numActive(): number;
+} //#endregion
+//#region src/util/dispatcher.d.ts
+/**
+ * Responsible for sending messages from a {@link Source} to an associated worker source (usually with the same name).
+ */
+declare class Dispatcher {
+  workerPool: WorkerPool;
+  actors: Actor[];
+  actorsPromise: Promise<Actor[]>;
+  currentActor: number;
+  id: string | number;
+  private removed;
+  constructor(workerPool: WorkerPool, mapId: string | number);
+  private initActors;
+  /**
+   * Broadcast a message to all Workers.
+   */
+  broadcast<T extends MessageType>(type: T, data: RequestResponseMessageMap[T][0]): Promise<Array<RequestResponseMessageMap[T][1]>>;
+  /**
+   * Acquires an actor to dispatch messages to. The actors are distributed in round-robin fashion.
+   * @returns An actor object backed by a web worker for processing messages.
+   */
+  getActor(): Promise<Actor>;
+  waitForInitComplete(): Promise<void>;
+  getReadyActor(): Actor;
+  remove(mapRemoved?: boolean): void;
+  registerMessageHandler<T extends MessageType>(type: T, handler: MessageHandler<T>): Promise<void>;
+  unregisterMessageHandler<T extends MessageType>(type: T): Promise<void>;
 }
 /**
- * Options for setting padding on calls to methods such as {@link Map.fitBounds}, {@link Map.fitScreenCoordinates}, and {@link Map.setPadding}. Adjust these options to set the amount of padding in pixels added to the edges of the canvas. Set a uniform padding on all edges or individual values for each edge. All properties of this object must be
- * non-negative integers.
- *
- * @group Geography and Geometry
- *
- * @example
- * ```ts
- * let bbox = [[-79, 43], [-73, 45]];
- * map.fitBounds(bbox, {
- *   padding: {top: 10, bottom:25, left: 15, right: 5}
- * });
- * ```
- *
- * @example
- * ```ts
- * let bbox = [[-79, 43], [-73, 45]];
- * map.fitBounds(bbox, {
- *   padding: 20
- * });
- * ```
- * @see [Fit to the bounds of a LineString](https://maplibre.org/maplibre-gl-js/docs/examples/zoomto-linestring/)
- * @see [Fit a map to a bounding box](https://maplibre.org/maplibre-gl-js/docs/examples/fitbounds/)
+ * This function is used to get the global dispatcher that is shared across all maps instances.
+ * It is used by the main thread to send messages to the workers, and by the workers to send messages back to the main thread.
+ * If you import a script into the worker and need to send a message to the workers to pass some parameters for example,
+ * you can use this function to get the global dispatcher and send a message to the workers.
+ * @returns The global dispatcher instance.
  */
-type PaddingOptions = RequireAtLeastOne<{
-  /**
-   * Padding in pixels from the top of the map canvas.
-   */
-  top: number;
-  /**
-   * Padding in pixels from the bottom of the map canvas.
-   */
-  bottom: number;
-  /**
-   * Padding in pixels from the left of the map canvas.
-   */
-  right: number;
-  /**
-   * Padding in pixels from the right of the map canvas.
-   */
-  left: number;
-}>;
+//#endregion
+//#region src/util/transferable_grid_index.d.ts
+type SerializedGrid = {
+  buffer: ArrayBuffer;
+};
+declare class TransferableGridIndex {
+  cells: number[][];
+  arrayBuffer: ArrayBuffer;
+  d: number;
+  keys: number[];
+  bboxes: number[];
+  n: number;
+  extent: number;
+  padding: number;
+  scale: any;
+  uid: number;
+  min: number;
+  max: number;
+  constructor(extent: number | ArrayBuffer, n?: number, padding?: number);
+  insert(key: number, x1: number, y1: number, x2: number, y2: number): void;
+  _insertReadonly(): void;
+  _insertCell(x1: number, y1: number, x2: number, y2: number, cellIndex: number, uid: number): void;
+  query(x1: number, y1: number, x2: number, y2: number, intersectionTest?: (x1: number, y1: number, x2: number, y2: number) => boolean): number[];
+  _queryCell(x1: number, y1: number, x2: number, y2: number, cellIndex: number, result: number[], seenUids: Record<number, boolean>, intersectionTest: (x1: number, y1: number, x2: number, y2: number) => boolean): void;
+  _forEachCell(x1: number, y1: number, x2: number, y2: number, fn: Function, arg1: unknown, arg2: unknown, intersectionTest?: (x1: number, y1: number, x2: number, y2: number) => boolean): void;
+  _convertFromCellCoord(x: number): number;
+  _convertToCellCoord(x: number): number;
+  toArrayBuffer(): ArrayBuffer;
+  static serialize(grid: TransferableGridIndex, transferables?: Transferable[]): SerializedGrid;
+  static deserialize(serialized: SerializedGrid): TransferableGridIndex;
+} //#endregion
+//#region src/util/dictionary_coder.d.ts
+declare class DictionaryCoder {
+  _stringToNumber: {
+    [_: string]: number;
+  };
+  _numberToString: string[];
+  constructor(strings: string[]);
+  encode(string: string): number;
+  decode(n: number): string;
+} //#endregion
+//#region src/tile/tile_cache.d.ts
+/**
+ * @internal
+ * A [least-recently-used cache](https://en.wikipedia.org/wiki/Cache_algorithms)
+ * with hash lookup made possible by keeping a list of keys in parallel to
+ * an array of dictionary of values
+ *
+ * TileManager offloads currently unused tiles to this cache, and when a tile gets used again,
+ * it is also removed from this cache. Thus addition is the only operation that counts as "usage"
+ * for the purposes of LRU behaviour.
+ */
 declare class TileCache {
   max: number;
   data: {
@@ -5308,7 +6053,7 @@ declare class TileCache {
       timeout: ReturnType<typeof setTimeout>;
     }>;
   };
-  order: Array<string>;
+  order: string[];
   onRemove: (element: Tile) => void;
   /**
    * @param max - number of permitted values
@@ -5373,7 +6118,7 @@ declare class TileCache {
    * @param max - the max size of the cache
    * @returns this cache
    */
-  setMaxSize(max: number): TileCache;
+  setMaxSize(max: number): this;
   /**
    * Remove entries that do not pass a filter function. Used for removing
    * stale tiles from the cache.
@@ -5381,696 +6126,795 @@ declare class TileCache {
    * @param filterFn - Determines whether the tile is filtered. If the supplied function returns false, the tile will be filtered out.
    */
   filter(filterFn: (tile: Tile) => boolean): void;
-}
-declare class InViewTiles {
-  private _tiles;
-  handleWrapJump(wrapDelta: number): void;
-  setFeatureState(featuresChanged: LayerFeatureStates, painter: any): void;
-  getAllTiles(): Tile[];
-  getAllIds(sorted?: boolean): string[];
-  getTileById(key: string): Tile | undefined;
-  setTile(key: string, tile: Tile): void;
-  deleteTileById(key: string): void;
-  /**
-   * Get a currently loaded tile.
-   * - a cached tile is not a loaded tile
-   * @returns the tile if it's in view and had data, null otherwise.
-   */
-  getLoadedTile(tileID: OverscaledTileID): Tile | null;
-  isIdRenderable(id: string, symbolLayer?: boolean): boolean;
-  getRenderableIds(bearingInRadians?: number, symbolLayer?: boolean): Array<string>;
-}
-declare class WorkerPool {
-  static workerCount: number;
-  active: { [_ in number | string]: boolean };
-  workers: Array<ActorTarget>;
-  constructor();
-  acquire(mapId: number | string): Array<ActorTarget>;
-  release(mapId: number | string): void;
-  isPreloaded(): boolean;
-  numActive(): number;
-}
+} //#endregion
+//#region src/webgl/index_buffer.d.ts
 /**
- * Responsible for sending messages from a {@link Source} to an associated worker source (usually with the same name).
+ * @internal
+ * an index buffer class
  */
-declare class Dispatcher {
-  workerPool: WorkerPool;
-  actors: Array<Actor>;
-  currentActor: number;
-  id: string | number;
-  constructor(workerPool: WorkerPool, mapId: string | number);
-  /**
-   * Broadcast a message to all Workers.
-   */
-  broadcast<T extends MessageType>(type: T, data: RequestResponseMessageMap[T][0]): Promise<RequestResponseMessageMap[T][1][]>;
-  /**
-   * Acquires an actor to dispatch messages to. The actors are distributed in round-robin fashion.
-   * @returns An actor object backed by a web worker for processing messages.
-   */
-  getActor(): Actor;
-  remove(mapRemoved?: boolean): void;
-  registerMessageHandler<T extends MessageType>(type: T, handler: MessageHandler<T>): void;
-  unregisterMessageHandler<T extends MessageType>(type: T): void;
-}
-/**
- * A way to identify a feature, either by string or by number
- */
-type GeoJSONFeatureId = number | string;
-/**
- * The geojson source diff object - processed in the following order: remove, add, update. Provides an efficient
- * way to update GeoJSON data in a map source without having to replace the entire dataset.
- */
-type GeoJSONSourceDiff = {
-  /**
-   * When set to `true` it will remove all features
-   */
-  removeAll?: boolean;
-  /**
-   * An array of features IDs to remove
-   */
-  remove?: Array<GeoJSONFeatureId>;
-  /**
-   * An array of features to add
-   */
-  add?: Array<GeoJSON.Feature>;
-  /**
-   * An array of update objects
-   */
-  update?: Array<GeoJSONFeatureDiff>;
-};
-/**
- * A geojson feature diff object - processed in the following order: new geometry, remove properties, add/update properties.
- * Provides an efficient way to update GeoJSON features in a map source without replacing the entire feature.
- */
-type GeoJSONFeatureDiff = {
-  /**
-   * The feature ID
-   */
-  id: GeoJSONFeatureId;
-  /**
-   * If it's a new geometry, place it here
-   */
-  newGeometry?: GeoJSON.Geometry;
-  /**
-   * Setting to `true` will remove all preperties
-   */
-  removeAllProperties?: boolean;
-  /**
-   * The properties keys to remove
-   */
-  removeProperties?: Array<string>;
-  /**
-   * The properties to add or update along side their values
-   */
-  addOrUpdateProperties?: Array<{
-    key: string;
-    value: any;
-  }>;
-};
-type GeoJSONSourceShouldReloadTileOptions = {
-  /**
-   * Refresh all tiles that WILL contain these bounds.
-   */
-  affectedBounds: LngLatBounds[];
-};
-/**
- * The cluster options to set
- */
-type LoadTileResult = {
-  /**
-   * Indicates that the tile requested was not modified.
-   */
-  unmodified?: boolean;
-};
-type CanonicalTileRange = {
-  minTileY: number;
-  maxTileY: number;
-  /**
-   * Image can exceed the boundary of a single "world" (tile 0/0/0),
-   * so we need to know the tile range for wrapping.
-   */
-  minTileXWrapped: number;
-  maxTileXWrapped: number;
-  minWrap: number;
-  maxWrap: number;
-};
-/**
- * Options to add a canvas source type to the map.
- */
-type CanvasSourceSpecification = {
-  /**
-   * Source type. Must be `"canvas"`.
-   */
-  type: "canvas";
-  /**
-   * Four geographical coordinates denoting where to place the corners of the canvas, specified in `[longitude, latitude]` pairs.
-   */
-  coordinates: [[number, number], [number, number], [number, number], [number, number]];
-  /**
-   * Whether the canvas source is animated. If the canvas is static (i.e. pixels do not need to be re-read on every frame), `animate` should be set to `false` to improve performance.
-   * @defaultValue true
-   */
-  animate?: boolean;
-  /**
-   * Canvas source from which to read pixels. Can be a string representing the ID of the canvas element, or the `HTMLCanvasElement` itself.
-   */
-  canvas?: string | HTMLCanvasElement;
-};
-declare const enum IntersectionResult {
-  None = 0,
-  Partial = 1,
-  Full = 2
-}
-interface IBoundingVolume {
-  /**
-   * Performs an intersection test with a frustum.
-   */
-  intersectsFrustum(frustum: Frustum): IntersectionResult;
-  /**
-   * Performs an intersection test with a half-space defined by a plane equation.
-   * The half-space is assumed to lie on the positive side of the plane.
-   */
-  intersectsPlane(plane: vec4): IntersectionResult;
-}
-declare class Aabb implements IBoundingVolume {
-  min: vec3;
-  max: vec3;
-  center: vec3;
-  constructor(min_: vec3, max_: vec3);
-  quadrant(index: number): Aabb;
-  distanceX(point: Array<number>): number;
-  distanceY(point: Array<number>): number;
-  /**
-   * Performs a frustum-aabb intersection test.
-   */
-  intersectsFrustum(frustum: Frustum): IntersectionResult;
-  /**
-   * Performs a halfspace-aabb intersection test.
-   */
-  intersectsPlane(plane: vec4): IntersectionResult;
-}
-declare class Frustum {
-  points: vec4[];
-  planes: vec4[];
-  aabb: Aabb;
-  constructor(points: vec4[], planes: vec4[], aabb: Aabb);
-  static fromInvProjectionMatrix(invProj: mat4, worldSize?: number, zoom?: number, horizonPlane?: vec4, flippedNearFar?: boolean): Frustum;
-}
-type CoveringTilesOptions = {
-  /**
-   * Smallest allowed tile zoom.
-   */
-  minzoom?: number;
-  /**
-   * Largest allowed tile zoom.
-   */
-  maxzoom?: number;
-  /**
-   * Whether to round or floor the target zoom level. If true, the value will be rounded to the closest integer. Otherwise the value will be floored.
-   */
-  roundZoom?: boolean;
-  /**
-   * Tile size, expressed in screen pixels.
-   */
-  tileSize: number;
-};
-type CoveringTilesOptionsInternal = CoveringTilesOptions & {
-  /**
-   * `true` if tiles should be sent back to the worker for each overzoomed zoom level, `false` if not.
-   * Fill this option when computing covering tiles for a source.
-   * When true, any tile at `maxzoom` level that should be overscaled to a greater zoom will have
-   * its zoom set to the overscaled greater zoom. When false, such tiles will have zoom set to `maxzoom`.
-   */
-  reparseOverscaled?: boolean;
-  /**
-   * When terrain is present, tile visibility will be computed in regards to the min and max elevations for each tile.
-   */
-  terrain?: Terrain;
-  /**
-   * Optional function to redefine how tiles are loaded at high pitch angles.
-   */
-  calculateTileZoom?: CalculateTileZoomFunction;
-};
-/**
- * Function to define how tiles are loaded at high pitch angles
- * @param requestedCenterZoom - the requested zoom level, valid at the center point.
- * @param distanceToTile2D - 2D distance from the camera to the candidate tile, in mercator units.
- * @param distanceToTileZ - vertical distance from the camera to the candidate tile, in mercator units.
- * @param distanceToCenter3D - distance from camera to center point, in mercator units
- * @param cameraVerticalFOV - camera vertical field of view, in degrees
- * @return the desired zoom level for this tile. May not be an integer.
- */
-type CalculateTileZoomFunction = (requestedCenterZoom: number, distanceToTile2D: number, distanceToTileZ: number, distanceToCenter3D: number, cameraVerticalFOV: number) => number;
-/**
- * The `Source` interface must be implemented by each source type, including "core" types (`vector`, `raster`,
- * `video`, etc.) and all custom, third-party types.
- *
- * **Event** `data` - Fired with `{dataType: 'source', sourceDataType: 'metadata'}` to indicate that any necessary metadata
- * has been loaded so that it's okay to call `loadTile`; and with `{dataType: 'source', sourceDataType: 'content'}`
- * to indicate that the source data has changed, so that any current caches should be flushed.
- *
- * @group Sources
- */
-interface Source {
-  readonly type: string;
-  /**
-   * The id for the source. Must not be used by any existing source.
-   */
-  id: string;
-  /**
-   * The minimum zoom level for the source.
-   */
-  minzoom: number;
-  /**
-   * The maximum zoom level for the source.
-   */
-  maxzoom: number;
-  /**
-   * The tile size for the source.
-   */
-  tileSize: number;
-  /**
-   * The attribution for the source.
-   */
-  attribution?: string;
-  /**
-   * `true` if zoom levels are rounded to the nearest integer in the source data, `false` if they are floor-ed to the nearest integer.
-   */
-  roundZoom?: boolean;
-  /**
-   * `false` if tiles can be drawn outside their boundaries, `true` if they cannot.
-   */
-  isTileClipped?: boolean;
-  tileID?: CanonicalTileID;
-  /**
-   * `true` if tiles should be sent back to the worker for each overzoomed zoom level, `false` if not.
-   */
-  reparseOverscaled?: boolean;
-  vectorLayerIds?: Array<string>;
-  /**
-   * True if the source has transition, false otherwise.
-   */
-  hasTransition(): boolean;
-  /**
-   * True if the source is loaded, false otherwise.
-   */
-  loaded(): boolean;
-  /**
-   * An ability to fire an event to all the listeners, see {@link Evented}
-   * @param event - The event to fire
-   */
-  fire(event: Event$1): unknown;
-  /**
-   * This method is called when the source is added to the map.
-   * @param map - The map instance
-   */
-  onAdd?(map: Map$1): void;
-  /**
-   * This method is called when the source is removed from the map.
-   * @param map - The map instance
-   */
-  onRemove?(map: Map$1): void;
-  /**
-   * This method does the heavy lifting of loading a tile.
-   * In most cases it will defer the work to the relevant worker source.
-   * @param tile - The tile to load
-   */
-  loadTile(tile: Tile): Promise<LoadTileResult | void>;
-  /**
-   * True is the tile is part of the source, false otherwise.
-   * @param tileID - The tile ID
-   */
-  hasTile?(tileID: OverscaledTileID): boolean;
-  /**
-   * Allows to abort a tile loading.
-   * @param tile - The tile to abort
-   */
-  abortTile?(tile: Tile): Promise<void>;
-  /**
-   * Allows to unload a tile.
-   * @param tile - The tile to unload
-   */
-  unloadTile?(tile: Tile): Promise<void>;
-  /**
-   * @returns A plain (stringifiable) JS object representing the current state of the source.
-   * Creating a source using the returned object as the `options` should result in a Source that is
-   * equivalent to this one.
-   */
-  serialize(): any;
-  /**
-   * Allows to execute a prepare step before the source is used.
-   */
-  prepare?(): void;
-  /**
-   * Optional function to redefine how tiles are loaded at high pitch angles.
-   */
-  calculateTileZoom?: CalculateTileZoomFunction;
-  /**
-   * Optional function to determine whether a tile should be reloaded, given a
-   * set of options associated with a `MapSourceDataChangedEvent`.
-   * @internal
-   */
-  shouldReloadTile?(tile: Tile, options: GeoJSONSourceShouldReloadTileOptions): boolean;
-}
-type TileResult = {
-  tile: Tile;
-  tileID: OverscaledTileID;
-  queryGeometry: Array<Point>;
-  cameraQueryGeometry: Array<Point>;
-  scale: number;
-};
-declare class TileManager extends Evented {
-  id: string;
-  dispatcher: Dispatcher;
-  map: Map$1;
-  style: Style;
-  _source: Source;
-  /**
-   * @internal
-   * signifies that the TileJSON is loaded if applicable.
-   * if the source type does not come with a TileJSON, the flag signifies the
-   * source data has loaded (i.e geojson has been tiled on the worker and is ready)
-   */
-  _sourceLoaded: boolean;
-  _sourceErrored: boolean;
-  _inViewTiles: InViewTiles;
-  _prevLng: number;
-  _outOfViewCache: TileCache;
-  _timers: Record<string, ReturnType<typeof setTimeout>>;
-  _maxTileCacheSize: number;
-  _maxTileCacheZoomLevels: number;
-  _paused: boolean;
-  _shouldReloadOnResume: boolean;
-  transform: ITransform;
-  terrain: Terrain;
-  used: boolean;
-  usedForTerrain: boolean;
-  tileSize: number;
-  _state: SourceFeatureState;
-  _didEmitContent: boolean;
-  _updated: boolean;
-  _rasterFadeDuration: number;
-  _maxFadingAncestorLevels: number;
-  static maxUnderzooming: number;
-  static maxOverzooming: number;
-  constructor(id: string, options: SourceSpecification | CanvasSourceSpecification, dispatcher: Dispatcher);
-  onAdd(map: Map$1): void;
-  onRemove(map: Map$1): void;
-  /**
-   * Return true if no tile data is pending, tiles will not change unless
-   * an additional API call is received.
-   */
-  loaded(): boolean;
-  getSource(): Source;
-  getState(): SourceFeatureState;
-  pause(): void;
-  resume(): void;
-  _loadTile(tile: Tile, id: string, state: TileState): Promise<void>;
-  _unloadTile(tile: Tile): void;
-  _abortTile(tile: Tile): void;
-  serialize(): any;
-  prepare(context: Context): void;
-  /**
-   * Return all tile ids ordered with z-order, and cast to numbers
-   */
-  getIds(): Array<string>;
-  getRenderableIds(symbolLayer?: boolean): Array<string>;
-  hasRenderableParent(tileID: OverscaledTileID): boolean;
-  /**
-   * Reload tiles based on the current state of the source.
-   * @param sourceDataChanged - If `true`, reload all tiles using a state of 'expired', otherwise reload only non-errored tiles using state of 'reloading'.
-   * @param shouldReloadTileOptions - Set of options associated with a `MapSourceDataChangedEvent` that can be passed back to the associated `Source` determine whether a tile should be reloaded.
-   */
-  reload(sourceDataChanged?: boolean, shouldReloadTileOptions?: any): void;
-  _reloadTile(id: string, state: TileState): Promise<void>;
-  _tileLoaded(tile: Tile, id: string, previousState: TileState, result: LoadTileResult): void;
-  /**
-   * Get a specific tile by TileID
-   */
-  getTile(tileID: OverscaledTileID): Tile;
-  /**
-   * Get a specific tile by id
-   */
-  getTileByID(id: string): Tile | undefined;
-  /**
-   * Retain the uppermost loaded children of each provided target tile, within a variable covering zoom range.
-   *
-   * On pitched maps, different parts of the screen show different zoom levels simultaneously.
-   * Ideal tiles are generated using coveringTiles() above, which returns the ideal tile set for
-   * the current pitched plane, which can carry tiles of varying zooms (overscaledZ).
-   * See: https://maplibre.org/maplibre-gl-js/docs/examples/level-of-detail-control/
-   *
-   * A fixed `maxCoveringZoom` on a pitched map would incorrectly intersect with some
-   * ideal tiles and cause distant high-pitch tiles to skip their uppermost children.
-   *
-   * To solve this, we calculate the max covering zoom for each ideal tile separately using its
-   * `overscaledZ`. This effectively makes the "max covering zoom plane" parallel to the
-   * "ideal tile plane," ensuring that we correctly capture the uppermost children
-   * of each ideal tile across the pitched view.
-   *
-   * Analogy: imagine two sheets of paper in 3D space:
-   *   - one sheet = ideal tiles at varying overscaledZ
-   *   - the second sheet = maxCoveringZoom
-   *
-   * @param retainTileMap - this parameters will be updated with the child tiles to keep
-   * @param idealTilesWithoutData - which of the ideal tiles currently does not have loaded data
-   * @return a set of tiles that need to be loaded
-   */
-  _retainLoadedChildren(retainTileMap: Record<string, OverscaledTileID>, idealTilesWithoutData: Set<OverscaledTileID>): Set<OverscaledTileID>;
-  /**
-   * Return dictionary of qualified loaded descendents for each provided target tile id
-   */
-  _getLoadedDescendents(targetTileIDs: Set<OverscaledTileID>): Record<string, Tile[]>;
-  /**
-   * Determine if tile ids fully cover the current generation.
-   * - 1st generation: need 4 children or 1 overscaled child
-   * - 2nd generation: need 16 children or 1 overscaled child
-   */
-  _areDescendentsComplete(generationIDs: OverscaledTileID[], generationZ: number, ancestorZ: number): boolean;
-  /**
-   * Get a currently loaded tile.
-   * - a cached tile is not a loaded tile
-   * @returns the tile if it's in view and had data, null otherwise.
-   */
-  getLoadedTile(tileID: OverscaledTileID): Tile | null;
-  /**
-   * Resizes the tile cache based on the current viewport's size
-   * or the maxTileCacheSize option passed during map creation
-   *
-   * Larger viewports use more tiles and need larger caches. Larger viewports
-   * are more likely to be found on devices with more memory and on pages where
-   * the map is more important.
-   */
-  updateCacheSize(transform: IReadonlyTransform): void;
-  handleWrapJump(lng: number): void;
-  /**
-   * Removes tiles that are outside the viewport and adds new tiles that
-   * are inside the viewport.
-   */
-  update(transform: ITransform, terrain?: Terrain): void;
-  /**
-   * Remove raster tiles that are no longer retained
-   */
-  _cleanUpRasterTiles(retain: Record<string, OverscaledTileID>): void;
-  /**
-   * Remove vector tiles that are no longer retained and also not needed for symbol fading
-   */
-  _cleanUpVectorTiles(retain: Record<string, OverscaledTileID>): void;
-  /**
-   * Add ideal tiles needed for 3D terrain rendering
-   */
-  _addTerrainIdealTiles(idealTileIDs: OverscaledTileID[]): OverscaledTileID[];
-  releaseSymbolFadeTiles(): void;
-  /**
-   * Set tiles to be retained on update of the source. For ideal tiles that do not have data, retain their loaded
-   * children so they can be displayed as substitutes pending load of each ideal tile (to reduce flickering).
-   * If no loaded children are available, fallback to seeking loaded parents as an alternative substitute.
-   */
-  _updateRetainedTiles(idealTileIDs: Array<OverscaledTileID>, zoom: number): Record<string, OverscaledTileID>;
-  /**
-   * Add a tile, given its coordinate, to the pyramid.
-   */
-  _addTile(tileID: OverscaledTileID): Tile;
-  /**
-   * Set a timeout to reload the tile after it expires
-   */
-  _setTileReloadTimer(id: string, tile: Tile): void;
-  _clearTileReloadTimer(id: string): void;
-  _resetTileReloadTimers(): void;
-  /**
-   * Reload any currently renderable tiles that are match one of the incoming `tileId` x/y/z
-   */
-  refreshTiles(tileIds: Array<ICanonicalTileID>): void;
-  /**
-   * Remove a tile, given its id, from the pyramid
-   */
-  _removeTile(id: string): void;
-  /** @internal
-   * Handles incoming source data messages (i.e. after the source has been updated via a worker that has fired
-   * to map.ts data event). For sources with mutable data, the 'content' event fires when the underlying data
-   * to a source has changed. (i.e. GeoJSONSource.setData and ImageSource.setCoordinates)
-   */
-  private _dataHandler;
-  /**
-   * Remove all tiles from this pyramid
-   */
-  clearTiles(): void;
-  /**
-   * Search through our current tiles and attempt to find the tiles that
-   * cover the given bounds.
-   * @param pointQueryGeometry - coordinates of the corners of bounding rectangle
-   * @returns result items have `{tile, minX, maxX, minY, maxY}`, where min/max bounding values are the given bounds transformed in into the coordinate space of this tile.
-   */
-  tilesIn(pointQueryGeometry: Array<Point>, maxPitchScaleFactor: number, has3DLayer: boolean): TileResult[];
-  private transformBbox;
-  getVisibleCoordinates(symbolLayer?: boolean): Array<OverscaledTileID>;
-  hasTransition(): boolean;
-  setRasterFadeDuration(fadeDuration: number): void;
-  /**
-   * Set the value of a particular state for a feature
-   */
-  setFeatureState(sourceLayer: string, featureId: number | string, state: any): void;
-  /**
-   * Resets the value of a particular state key for a feature
-   */
-  removeFeatureState(sourceLayer?: string, featureId?: number | string, key?: string): void;
-  /**
-   * Get the entire state object for a feature
-   */
-  getFeatureState(sourceLayer: string, featureId: number | string): FeatureState;
-  /**
-   * Sets the set of keys that the tile depends on. This allows tiles to
-   * be reloaded when their dependencies change.
-   */
-  setDependencies(tileKey: string, namespace: string, dependencies: Array<string>): void;
-  /**
-   * Reloads all tiles that depend on the given keys.
-   */
-  reloadTilesForDependencies(namespaces: Array<string>, keys: Array<string>): void;
-  areTilesLoaded(): boolean;
-}
-declare class TerrainTileManager extends Evented {
-  /**
-   * tile manager for the raster-dem source.
-   */
-  tileManager: TileManager;
-  /**
-   * stores all render-to-texture tiles.
-   */
-  _tiles: {
-    [_: string]: Tile;
-  };
-  /**
-   * contains a list of tileID-keys for the current scene. (only for performance)
-   */
-  _renderableTilesKeys: Array<string>;
-  /**
-   * raster-dem-tile for a TileID cache.
-   */
-  _sourceTileCache: {
-    [_: string]: string;
-  };
-  /**
-   * minimum zoomlevel to render the terrain.
-   */
-  minzoom: number;
-  /**
-   * maximum zoomlevel to render the terrain.
-   */
-  maxzoom: number;
-  /**
-   * render-to-texture tileSize in scene.
-   */
-  tileSize: number;
-  /**
-   * raster-dem tiles will load for performance the actualZoom - deltaZoom zoom-level.
-   */
-  deltaZoom: number;
-  /**
-   * used to determine whether depth & coord framebuffers need updating
-   */
-  _lastTilesetChange: number;
-  constructor(tileManager: TileManager);
-  destruct(): void;
-  getSource(): Source;
-  /**
-   * Load Terrain Tiles, create internal render-to-texture tiles, free GPU memory.
-   * @param transform - the operation to do
-   * @param terrain - the terrain
-   */
-  update(transform: ITransform, terrain: Terrain): void;
-  /**
-   * Free render to texture cache
-   * @param tileID - optional, free only corresponding to tileID.
-   */
-  freeRtt(tileID?: OverscaledTileID): void;
-  /**
-   * get a list of tiles, which are loaded and should be rendered in the current scene
-   * @returns the renderable tiles
-   */
-  getRenderableTiles(): Array<Tile>;
-  /**
-   * get terrain tile by the TileID key
-   * @param id - the tile id
-   * @returns the tile
-   */
-  getTileByID(id: string): Tile;
-  /**
-   * Searches for the corresponding current renderable terrain-tiles
-   * @param tileID - the tile to look for
-   * @returns the tiles that were found
-   */
-  getTerrainCoords(tileID: OverscaledTileID, terrainTileRanges?: {
-    [zoom: string]: CanonicalTileRange;
-  }): Record<string, OverscaledTileID>;
-  /**
-   * Searches for the corresponding current renderable terrain-tiles.
-   * Includes terrain tiles that are either:
-   * - the same as the tileID
-   * - a parent of the tileID
-   * - a child of the tileID
-   * @param tileID - the tile to look for
-   * @returns the tiles that were found
-   */
-  _getTerrainCoordsForRegularTile(tileID: OverscaledTileID): Record<string, OverscaledTileID>;
-  /**
-   * Searches for the corresponding current renderable terrain-tiles.
-   * Includes terrain tiles that are within terrain tile ranges.
-   * @param tileID - the tile to look for
-   * @returns the tiles that were found
-   */
-  _getTerrainCoordsForTileRanges(tileID: OverscaledTileID, terrainTileRanges: {
-    [zoom: string]: CanonicalTileRange;
-  }): Record<string, OverscaledTileID>;
-  /**
-   * find the covering raster-dem tile
-   * @param tileID - the tile to look for
-   * @param searchForDEM - Optional parameter to search for (parent) source tiles with loaded dem.
-   * @returns the tile
-   */
-  getSourceTile(tileID: OverscaledTileID, searchForDEM?: boolean): Tile | undefined;
-  findTileInCaches(key: string): Tile | undefined;
-  /**
-   * gets whether any tiles were loaded after a specific time. This is used to update depth & coords framebuffers.
-   * @param time - the time
-   * @returns true if any tiles came into view at or after the specified time
-   */
-  anyTilesAfterTime(time?: number): boolean;
-  /**
-   * Checks whether a tile is within the canonical tile ranges.
-   * @param tileID - Tile to check
-   * @param canonicalTileRanges - Canonical tile ranges
-   * @returns
-   */
-  private _isWithinTileRanges;
-}
-declare class Mesh {
-  vertexBuffer: VertexBuffer;
-  indexBuffer: IndexBuffer;
-  segments: SegmentVector;
-  constructor(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, segments: SegmentVector);
+declare class IndexBuffer {
+  context: Context;
+  buffer: WebGLBuffer;
+  dynamicDraw: boolean;
+  constructor(context: Context, array: TriangleIndexArray | LineIndexArray | LineStripIndexArray, dynamicDraw?: boolean);
+  bind(): void;
+  updateData(array: StructArray): void;
   destroy(): void;
+} //#endregion
+//#region src/shaders/shaders.d.ts
+type PreparedShader = {
+  fragmentSource: string;
+  vertexSource: string;
+  staticAttributes: string[];
+  staticUniforms: string[];
+}; //#endregion
+//#region src/style/zoom_history.d.ts
+declare class ZoomHistory {
+  lastZoom: number;
+  lastFloorZoom: number;
+  lastIntegerZoom: number;
+  lastIntegerZoomTime: number;
+  first: boolean;
+  constructor();
+  update(z: number, now: number): boolean;
+} //#endregion
+//#region src/style/evaluation_parameters.d.ts
+type CrossfadeParameters = {
+  fromScale: number;
+  toScale: number;
+  t: number;
+};
+/**
+ * @internal
+ * A parameter that can be evaluated to a value.
+ * It's main purpose is a parameter to expression `evaluate` methods.
+ */
+declare class EvaluationParameters implements GlobalProperties {
+  zoom: number;
+  now: number;
+  fadeDuration: number;
+  zoomHistory: ZoomHistory;
+  transition: TransitionSpecification;
+  isSupportedScript: (_: string) => boolean;
+  constructor(zoom: number, options?: any);
+  crossFadingFactor(): number;
+  getCrossfadeParameters(): CrossfadeParameters;
+} //#endregion
+//#region src/style/properties.d.ts
+type TimePoint = number;
+/**
+ * A from-to type
+ */
+type CrossFaded<T> = {
+  to: T;
+  from: T;
+};
+/**
+ * @internal
+ *  Implementations of the `Property` interface:
+ *
+ *  * Hold metadata about a property that's independent of any specific value: stuff like the type of the value,
+ *    the default value, etc. This comes from the style specification JSON.
+ *  * Define behavior that needs to be polymorphic across different properties: "possibly evaluating"
+ *    an input value (see below), and interpolating between two possibly-evaluted values.
+ *
+ *  The type `T` is the fully-evaluated value type (e.g. `number`, `string`, `Color`).
+ *  The type `R` is the intermediate "possibly evaluated" value type. See below.
+ *
+ *  There are two main implementations of the interface -- one for properties that allow data-driven values,
+ *  and one for properties that don't. There are a few "special case" implementations as well: one for properties
+ *  which cross-fade between two values rather than interpolating, one for `heatmap-color` and `line-gradient`,
+ *  and one for `light-position`.
+ */
+interface Property<T, R> {
+  specification: StylePropertySpecification;
+  name: string;
+  possiblyEvaluate(value: PropertyValue<T, R>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): R;
+  interpolate(a: R, b: R, t: number): R;
 }
+/**
+ * @internal
+ *  `PropertyValue` represents the value part of a property key-value unit. It's used to represent both
+ *  paint and layout property values, and regardless of whether or not their property supports data-driven
+ *  expressions.
+ *
+ *  `PropertyValue` stores the raw input value as seen in a style or a runtime styling API call, i.e. one of the
+ *  following:
+ *
+ *    * A constant value of the type appropriate for the property
+ *    * A function which produces a value of that type (but functions are quasi-deprecated in favor of expressions)
+ *    * An expression which produces a value of that type
+ *    * "undefined"/"not present", in which case the property is assumed to take on its default value.
+ *
+ *  In addition to storing the original input value, `PropertyValue` also stores a normalized representation,
+ *  effectively treating functions as if they are expressions, and constant or default values as if they are
+ *  (constant) expressions.
+ */
+declare class PropertyValue<T, R> {
+  property: Property<T, R>;
+  value: PropertyValueSpecification<T> | void;
+  expression: StylePropertyExpression;
+  constructor(property: Property<T, R>, value: PropertyValueSpecification<T> | void, rootKey: string, globalState: Record<string, any>);
+  isDataDriven(): boolean;
+  getGlobalStateRefs(): Set<string>;
+  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): R;
+}
+type TransitionParameters = {
+  now: TimePoint;
+  transition: TransitionSpecification;
+};
+/**
+ * @internal
+ * Paint properties are _transitionable_: they can change in a fluid manner, interpolating or cross-fading between
+ * old and new value. The duration of the transition, and the delay before it begins, is configurable.
+ *
+ * `TransitionablePropertyValue` is a compositional class that stores both the property value and that transition
+ * configuration.
+ *
+ * A `TransitionablePropertyValue` can calculate the next step in the evaluation chain for paint property values:
+ * `TransitioningPropertyValue`.
+ */
+declare class TransitionablePropertyValue<T, R> {
+  property: Property<T, R>;
+  value: PropertyValue<T, R>;
+  transition: TransitionSpecification | void;
+  constructor(property: Property<T, R>, rootKey: string, globalState: Record<string, any>);
+  transitioned(parameters: TransitionParameters, prior: TransitioningPropertyValue<T, R>): TransitioningPropertyValue<T, R>;
+  untransitioned(): TransitioningPropertyValue<T, R>;
+}
+/**
+ * @internal
+ * `Transitionable` stores a map of all (property name, `TransitionablePropertyValue`) pairs for paint properties of a
+ * given layer type. It can calculate the `TransitioningPropertyValue`s for all of them at once, producing a
+ * `Transitioning` instance for the same set of properties.
+ */
+declare class Transitionable<Props> {
+  _properties: Properties<Props>;
+  _values: { [K in keyof Props]: TransitionablePropertyValue<any, unknown> };
+  private _globalState;
+  private _rootKey;
+  constructor(properties: Properties<Props>, rootKey: string, globalState: Record<string, any>);
+  /** rootKey of a property, e.g. `layers[3].paint.line-color`. */
+  private _propertyRootKey;
+  hasProperty(name: string): boolean;
+  getValue<S extends keyof Props, T>(name: S): PropertyValueSpecification<T> | void;
+  setValue<S extends keyof Props, T>(name: S, value: PropertyValueSpecification<T> | void): void;
+  getTransition<S extends keyof Props>(name: S): TransitionSpecification | void;
+  setTransition<S extends keyof Props>(name: S, value: TransitionSpecification | void): void;
+  serialize(): any;
+  transitioned(parameters: TransitionParameters, prior: Transitioning<Props>): Transitioning<Props>;
+  untransitioned(): Transitioning<Props>;
+}
+/**
+ * @internal
+ * `TransitioningPropertyValue` implements the first of two intermediate steps in the evaluation chain of a paint
+ * property value. In this step, transitions between old and new values are handled: as long as the transition is in
+ * progress, `TransitioningPropertyValue` maintains a reference to the prior value, and interpolates between it and
+ * the new value based on the current time and the configured transition duration and delay. The product is the next
+ * step in the evaluation chain: the "possibly evaluated" result type `R`. See below for more on this concept.
+ */
+declare class TransitioningPropertyValue<T, R> {
+  property: Property<T, R>;
+  value: PropertyValue<T, R>;
+  prior: TransitioningPropertyValue<T, R>;
+  begin: TimePoint;
+  end: TimePoint;
+  constructor(property: Property<T, R>, value: PropertyValue<T, R>, prior: TransitioningPropertyValue<T, R>, transition: TransitionSpecification, now: TimePoint);
+  possiblyEvaluate(parameters: EvaluationParameters, canonical: CanonicalTileID, availableImages: string[]): R;
+}
+/**
+ * @internal
+ * `Transitioning` stores a map of all (property name, `TransitioningPropertyValue`) pairs for paint properties of a
+ * given layer type. It can calculate the possibly-evaluated values for all of them at once, producing a
+ * `PossiblyEvaluated` instance for the same set of properties.
+ */
+declare class Transitioning<Props> {
+  _properties: Properties<Props>;
+  _values: { [K in keyof Props]: PossiblyEvaluatedPropertyValue<unknown> };
+  constructor(properties: Properties<Props>);
+  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): PossiblyEvaluated<Props, any>;
+  hasTransition(): boolean;
+}
+/**
+ * Because layout properties are not transitionable, they have a simpler representation and evaluation chain than
+ * paint properties: `PropertyValue`s are possibly evaluated, producing possibly evaluated values, which are then
+ * fully evaluated.
+ *
+ * `Layout` stores a map of all (property name, `PropertyValue`) pairs for layout properties of a
+ * given layer type. It can calculate the possibly-evaluated values for all of them at once, producing a
+ * `PossiblyEvaluated` instance for the same set of properties.
+ */
+declare class Layout<Props> {
+  _properties: Properties<Props>;
+  _values: { [K in keyof Props]: PropertyValue<any, PossiblyEvaluatedPropertyValue<any>> };
+  private _globalState;
+  private _rootKey;
+  constructor(properties: Properties<Props>, rootKey: string, globalState: Record<string, any>);
+  /** rootKey of a property, e.g. `layers[3].layout.line-cap`. */
+  private _propertyRootKey;
+  hasValue<S extends keyof Props>(name: S): boolean;
+  hasProperty(name: string): boolean;
+  getValue<S extends keyof Props>(name: S): any;
+  setValue<S extends keyof Props>(name: S, value: any): void;
+  serialize(): any;
+  possiblyEvaluate(parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): PossiblyEvaluated<Props, any>;
+}
+/**
+ * "Possibly evaluated value" is an intermediate stage in the evaluation chain for both paint and layout property
+ * values. The purpose of this stage is to optimize away unnecessary recalculations for data-driven properties. Code
+ * which uses data-driven property values must assume that the value is dependent on feature data, and request that it
+ * be evaluated for each feature. But when that property value is in fact a constant or camera function, the calculation
+ * will not actually depend on the feature, and we can benefit from returning the prior result of having done the
+ * evaluation once, ahead of time, in an intermediate step whose inputs are just the value and "global" parameters
+ * such as current zoom level.
+ *
+ * `PossiblyEvaluatedValue` represents the three possible outcomes of this step: if the input value was a constant or
+ * camera expression, then the "possibly evaluated" result is a constant value. Otherwise, the input value was either
+ * a source or composite expression, and we must defer final evaluation until supplied a feature. We separate
+ * the source and composite cases because they are handled differently when generating GL attributes, buffers, and
+ * uniforms.
+ *
+ * Note that `PossiblyEvaluatedValue` (and `PossiblyEvaluatedPropertyValue`, below) are _not_ used for properties that
+ * do not allow data-driven values. For such properties, we know that the "possibly evaluated" result is always a constant
+ * scalar value. See below.
+ */
+type PossiblyEvaluatedValue<T> = {
+  kind: "constant";
+  value: T;
+} | SourceExpression | CompositeExpression;
+/**
+ * @internal
+ * `PossiblyEvaluatedPropertyValue` is used for data-driven paint and layout property values. It holds a
+ * `PossiblyEvaluatedValue` and the `GlobalProperties` that were used to generate it. You're not allowed to supply
+ * a different set of `GlobalProperties` when performing the final evaluation because they would be ignored in the
+ * case where the input value was a constant or camera function.
+ */
+declare class PossiblyEvaluatedPropertyValue<T> {
+  property: DataDrivenProperty<T>;
+  value: PossiblyEvaluatedValue<T>;
+  parameters: EvaluationParameters;
+  constructor(property: DataDrivenProperty<T>, value: PossiblyEvaluatedValue<T>, parameters: EvaluationParameters);
+  isConstant(): boolean;
+  constantOr(value: T): T;
+  evaluate(feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: string[]): T;
+}
+/**
+ * @internal
+ * `PossiblyEvaluated` stores a map of all (property name, `R`) pairs for paint or layout properties of a
+ * given layer type.
+ */
+declare class PossiblyEvaluated<Props, PossibleEvaluatedProps> {
+  _properties: Properties<Props>;
+  _values: PossibleEvaluatedProps;
+  constructor(properties: Properties<Props>);
+  get<S extends keyof PossibleEvaluatedProps>(name: S): PossibleEvaluatedProps[S];
+}
+/**
+ * @internal
+ * An implementation of `Property` for properties that do not permit data-driven (source or composite) expressions.
+ * This restriction allows us to declare statically that the result of possibly evaluating this kind of property
+ * is in fact always the scalar type `T`, and can be used without further evaluating the value on a per-feature basis.
+ */
+declare class DataConstantProperty<T> implements Property<T, T> {
+  specification: StylePropertySpecification;
+  name: string;
+  constructor(specification: StylePropertySpecification, name: string);
+  possiblyEvaluate(value: PropertyValue<T, T>, parameters: EvaluationParameters): T;
+  interpolate(a: T, b: T, t: number): T;
+}
+/**
+ * @internal
+ * An implementation of `Property` for properties that permit data-driven (source or composite) expressions.
+ * The result of possibly evaluating this kind of property is `PossiblyEvaluatedPropertyValue<T>`; obtaining
+ * a scalar value `T` requires further evaluation on a per-feature basis.
+ */
+declare class DataDrivenProperty<T> implements Property<T, PossiblyEvaluatedPropertyValue<T>> {
+  specification: StylePropertySpecification;
+  name: string;
+  overrides: any;
+  constructor(specification: StylePropertySpecification, name: string, overrides?: any);
+  possiblyEvaluate(value: PropertyValue<T, PossiblyEvaluatedPropertyValue<T>>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): PossiblyEvaluatedPropertyValue<T>;
+  interpolate(a: PossiblyEvaluatedPropertyValue<T>, b: PossiblyEvaluatedPropertyValue<T>, t: number): PossiblyEvaluatedPropertyValue<T>;
+  evaluate(value: PossiblyEvaluatedValue<T>, parameters: EvaluationParameters, feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: string[]): T;
+}
+/**
+ * @internal
+ * An implementation of `Property` for  data driven `line-pattern` which are transitioned by cross-fading
+ * rather than interpolation.
+ */
+declare class CrossFadedDataDrivenProperty<T> extends DataDrivenProperty<CrossFaded<T>> {
+  possiblyEvaluate(value: PropertyValue<CrossFaded<T>, PossiblyEvaluatedPropertyValue<CrossFaded<T>>>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): PossiblyEvaluatedPropertyValue<CrossFaded<T>>;
+  evaluate(value: PossiblyEvaluatedValue<CrossFaded<T>>, globals: EvaluationParameters, feature: Feature, featureState: FeatureState, canonical?: CanonicalTileID, availableImages?: string[]): CrossFaded<T>;
+  _calculate(min: T, mid: T, max: T, parameters: EvaluationParameters): CrossFaded<T>;
+  interpolate(a: PossiblyEvaluatedPropertyValue<CrossFaded<T>>): PossiblyEvaluatedPropertyValue<CrossFaded<T>>;
+}
+/**
+ * @internal
+ * An implementation of `Property` for `*-pattern` and `line-dasharray`, which are transitioned by cross-fading
+ * rather than interpolation.
+ */
+declare class CrossFadedProperty<T> implements Property<T, CrossFaded<T>> {
+  specification: StylePropertySpecification;
+  name: string;
+  constructor(specification: StylePropertySpecification, name: string);
+  possiblyEvaluate(value: PropertyValue<T, CrossFaded<T>>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): CrossFaded<T>;
+  _calculate(min: T, mid: T, max: T, parameters: EvaluationParameters): CrossFaded<T>;
+  interpolate(a?: CrossFaded<T> | null): CrossFaded<T>;
+}
+/**
+ * @internal
+ * An implementation of `Property` for `heatmap-color` and `line-gradient`. Interpolation is a no-op, and
+ * evaluation returns a boolean value in order to indicate its presence, but the real
+ * evaluation happens in StyleLayer classes.
+ */
+declare class ColorRampProperty implements Property<Color, boolean> {
+  specification: StylePropertySpecification;
+  name: string;
+  constructor(specification: StylePropertySpecification, name: string);
+  possiblyEvaluate(value: PropertyValue<Color, boolean>, parameters: EvaluationParameters, canonical?: CanonicalTileID, availableImages?: string[]): boolean;
+  interpolate(): boolean;
+}
+/**
+ * @internal
+ * `Properties` holds objects containing default values for the layout or paint property set of a given
+ * layer type. These objects are immutable, and they are used as the prototypes for the `_values` members of
+ * `Transitionable`, `Transitioning`, `Layout`, and `PossiblyEvaluated`. This allows these classes to avoid
+ * doing work in the common case where a property has no explicit value set and should be considered to take
+ * on the default value: using `for (const property of Object.keys(this._values))`, they can iterate over
+ * only the _own_ properties of `_values`, skipping repeated calculation of transitions and possible/final
+ * evaluations for defaults, the result of which will always be the same.
+ */
+declare class Properties<Props> {
+  properties: Props;
+  defaultPropertyValues: { [K in keyof Props]: PropertyValue<unknown, any> };
+  defaultTransitionablePropertyValues: { [K in keyof Props]: TransitionablePropertyValue<unknown, unknown> };
+  defaultTransitioningPropertyValues: { [K in keyof Props]: TransitioningPropertyValue<unknown, unknown> };
+  defaultPossiblyEvaluatedValues: { [K in keyof Props]: PossiblyEvaluatedPropertyValue<unknown> };
+  overridableProperties: string[];
+  constructor(properties: Props);
+} //#endregion
+//#region src/data/feature_position_map.d.ts
+type SerializedFeaturePositionMap = {
+  ids: Float64Array;
+  positions: Uint32Array;
+};
+type FeaturePosition = {
+  index: number;
+  start: number;
+  end: number;
+};
+declare class FeaturePositionMap {
+  ids: number[];
+  positions: number[];
+  indexed: boolean;
+  constructor();
+  add(id: unknown, index: number, start: number, end: number): void;
+  getPositions(id: unknown): FeaturePosition[];
+  static serialize(map: FeaturePositionMap, transferables: ArrayBuffer[]): SerializedFeaturePositionMap;
+  static deserialize(obj: SerializedFeaturePositionMap): FeaturePositionMap;
+} //#endregion
+//#region src/webgl/uniform_binding.d.ts
+type $ObjMap<T extends {}, F extends (v: any) => any> = { [K in keyof T]: F extends ((v: T[K]) => infer R) ? R : never };
+type UniformValues<Us extends {}> = $ObjMap<Us, <V>(u: Uniform<V>) => V>;
+type UniformLocations = {
+  [_: string]: WebGLUniformLocation;
+};
+/**
+ * @internal
+ * A base uniform abstract class
+ */
+declare abstract class Uniform<T> {
+  gl: WebGL2RenderingContext;
+  location: WebGLUniformLocation;
+  current: T;
+  constructor(context: Context, location: WebGLUniformLocation);
+  abstract set(v: T): void;
+}
+declare class Uniform1i extends Uniform<number> {
+  constructor(context: Context, location: WebGLUniformLocation);
+  set(v: number): void;
+}
+declare class Uniform1f extends Uniform<number> {
+  constructor(context: Context, location: WebGLUniformLocation);
+  set(v: number): void;
+}
+declare class Uniform4f extends Uniform<vec4> {
+  constructor(context: Context, location: WebGLUniformLocation);
+  set(v: vec4): void;
+}
+declare class UniformMatrix4f extends Uniform<mat4> {
+  constructor(context: Context, location: WebGLUniformLocation);
+  set(v: mat4): void;
+}
+/**
+ * @internal
+ * A uniform bindings
+ */
+type UniformBindings = {
+  [_: string]: Uniform<any>;
+}; //#endregion
+//#region src/webgl/vertex_array_object.d.ts
+/**
+ * @internal
+ * A vertex array object used to pass data to the webgl code
+ */
+declare class VertexArrayObject {
+  context: Context;
+  boundProgram: Program<any>;
+  boundLayoutVertexBuffer: VertexBuffer;
+  boundPaintVertexBuffers: VertexBuffer[];
+  boundIndexBuffer: IndexBuffer;
+  boundVertexOffset: number;
+  boundDynamicVertexBuffer: VertexBuffer;
+  boundDynamicVertexBuffer2: VertexBuffer;
+  boundDynamicVertexBuffer3: VertexBuffer;
+  vao: any;
+  constructor();
+  bind(context: Context, program: Program<any>, layoutVertexBuffer: VertexBuffer, paintVertexBuffers: VertexBuffer[], indexBuffer?: IndexBuffer | null, vertexOffset?: number | null, dynamicVertexBuffer?: VertexBuffer | null, dynamicVertexBuffer2?: VertexBuffer | null, dynamicVertexBuffer3?: VertexBuffer | null): void;
+  freshBind(program: Program<any>, layoutVertexBuffer: VertexBuffer, paintVertexBuffers: VertexBuffer[], indexBuffer?: IndexBuffer | null, vertexOffset?: number | null, dynamicVertexBuffer?: VertexBuffer | null, dynamicVertexBuffer2?: VertexBuffer | null, dynamicVertexBuffer3?: VertexBuffer | null): void;
+  destroy(): void;
+} //#endregion
+//#region src/data/segment.d.ts
+/**
+ * @internal
+ * A single segment of a vector
+ */
+type Segment = {
+  sortKey?: number;
+  vertexOffset: number;
+  primitiveOffset: number;
+  vertexLength: number;
+  primitiveLength: number;
+  vaos: {
+    [_: string]: VertexArrayObject;
+  };
+};
+/**
+ * @internal
+ * Used for calculations on vector segments
+ */
+declare class SegmentVector {
+  static MAX_VERTEX_ARRAY_LENGTH: number;
+  segments: Segment[];
+  private _forceNewSegmentOnNextPrepare;
+  constructor(segments?: Segment[]);
+  /**
+   * Returns the last segment if `numVertices` fits into it.
+   * If there are no segments yet or `numVertices` doesn't fit into the last one, creates a new empty segment and returns it.
+   */
+  prepareSegment(numVertices: number, layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
+  /**
+   * Creates a new empty segment and returns it.
+   */
+  createNewSegment(layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
+  /**
+   * Returns the last segment, or creates a new segments if there are no segments yet.
+   */
+  getOrCreateLatestSegment(layoutVertexArray: StructArray, indexArray: StructArray, sortKey?: number): Segment;
+  /**
+   * Causes the next call to {@link prepareSegment} to always return a new segment,
+   * not reusing the current segment even if the new geometry would fit it.
+   */
+  forceNewSegmentOnNextPrepare(): void;
+  get(): Segment[];
+  destroy(): void;
+  static simpleSegment(vertexOffset: number, primitiveOffset: number, vertexLength: number, primitiveLength: number): SegmentVector;
+} //#endregion
+//#region src/util/image.d.ts
+type Size = {
+  width: number;
+  height: number;
+};
+type Point2D = {
+  x: number;
+  y: number;
+};
+/**
+ * An image with alpha color value
+ */
+declare class AlphaImage {
+  width: number;
+  height: number;
+  data: Uint8Array;
+  constructor(size: Size, data?: Uint8Array | Uint8ClampedArray);
+  resize(size: Size): void;
+  clone(): AlphaImage;
+  static copy(srcImg: AlphaImage, dstImg: AlphaImage, srcPt: Point2D, dstPt: Point2D, size: Size): void;
+}
+/**
+ * An object to store image data not premultiplied, because ImageData is not premultiplied.
+ * Premultiplication is applied in JS before uploading to a texture.
+ */
+declare class RGBAImage {
+  width: number;
+  height: number;
+  /**
+   * data must be a Uint8Array instead of Uint8ClampedArray because texImage2D does not support Uint8ClampedArray in all browsers.
+   */
+  data: Uint8Array;
+  constructor(size: Size, data?: Uint8Array | Uint8ClampedArray);
+  resize(size: Size): void;
+  replace(data: Uint8Array | Uint8ClampedArray, copy?: boolean): void;
+  clone(): RGBAImage;
+  static copy(srcImg: RGBAImage | ImageData, dstImg: RGBAImage, srcPt: Point2D, dstPt: Point2D, size: Size): void;
+  setPixel(row: number, col: number, value: Color): void;
+} //#endregion
+//#region src/style/style_image.d.ts
+/**
+ * The sprite data
+ */
+type SpriteOnDemandStyleImage = {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  context: CanvasRenderingContext2D;
+};
+/**
+ * The style's image metadata
+ */
+type StyleImageData = {
+  data: RGBAImage;
+  version?: number;
+  hasRenderCallback?: boolean;
+  userImage?: StyleImageInterface;
+  spriteData?: SpriteOnDemandStyleImage;
+};
+/**
+ * Enumeration of possible values for StyleImageMetadata.textFitWidth and textFitHeight.
+ */
+declare const enum TextFit {
+  /**
+   * The image will be resized on the specified axis to tightly fit the content rectangle to target text.
+   * This is the same as not being defined.
+   */
+  stretchOrShrink = "stretchOrShrink",
+  /**
+   * The image will be resized on the specified axis to fit the content rectangle to the target text, but will not
+   * fall below the aspect ratio of the original content rectangle if the other axis is set to proportional.
+   */
+  stretchOnly = "stretchOnly",
+  /**
+   * The image will be resized on the specified axis to fit the content rectangle to the target text and
+   * will resize the other axis to maintain the aspect ratio of the content rectangle.
+   */
+  proportional = "proportional"
+}
+/**
+ * The style's image metadata
+ */
+type StyleImageMetadata = {
+  /**
+   * The ratio of pixels in the image to physical pixels on the screen
+   */
+  pixelRatio: number;
+  /**
+   * Whether the image should be interpreted as an SDF image
+   */
+  sdf: boolean;
+  /**
+   * If `icon-text-fit` is used in a layer with this image, this option defines the part(s) of the image that can be stretched horizontally.
+   */
+  stretchX?: Array<[number, number]>;
+  /**
+   * If `icon-text-fit` is used in a layer with this image, this option defines the part(s) of the image that can be stretched vertically.
+   */
+  stretchY?: Array<[number, number]>;
+  /**
+   * If `icon-text-fit` is used in a layer with this image, this option defines the part of the image that can be covered by the content in `text-field`.
+   */
+  content?: [number, number, number, number];
+  /**
+   * If `icon-text-fit` is used in a layer with this image, this option defines constraints on the horizontal scaling of the image.
+   */
+  textFitWidth?: TextFit;
+  /**
+   * If `icon-text-fit` is used in a layer with this image, this option defines constraints on the vertical scaling of the image.
+   */
+  textFitHeight?: TextFit;
+};
+/**
+ * the style's image, including data and metedata
+ */
+type StyleImage = StyleImageData & StyleImageMetadata;
+/**
+ * Interface for dynamically generated style images. This is a specification for
+ * implementers to model: it is not an exported method or class.
+ *
+ * Images implementing this interface can be redrawn for every frame. They can be used to animate
+ * icons and patterns or make them respond to user input. Style images can implement a
+ * {@link StyleImageInterface.render} method. The method is called every frame and
+ * can be used to update the image.
+ *
+ * @see [Add an animated icon to the map.](https://maplibre.org/maplibre-gl-js/docs/examples/add-image-animated/)
+ *
+ * @example
+ * ```ts
+ * let flashingSquare = {
+ *     width: 64,
+ *     height: 64,
+ *     data: new Uint8Array(64 * 64 * 4),
+ *
+ *     onAdd: function(map) {
+ *         this.map = map;
+ *     },
+ *
+ *     render: function() {
+ *         // keep repainting while the icon is on the map
+ *         this.map.triggerRepaint();
+ *
+ *         // alternate between black and white based on the time
+ *         let value = Math.round(Date.now() / 1000) % 2 === 0  ? 255 : 0;
+ *
+ *         // check if image needs to be changed
+ *         if (value !== this.previousValue) {
+ *             this.previousValue = value;
+ *
+ *             let bytesPerPixel = 4;
+ *             for (let x = 0; x < this.width; x++) {
+ *                 for (let y = 0; y < this.height; y++) {
+ *                     let offset = (y * this.width + x) * bytesPerPixel;
+ *                     this.data[offset + 0] = value;
+ *                     this.data[offset + 1] = value;
+ *                     this.data[offset + 2] = value;
+ *                     this.data[offset + 3] = 255;
+ *                 }
+ *             }
+ *
+ *             // return true to indicate that the image changed
+ *             return true;
+ *         }
+ *     }
+ *  }
+ *
+ *  map.addImage('flashing_square', flashingSquare);
+ * ```
+ */
+interface StyleImageInterface {
+  width: number;
+  height: number;
+  data: Uint8Array | Uint8ClampedArray;
+  /**
+   * This method is called once before every frame where the icon will be used.
+   * The method can optionally update the image's `data` member with a new image.
+   *
+   * If the method updates the image it must return `true` to commit the change.
+   * If the method returns `false` or nothing the image is assumed to not have changed.
+   *
+   * If updates are infrequent it maybe easier to use {@link Map.updateImage} to update
+   * the image instead of implementing this method.
+   *
+   * @returns `true` if this method updated the image. `false` if the image was not changed.
+   */
+  render?: () => boolean;
+  /**
+   * Optional method called when the layer has been added to the Map with {@link Map.addImage}.
+   *
+   * @param map - The Map this custom layer was just added to.
+   */
+  onAdd?: (map: Map$1, id: string) => void;
+  /**
+   * Optional method called when the icon is removed from the map with {@link Map.removeImage}.
+   * This gives the image a chance to clean up resources and event listeners.
+   */
+  onRemove?: () => void;
+} //#endregion
+//#region src/webgl/texture.d.ts
+type TextureFormat = WebGLRenderingContextBase["RGBA"] | WebGLRenderingContextBase["ALPHA"];
+type TextureFilter = WebGLRenderingContextBase["LINEAR"] | WebGLRenderingContextBase["LINEAR_MIPMAP_NEAREST"] | WebGLRenderingContextBase["NEAREST"];
+type TextureWrap = WebGLRenderingContextBase["REPEAT"] | WebGLRenderingContextBase["CLAMP_TO_EDGE"] | WebGLRenderingContextBase["MIRRORED_REPEAT"];
+type EmptyImage = {
+  width: number;
+  height: number;
+  data: null;
+};
+type DataTextureImage = RGBAImage | AlphaImage | EmptyImage;
+type TextureImage = TexImageSource | DataTextureImage;
+/**
+ * @internal
+ * A `Texture` GL related object
+ */
+declare class Texture {
+  context: Context;
+  size: [number, number];
+  texture: WebGLTexture;
+  format: TextureFormat;
+  filter: TextureFilter;
+  wrap: TextureWrap;
+  useMipmap: boolean;
+  /** Tracks the original handle to detect corruption after context loss (#2811) */
+  private _ownedHandle;
+  constructor(context: Context, image: TextureImage, format: TextureFormat, options?: {
+    premultiply?: boolean;
+    useMipmap?: boolean;
+  } | null);
+  update(image: TextureImage, options?: {
+    premultiply?: boolean;
+    useMipmap?: boolean;
+  } | null, position?: {
+    x: number;
+    y: number;
+  }): void;
+  private _uploadDomImage;
+  private _uploadRawData;
+  private _updateDomImage;
+  private _updateRawData;
+  bind(filter: TextureFilter, wrap: TextureWrap, minFilter?: TextureFilter | null): void;
+  destroy(): void;
+} //#endregion
+//#region src/render/image_manager.d.ts
+type MissingImageRequestHandler = (id: string) => void | Promise<void>;
+type Pattern = {
+  bin: PotpackBox;
+  position: ImagePosition;
+};
+/**
+ * ImageManager does three things:
+ *
+ * 1. Tracks requests for icon images from tile workers and sends responses when the requests are fulfilled.
+ * 2. Builds a texture atlas for pattern images.
+ * 3. Rerenders renderable images once per frame
+ *
+ * These are disparate responsibilities and should eventually be handled by different classes. When we implement
+ * data-driven support for `*-pattern`, we'll likely use per-bucket pattern atlases, and that would be a good time
+ * to refactor this.
+ */
+declare class ImageManager extends Evented {
+  images: {
+    [_: string]: StyleImage;
+  };
+  updatedImages: {
+    [_: string]: boolean;
+  };
+  callbackDispatchedThisFrame: {
+    [_: string]: boolean;
+  };
+  loaded: boolean;
+  /**
+   * This is used to track requests for images that are not yet available. When the image is loaded,
+   * the requestors will be notified.
+   */
+  requestors: Array<{
+    ids: string[];
+    promiseResolve: (value: GetImagesResponse | PromiseLike<GetImagesResponse>) => void;
+  }>;
+  missingImageResolver: MissingImageRequestHandler | null;
+  patterns: {
+    [_: string]: Pattern;
+  };
+  atlasImage: RGBAImage;
+  atlasTexture: Texture;
+  dirty: boolean;
+  constructor();
+  destroy(): void;
+  isLoaded(): boolean;
+  setLoaded(loaded: boolean): void;
+  getImage(id: string): StyleImage;
+  addImage(id: string, image: StyleImage): void;
+  _validate(id: string, image: StyleImage): boolean;
+  _validateStretch(stretch: Array<[number, number]>, size: number): boolean;
+  _validateContent(content: [number, number, number, number], image: StyleImage): boolean;
+  updateImage(id: string, image: StyleImage, validate?: boolean): void;
+  removeImage(id: string): void;
+  listImages(): string[];
+  setMissingImageResolver(resolver: MissingImageRequestHandler | null): void;
+  getImages(ids: string[]): Promise<GetImagesResponse>;
+  _getImagesForIds(ids: string[]): Promise<GetImagesResponse>;
+  getPixelSize(): {
+    width: number;
+    height: number;
+  };
+  getPattern(id: string): ImagePosition;
+  bind(context: Context): void;
+  _updatePatternAtlas(): void;
+  beginFrame(): void;
+  dispatchRenderCallbacks(ids: string[]): void;
+  cloneImages(): Record<string, StyleImage>;
+} //#endregion
+//#region src/style/style_glyph.d.ts
+/**
+ * Some metices related to a glyph
+ */
 type GlyphMetrics = {
   width: number;
   height: number;
@@ -6089,7 +6933,11 @@ type StyleGlyph = {
   id: number;
   bitmap: AlphaImage;
   metrics: GlyphMetrics;
-};
+}; //#endregion
+//#region src/render/glyph_atlas.d.ts
+/**
+ * A rectangle type with position, width and height.
+ */
 type Rect = {
   x: number;
   y: number;
@@ -6110,19 +6958,1274 @@ type GlyphPositions = {
   [_: string]: {
     [_: number]: GlyphPosition;
   };
+}; //#endregion
+//#region src/render/image_atlas.d.ts
+declare class ImagePosition {
+  paddedRect: Rect;
+  pixelRatio: number;
+  version: number;
+  stretchY: Array<[number, number]>;
+  stretchX: Array<[number, number]>;
+  content: [number, number, number, number];
+  textFitWidth: TextFit;
+  textFitHeight: TextFit;
+  constructor(paddedRect: Rect, {
+    pixelRatio,
+    version,
+    stretchX,
+    stretchY,
+    content,
+    textFitWidth,
+    textFitHeight
+  }: StyleImage);
+  get tl(): [number, number];
+  get br(): [number, number];
+  get tlbr(): number[];
+  get displaySize(): [number, number];
+}
+/**
+ * A class holding all the images
+ */
+declare class ImageAtlas {
+  image: RGBAImage;
+  iconPositions: {
+    [_: string]: ImagePosition;
+  };
+  patternPositions: {
+    [_: string]: ImagePosition;
+  };
+  haveRenderCallbacks: string[];
+  uploaded: boolean;
+  constructor(icons: GetImagesResponse, patterns: GetImagesResponse);
+  addImages(images: {
+    [_: string]: StyleImage;
+  }, positions: {
+    [_: string]: ImagePosition;
+  }, bins: Rect[]): void;
+  patchUpdatedImages(imageManager: ImageManager, texture: Texture): void;
+  patchUpdatedImage(position: ImagePosition, image: StyleImage, texture: Texture): void;
+} //#endregion
+//#region src/render/subdivision_granularity_settings.d.ts
+/**
+ * Defines the granularity of subdivision for circles with `circle-pitch-alignment: 'map'` and for heatmap kernels.
+ * More subdivision will cause circles to more closely follow the planet's surface.
+ *
+ * Possible values: 1, 3, 5, 7.
+ * Subdivision of 1 results in a simple quad.
+ */
+type CircleGranularity = 1 | 3 | 5 | 7;
+/**
+ * Controls how much subdivision happens for a given type of geometry at different zoom levels.
+ */
+declare class SubdivisionGranularityExpression {
+  /**
+   * A tile of zoom level 0 will be subdivided to this granularity level.
+   * Each subsequent zoom level will have its granularity halved.
+   */
+  private readonly _baseZoomGranularity;
+  /**
+   * No tile will have granularity level smaller than this.
+   */
+  private readonly _minGranularity;
+  constructor(baseZoomGranularity: number, minGranularity: number);
+  getGranularityForZoomLevel(zoomLevel: number): number;
+}
+/**
+ * An object describing how much subdivision should be applied to different types of geometry at different zoom levels.
+ */
+declare class SubdivisionGranularitySetting {
+  /**
+   * Granularity settings used for fill and fill-extrusion layers (for fill, both polygons and their anti-aliasing outlines).
+   */
+  readonly fill: SubdivisionGranularityExpression;
+  /**
+   * Granularity used for the line layer.
+   */
+  readonly line: SubdivisionGranularityExpression;
+  /**
+   * Granularity used for geometry covering the entire tile: raster tiles, etc.
+   */
+  readonly tile: SubdivisionGranularityExpression;
+  /**
+   * Granularity used for stencil masks for tiles.
+   */
+  readonly stencil: SubdivisionGranularityExpression;
+  /**
+   * Controls the granularity of `pitch-alignment: map` circles and heatmap kernels.
+   * More granular circles will more closely follow the map's surface.
+   */
+  readonly circle: CircleGranularity;
+  constructor(options: {
+    /**
+     * Granularity settings used for fill and fill-extrusion layers (for fill, both polygons and their anti-aliasing outlines).
+     */
+    fill: SubdivisionGranularityExpression;
+    /**
+     * Granularity used for the line layer.
+     */
+    line: SubdivisionGranularityExpression;
+    /**
+     * Granularity used for geometry covering the entire tile: stencil masks, raster tiles, etc.
+     */
+    tile: SubdivisionGranularityExpression;
+    /**
+     * Granularity used for stencil masks for tiles.
+     */
+    stencil: SubdivisionGranularityExpression;
+    /**
+     * Controls the granularity of `pitch-alignment: map` circles and heatmap kernels.
+     * More granular circles will more closely follow the map's surface.
+     */
+    circle: CircleGranularity;
+  });
+  /**
+   * Granularity settings that disable subdivision altogether.
+   */
+  static readonly noSubdivision: SubdivisionGranularitySetting;
+} //#endregion
+//#region src/render/line_atlas.d.ts
+type DashRange = {
+  left: number;
+  right: number;
+  isDash: boolean;
+  zeroLength: boolean;
 };
+/**
+ * A dash entry
+ */
+type DashEntry = {
+  y: number;
+  height: number;
+  width: number;
+};
+/**
+ * @internal
+ * A LineAtlas lets us reuse rendered dashed lines
+ * by writing many of them to a texture and then fetching their positions
+ * using {@link LineAtlas.getDash}.
+ *
+ * @param width - the width
+ * @param height - the height
+ */
+declare class LineAtlas {
+  width: number;
+  height: number;
+  nextRow: number;
+  bytes: number;
+  data: Uint8Array;
+  dashEntry: {
+    [_: string]: DashEntry;
+  };
+  dirty: boolean;
+  texture: WebGLTexture;
+  constructor(width: number, height: number);
+  /**
+   * Get or create a dash line pattern.
+   *
+   * @param dasharray - the key (represented by numbers) to get the dash texture
+   * @param round - whether to add circle caps in between dash segments
+   * @returns position of dash texture in {@link DashEntry}
+   */
+  getDash(dasharray: number[], round: boolean): DashEntry;
+  getDashRanges(dasharray: number[], lineAtlasWidth: number, stretch: number): DashRange[];
+  addRoundDash(ranges: DashRange[], stretch: number, n: number): void;
+  addRegularDash(ranges: DashRange[]): void;
+  addDash(dasharray: number[], round: boolean): DashEntry;
+  bind(context: Context): void;
+} //#endregion
+//#region src/data/bucket.d.ts
+type BucketParameters<Layer extends TypedStyleLayer> = {
+  index: number;
+  layers: Layer[];
+  zoom: number;
+  pixelRatio: number;
+  overscaling: number;
+  collisionBoxArray: CollisionBoxArray;
+  sourceLayerIndex: number;
+  sourceID: string;
+};
+type PopulateParameters = {
+  featureIndex: FeatureIndex;
+  iconDependencies: {};
+  patternDependencies: {};
+  glyphDependencies: {};
+  dashDependencies: Record<string, {
+    round: boolean;
+    dasharray: number[];
+  }>;
+  availableImages: string[];
+  subdivisionGranularity: SubdivisionGranularitySetting;
+};
+type IndexedFeature = {
+  feature: VectorTileFeatureLike;
+  id: number | string;
+  index: number;
+  sourceLayerIndex: number;
+};
+type BucketFeature = {
+  index: number;
+  sourceLayerIndex: number;
+  geometry: Point[][];
+  properties: any;
+  type: 0 | 1 | 2 | 3;
+  id?: any;
+  readonly patterns: {
+    [_: string]: {
+      "min": string;
+      "mid": string;
+      "max": string;
+    };
+  };
+  readonly dashes?: NonNullable<Feature["dashes"]>;
+  sortKey?: number;
+};
+/**
+ * @hidden
+ * The `Bucket` interface is the single point of knowledge about turning vector
+ * tiles into WebGL buffers.
+ *
+ * `Bucket` is an abstract interface. An implementation exists for each style layer type.
+ * Create a bucket via the `StyleLayer.createBucket` method.
+ *
+ * The concrete bucket types, using layout options from the style layer,
+ * transform feature geometries into vertex and index data for use by the
+ * vertex shader.  They also (via `ProgramConfiguration`) use feature
+ * properties and the zoom level to populate the attributes needed for
+ * data-driven styling.
+ *
+ * Buckets are designed to be built on a worker thread and then serialized and
+ * transferred back to the main thread for rendering.  On the worker side, a
+ * bucket's vertex, index, and attribute data is stored in `bucket.arrays: ArrayGroup`.
+ * When a bucket's data is serialized and sent back to the main thread,
+ * is gets deserialized (using `new Bucket(serializedBucketData)`, with
+ * the array data now stored in `bucket.buffers: BufferGroup`. BufferGroups
+ * hold the same data as ArrayGroups, but are tuned for consumption by WebGL.
+ */
+interface Bucket {
+  layerIds: string[];
+  hasDependencies: boolean;
+  readonly layers: any[];
+  readonly stateDependentLayers: any[];
+  readonly stateDependentLayerIds: string[];
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }, dashPositions: Record<string, DashEntry>): void;
+  isEmpty(): boolean;
+  upload(context: Context): void;
+  uploadPending(): boolean;
+  /**
+   * Release the WebGL resources associated with the buffers. Note that because
+   * buckets are shared between layers having the same layout properties, they
+   * must be destroyed in groups (all buckets for a tile, or all symbol buckets).
+   */
+  destroy(): void;
+} //#endregion
+//#region src/data/bucket/heatmap_bucket.d.ts
+declare class HeatmapBucket extends CircleBucket<HeatmapStyleLayer> {
+  layers: HeatmapStyleLayer[];
+} //#endregion
+//#region src/style/style_layer/heatmap_style_layer_properties.g.d.ts
+type HeatmapPaintProps = {
+  "heatmap-radius": DataDrivenProperty<number>;
+  "heatmap-weight": DataDrivenProperty<number>;
+  "heatmap-intensity": DataConstantProperty<number>;
+  "heatmap-color": ColorRampProperty;
+  "heatmap-opacity": DataConstantProperty<number>;
+};
+type HeatmapPaintPropsPossiblyEvaluated = {
+  "heatmap-radius": PossiblyEvaluatedPropertyValue<number>;
+  "heatmap-weight": PossiblyEvaluatedPropertyValue<number>;
+  "heatmap-intensity": number;
+  "heatmap-color": ColorRampProperty;
+  "heatmap-opacity": number;
+}; //#endregion
+//#region src/webgl/types.d.ts
+type BlendFuncConstant = WebGLRenderingContextBase["ZERO"] | WebGLRenderingContextBase["ONE"] | WebGLRenderingContextBase["SRC_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_SRC_COLOR"] | WebGLRenderingContextBase["DST_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_DST_COLOR"] | WebGLRenderingContextBase["SRC_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_SRC_ALPHA"] | WebGLRenderingContextBase["DST_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_DST_ALPHA"] | WebGLRenderingContextBase["CONSTANT_COLOR"] | WebGLRenderingContextBase["ONE_MINUS_CONSTANT_COLOR"] | WebGLRenderingContextBase["CONSTANT_ALPHA"] | WebGLRenderingContextBase["ONE_MINUS_CONSTANT_ALPHA"] | WebGLRenderingContextBase["BLEND_COLOR"];
+type BlendFuncType = [BlendFuncConstant, BlendFuncConstant];
+type BlendEquationType = WebGLRenderingContextBase["FUNC_ADD"] | WebGLRenderingContextBase["FUNC_SUBTRACT"] | WebGLRenderingContextBase["FUNC_REVERSE_SUBTRACT"];
+type ColorMaskType = [boolean, boolean, boolean, boolean];
+type CompareFuncType = WebGLRenderingContextBase["NEVER"] | WebGLRenderingContextBase["LESS"] | WebGLRenderingContextBase["EQUAL"] | WebGLRenderingContextBase["LEQUAL"] | WebGLRenderingContextBase["GREATER"] | WebGLRenderingContextBase["NOTEQUAL"] | WebGLRenderingContextBase["GEQUAL"] | WebGLRenderingContextBase["ALWAYS"];
+type DepthMaskType = boolean;
+type DepthRangeType = [number, number];
+type DepthFuncType = CompareFuncType;
+type StencilFuncType = {
+  func: CompareFuncType;
+  ref: number;
+  mask: number;
+};
+type StencilOpConstant = WebGLRenderingContextBase["KEEP"] | WebGLRenderingContextBase["ZERO"] | WebGLRenderingContextBase["REPLACE"] | WebGLRenderingContextBase["INCR"] | WebGLRenderingContextBase["INCR_WRAP"] | WebGLRenderingContextBase["DECR"] | WebGLRenderingContextBase["DECR_WRAP"] | WebGLRenderingContextBase["INVERT"];
+type StencilOpType = [StencilOpConstant, StencilOpConstant, StencilOpConstant];
+type TextureUnitType = number;
+type ViewportType = [number, number, number, number];
+type StencilTestGL = {
+  func: WebGLRenderingContextBase["NEVER"];
+  mask: 0;
+} | {
+  func: WebGLRenderingContextBase["LESS"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["EQUAL"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["LEQUAL"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["GREATER"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["NOTEQUAL"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["GEQUAL"];
+  mask: number;
+} | {
+  func: WebGLRenderingContextBase["ALWAYS"];
+  mask: 0;
+};
+type CullFaceModeType = WebGLRenderingContextBase["FRONT"] | WebGLRenderingContextBase["BACK"] | WebGLRenderingContextBase["FRONT_AND_BACK"];
+type FrontFaceType = WebGLRenderingContextBase["CW"] | WebGLRenderingContextBase["CCW"]; //#endregion
+//#region src/webgl/value.d.ts
+interface IValue<T> {
+  current: T;
+  default: T;
+  dirty: boolean;
+  get(): T;
+  setDefault(): void;
+  set(value: T): void;
+}
+declare class BaseValue<T> implements IValue<T> {
+  gl: WebGL2RenderingContext;
+  current: T;
+  default: T;
+  dirty: boolean;
+  constructor(context: Context);
+  get(): T;
+  set(value: T): void;
+  getDefault(): T;
+  setDefault(): void;
+}
+declare class ClearColor extends BaseValue<Color> {
+  getDefault(): Color;
+  set(v: Color): void;
+}
+declare class ClearDepth extends BaseValue<number> {
+  getDefault(): number;
+  set(v: number): void;
+}
+declare class ClearStencil extends BaseValue<number> {
+  getDefault(): number;
+  set(v: number): void;
+}
+declare class ColorMask extends BaseValue<ColorMaskType> {
+  getDefault(): ColorMaskType;
+  set(v: ColorMaskType): void;
+}
+declare class DepthMask extends BaseValue<DepthMaskType> {
+  getDefault(): DepthMaskType;
+  set(v: DepthMaskType): void;
+}
+declare class StencilMask extends BaseValue<number> {
+  getDefault(): number;
+  set(v: number): void;
+}
+declare class StencilFunc extends BaseValue<StencilFuncType> {
+  getDefault(): StencilFuncType;
+  set(v: StencilFuncType): void;
+}
+declare class StencilOp extends BaseValue<StencilOpType> {
+  getDefault(): StencilOpType;
+  set(v: StencilOpType): void;
+}
+declare class StencilTest extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class DepthRange extends BaseValue<DepthRangeType> {
+  getDefault(): DepthRangeType;
+  set(v: DepthRangeType): void;
+}
+declare class DepthTest extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class DepthFunc extends BaseValue<DepthFuncType> {
+  getDefault(): DepthFuncType;
+  set(v: DepthFuncType): void;
+}
+declare class Blend extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class BlendFunc extends BaseValue<BlendFuncType> {
+  getDefault(): BlendFuncType;
+  set(v: BlendFuncType): void;
+}
+declare class BlendColor extends BaseValue<Color> {
+  getDefault(): Color;
+  set(v: Color): void;
+}
+declare class BlendEquation extends BaseValue<BlendEquationType> {
+  getDefault(): BlendEquationType;
+  set(v: BlendEquationType): void;
+}
+declare class CullFace extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class CullFaceSide extends BaseValue<CullFaceModeType> {
+  getDefault(): CullFaceModeType;
+  set(v: CullFaceModeType): void;
+}
+declare class FrontFace extends BaseValue<FrontFaceType> {
+  getDefault(): FrontFaceType;
+  set(v: FrontFaceType): void;
+}
+declare class ProgramValue extends BaseValue<WebGLProgram> {
+  getDefault(): WebGLProgram;
+  set(v?: WebGLProgram | null): void;
+}
+declare class ActiveTextureUnit extends BaseValue<TextureUnitType> {
+  getDefault(): TextureUnitType;
+  set(v: TextureUnitType): void;
+}
+declare class Viewport extends BaseValue<ViewportType> {
+  getDefault(): ViewportType;
+  set(v: ViewportType): void;
+}
+declare class BindFramebuffer extends BaseValue<WebGLFramebuffer> {
+  getDefault(): WebGLFramebuffer;
+  set(v?: WebGLFramebuffer | null): void;
+}
+declare class BindRenderbuffer extends BaseValue<WebGLRenderbuffer> {
+  getDefault(): WebGLRenderbuffer;
+  set(v?: WebGLRenderbuffer | null): void;
+}
+declare class BindTexture extends BaseValue<WebGLTexture> {
+  getDefault(): WebGLTexture;
+  set(v?: WebGLTexture | null): void;
+}
+declare class BindVertexBuffer extends BaseValue<WebGLBuffer> {
+  getDefault(): WebGLBuffer;
+  set(v?: WebGLBuffer | null): void;
+}
+declare class BindElementBuffer extends BaseValue<WebGLBuffer> {
+  getDefault(): WebGLBuffer;
+  set(v?: WebGLBuffer | null): void;
+}
+declare class BindVertexArray extends BaseValue<WebGLVertexArrayObject | null> {
+  getDefault(): WebGLVertexArrayObject | null;
+  set(v: WebGLVertexArrayObject | null): void;
+}
+declare class PixelStoreUnpack extends BaseValue<number> {
+  getDefault(): number;
+  set(v: number): void;
+}
+declare class PixelStoreUnpackPremultiplyAlpha extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class PixelStoreUnpackFlipY extends BaseValue<boolean> {
+  getDefault(): boolean;
+  set(v: boolean): void;
+}
+declare class FramebufferAttachment<T> extends BaseValue<T> {
+  parent: WebGLFramebuffer;
+  context: Context;
+  constructor(context: Context, parent: WebGLFramebuffer);
+  getDefault(): T;
+}
+declare class ColorAttachment extends FramebufferAttachment<WebGLTexture> {
+  setDirty(): void;
+  set(v?: WebGLTexture | null): void;
+}
+declare class DepthAttachment extends FramebufferAttachment<WebGLRenderbuffer> {
+  set(v?: WebGLRenderbuffer | null): void;
+} //#endregion
+//#region src/webgl/framebuffer.d.ts
+/**
+ * @internal
+ * A framebuffer holder object
+ */
+declare class Framebuffer {
+  context: Context;
+  width: number;
+  height: number;
+  framebuffer: WebGLFramebuffer;
+  colorAttachment: ColorAttachment;
+  depthAttachment: DepthAttachment;
+  constructor(context: Context, width: number, height: number, hasDepth: boolean, hasStencil: boolean);
+  destroy(): void;
+} //#endregion
+//#region src/style/style_layer/heatmap_style_layer.d.ts
+/**
+ * A style layer that defines a heatmap
+ */
+declare class HeatmapStyleLayer extends StyleLayer {
+  heatmapFbos: Map<string, Framebuffer>;
+  colorRamp: RGBAImage;
+  colorRampTexture: Texture;
+  _transitionablePaint: Transitionable<HeatmapPaintProps>;
+  _transitioningPaint: Transitioning<HeatmapPaintProps>;
+  paint: PossiblyEvaluated<HeatmapPaintProps, HeatmapPaintPropsPossiblyEvaluated>;
+  createBucket(options: any): HeatmapBucket;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  _handleSpecialPaintPropertyUpdate(name: string): void;
+  _updateColorRamp(): void;
+  resize(): void;
+  queryRadius(bucket: Bucket): number;
+  queryIntersectsFeature({
+    queryGeometry,
+    feature,
+    featureState,
+    geometry,
+    transform,
+    pixelsToTileUnits,
+    unwrappedTileID,
+    getElevation
+  }: QueryIntersectsFeatureParams): boolean;
+  hasOffscreenPass(): boolean;
+} //#endregion
+//#region src/data/bucket/circle_bucket.d.ts
+/**
+ * @internal
+ * Circles are represented by two triangles.
+ *
+ * Each corner has a pos that is the center of the circle and an extrusion
+ * vector that is where it points.
+ */
+declare class CircleBucket<Layer extends CircleStyleLayer | HeatmapStyleLayer> implements Bucket {
+  index: number;
+  zoom: number;
+  overscaling: number;
+  layerIds: string[];
+  layers: Layer[];
+  stateDependentLayers: Layer[];
+  stateDependentLayerIds: string[];
+  layoutVertexArray: CircleLayoutArray;
+  layoutVertexBuffer: VertexBuffer;
+  indexArray: TriangleIndexArray;
+  indexBuffer: IndexBuffer;
+  hasDependencies: boolean;
+  programConfigurations: ProgramConfigurationSet<Layer>;
+  segments: SegmentVector;
+  uploaded: boolean;
+  constructor(options: BucketParameters<Layer>);
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  isEmpty(): boolean;
+  uploadPending(): boolean;
+  upload(context: Context): void;
+  destroy(): void;
+  addFeature(feature: BucketFeature, geometry: Point[][], index: number, canonical: CanonicalTileID, granularity?: CircleGranularity): void;
+} //#endregion
+//#region src/style/style_layer/circle_style_layer_properties.g.d.ts
+type CircleLayoutProps = {
+  "circle-sort-key": DataDrivenProperty<number>;
+};
+type CircleLayoutPropsPossiblyEvaluated = {
+  "circle-sort-key": PossiblyEvaluatedPropertyValue<number>;
+};
+type CirclePaintProps = {
+  "circle-radius": DataDrivenProperty<number>;
+  "circle-color": DataDrivenProperty<Color>;
+  "circle-blur": DataDrivenProperty<number>;
+  "circle-opacity": DataDrivenProperty<number>;
+  "circle-translate": DataConstantProperty<[number, number]>;
+  "circle-translate-anchor": DataConstantProperty<"map" | "viewport">;
+  "circle-pitch-scale": DataConstantProperty<"map" | "viewport">;
+  "circle-pitch-alignment": DataConstantProperty<"map" | "viewport">;
+  "circle-stroke-width": DataDrivenProperty<number>;
+  "circle-stroke-color": DataDrivenProperty<Color>;
+  "circle-stroke-opacity": DataDrivenProperty<number>;
+};
+type CirclePaintPropsPossiblyEvaluated = {
+  "circle-radius": PossiblyEvaluatedPropertyValue<number>;
+  "circle-color": PossiblyEvaluatedPropertyValue<Color>;
+  "circle-blur": PossiblyEvaluatedPropertyValue<number>;
+  "circle-opacity": PossiblyEvaluatedPropertyValue<number>;
+  "circle-translate": [number, number];
+  "circle-translate-anchor": "map" | "viewport";
+  "circle-pitch-scale": "map" | "viewport";
+  "circle-pitch-alignment": "map" | "viewport";
+  "circle-stroke-width": PossiblyEvaluatedPropertyValue<number>;
+  "circle-stroke-color": PossiblyEvaluatedPropertyValue<Color>;
+  "circle-stroke-opacity": PossiblyEvaluatedPropertyValue<number>;
+}; //#endregion
+//#region src/style/style_layer/circle_style_layer.d.ts
+/**
+ * A style layer that defines a circle
+ */
+declare class CircleStyleLayer extends StyleLayer {
+  _unevaluatedLayout: Layout<CircleLayoutProps>;
+  layout: PossiblyEvaluated<CircleLayoutProps, CircleLayoutPropsPossiblyEvaluated>;
+  _transitionablePaint: Transitionable<CirclePaintProps>;
+  _transitioningPaint: Transitioning<CirclePaintProps>;
+  paint: PossiblyEvaluated<CirclePaintProps, CirclePaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  createBucket(parameters: BucketParameters<any>): CircleBucket<any>;
+  queryRadius(bucket: Bucket): number;
+  queryIntersectsFeature({
+    queryGeometry,
+    feature,
+    featureState,
+    geometry,
+    transform,
+    pixelsToTileUnits,
+    unwrappedTileID,
+    getElevation
+  }: QueryIntersectsFeatureParams): boolean;
+} //#endregion
+//#region src/data/bucket/fill_bucket.d.ts
+declare class FillBucket implements Bucket {
+  index: number;
+  zoom: number;
+  overscaling: number;
+  layers: FillStyleLayer[];
+  layerIds: string[];
+  stateDependentLayers: FillStyleLayer[];
+  stateDependentLayerIds: string[];
+  patternFeatures: BucketFeature[];
+  layoutVertexArray: FillLayoutArray;
+  layoutVertexBuffer: VertexBuffer;
+  indexArray: TriangleIndexArray;
+  indexBuffer: IndexBuffer;
+  indexArray2: LineIndexArray;
+  indexBuffer2: IndexBuffer;
+  hasDependencies: boolean;
+  programConfigurations: ProgramConfigurationSet<FillStyleLayer>;
+  segments: SegmentVector;
+  segments2: SegmentVector;
+  uploaded: boolean;
+  constructor(options: BucketParameters<FillStyleLayer>);
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  isEmpty(): boolean;
+  uploadPending(): boolean;
+  upload(context: Context): void;
+  destroy(): void;
+  addFeature(feature: BucketFeature, geometry: Point[][], index: number, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }, subdivisionGranularity: SubdivisionGranularitySetting): void;
+} //#endregion
+//#region src/style/style_layer/fill_style_layer_properties.g.d.ts
+type FillLayoutProps = {
+  "fill-sort-key": DataDrivenProperty<number>;
+};
+type FillLayoutPropsPossiblyEvaluated = {
+  "fill-sort-key": PossiblyEvaluatedPropertyValue<number>;
+};
+type FillPaintProps = {
+  "fill-antialias": DataConstantProperty<boolean>;
+  "fill-opacity": DataDrivenProperty<number>;
+  "fill-layer-opacity": DataConstantProperty<number>;
+  "fill-color": DataDrivenProperty<Color>;
+  "fill-outline-color": DataDrivenProperty<Color>;
+  "fill-translate": DataConstantProperty<[number, number]>;
+  "fill-translate-anchor": DataConstantProperty<"map" | "viewport">;
+  "fill-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
+};
+type FillPaintPropsPossiblyEvaluated = {
+  "fill-antialias": boolean;
+  "fill-opacity": PossiblyEvaluatedPropertyValue<number>;
+  "fill-layer-opacity": number;
+  "fill-color": PossiblyEvaluatedPropertyValue<Color>;
+  "fill-outline-color": PossiblyEvaluatedPropertyValue<Color>;
+  "fill-translate": [number, number];
+  "fill-translate-anchor": "map" | "viewport";
+  "fill-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
+}; //#endregion
+//#region src/style/style_layer/fill_style_layer.d.ts
+declare class FillStyleLayer extends StyleLayer {
+  _unevaluatedLayout: Layout<FillLayoutProps>;
+  layout: PossiblyEvaluated<FillLayoutProps, FillLayoutPropsPossiblyEvaluated>;
+  _transitionablePaint: Transitionable<FillPaintProps>;
+  _transitioningPaint: Transitioning<FillPaintProps>;
+  paint: PossiblyEvaluated<FillPaintProps, FillPaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  recalculate(parameters: EvaluationParameters, availableImages: string[]): void;
+  createBucket(parameters: BucketParameters<any>): FillBucket;
+  queryRadius(): number;
+  queryIntersectsFeature({
+    queryGeometry,
+    geometry,
+    transform,
+    pixelsToTileUnits
+  }: QueryIntersectsFeatureParams): boolean;
+  isTileClipped(): boolean;
+} //#endregion
+//#region src/data/bucket/fill_extrusion_bucket.d.ts
+declare class FillExtrusionBucket implements Bucket {
+  index: number;
+  zoom: number;
+  overscaling: number;
+  layers: FillExtrusionStyleLayer[];
+  layerIds: string[];
+  stateDependentLayers: FillExtrusionStyleLayer[];
+  stateDependentLayerIds: string[];
+  layoutVertexArray: FillExtrusionLayoutArray;
+  layoutVertexBuffer: VertexBuffer;
+  centroidVertexArray: PosArray;
+  centroidVertexBuffer: VertexBuffer;
+  indexArray: TriangleIndexArray;
+  indexBuffer: IndexBuffer;
+  hasDependencies: boolean;
+  programConfigurations: ProgramConfigurationSet<FillExtrusionStyleLayer>;
+  segments: SegmentVector;
+  uploaded: boolean;
+  features: BucketFeature[];
+  constructor(options: BucketParameters<FillExtrusionStyleLayer>);
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  isEmpty(): boolean;
+  uploadPending(): boolean;
+  upload(context: Context): void;
+  destroy(): void;
+  addFeature(feature: BucketFeature, geometry: Point[][], index: number, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }, subdivisionGranularity: SubdivisionGranularitySetting): void;
+  private processPolygon;
+  /**
+   * Generates side faces for the supplied geometry. Assumes `geometry` to be a line string, like the output of {@link subdivideVertexLine}.
+   * For rings, it is assumed that the first and last vertex of `geometry` are equal.
+   */
+  private _generateSideFaces;
+} //#endregion
+//#region src/style/style_layer/fill_extrusion_style_layer_properties.g.d.ts
+type FillExtrusionPaintProps = {
+  "fill-extrusion-opacity": DataConstantProperty<number>;
+  "fill-extrusion-color": DataDrivenProperty<Color>;
+  "fill-extrusion-translate": DataConstantProperty<[number, number]>;
+  "fill-extrusion-translate-anchor": DataConstantProperty<"map" | "viewport">;
+  "fill-extrusion-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
+  "fill-extrusion-height": DataDrivenProperty<number>;
+  "fill-extrusion-base": DataDrivenProperty<number>;
+  "fill-extrusion-vertical-gradient": DataConstantProperty<boolean>;
+};
+type FillExtrusionPaintPropsPossiblyEvaluated = {
+  "fill-extrusion-opacity": number;
+  "fill-extrusion-color": PossiblyEvaluatedPropertyValue<Color>;
+  "fill-extrusion-translate": [number, number];
+  "fill-extrusion-translate-anchor": "map" | "viewport";
+  "fill-extrusion-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
+  "fill-extrusion-height": PossiblyEvaluatedPropertyValue<number>;
+  "fill-extrusion-base": PossiblyEvaluatedPropertyValue<number>;
+  "fill-extrusion-vertical-gradient": boolean;
+}; //#endregion
+//#region src/style/style_layer/fill_extrusion_style_layer.d.ts
+declare class FillExtrusionStyleLayer extends StyleLayer {
+  _transitionablePaint: Transitionable<FillExtrusionPaintProps>;
+  _transitioningPaint: Transitioning<FillExtrusionPaintProps>;
+  paint: PossiblyEvaluated<FillExtrusionPaintProps, FillExtrusionPaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  createBucket(parameters: BucketParameters<FillExtrusionStyleLayer>): FillExtrusionBucket;
+  queryRadius(): number;
+  is3D(): boolean;
+  queryIntersectsFeature({
+    queryGeometry,
+    feature,
+    featureState,
+    geometry,
+    transform,
+    pixelsToTileUnits,
+    pixelPosMatrix
+  }: QueryIntersectsFeatureParams): boolean | number;
+} //#endregion
+//#region src/style/style_layer/hillshade_style_layer_properties.g.d.ts
+type HillshadePaintProps = {
+  "hillshade-illumination-direction": DataConstantProperty<NumberArray>;
+  "hillshade-illumination-altitude": DataConstantProperty<NumberArray>;
+  "hillshade-illumination-anchor": DataConstantProperty<"map" | "viewport">;
+  "hillshade-exaggeration": DataConstantProperty<number>;
+  "hillshade-shadow-color": DataConstantProperty<ColorArray>;
+  "hillshade-highlight-color": DataConstantProperty<ColorArray>;
+  "hillshade-accent-color": DataConstantProperty<Color>;
+  "hillshade-method": DataConstantProperty<"standard" | "basic" | "combined" | "igor" | "multidirectional">;
+  "resampling": DataConstantProperty<"linear" | "nearest">;
+};
+type HillshadePaintPropsPossiblyEvaluated = {
+  "hillshade-illumination-direction": NumberArray;
+  "hillshade-illumination-altitude": NumberArray;
+  "hillshade-illumination-anchor": "map" | "viewport";
+  "hillshade-exaggeration": number;
+  "hillshade-shadow-color": ColorArray;
+  "hillshade-highlight-color": ColorArray;
+  "hillshade-accent-color": Color;
+  "hillshade-method": "standard" | "basic" | "combined" | "igor" | "multidirectional";
+  "resampling": "linear" | "nearest";
+}; //#endregion
+//#region src/style/style_layer/hillshade_style_layer.d.ts
+declare class HillshadeStyleLayer extends StyleLayer {
+  _transitionablePaint: Transitionable<HillshadePaintProps>;
+  _transitioningPaint: Transitioning<HillshadePaintProps>;
+  paint: PossiblyEvaluated<HillshadePaintProps, HillshadePaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  getIlluminationProperties(): {
+    directionRadians: number[];
+    altitudeRadians: number[];
+    shadowColor: Color[];
+    highlightColor: Color[];
+  };
+  hasOffscreenPass(): boolean;
+} //#endregion
+//#region src/style/style_layer/color_relief_style_layer_properties.g.d.ts
+type ColorReliefPaintProps = {
+  "color-relief-opacity": DataConstantProperty<number>;
+  "color-relief-color": ColorRampProperty;
+  "resampling": DataConstantProperty<"linear" | "nearest">;
+};
+type ColorReliefPaintPropsPossiblyEvaluated = {
+  "color-relief-opacity": number;
+  "color-relief-color": ColorRampProperty;
+  "resampling": "linear" | "nearest";
+}; //#endregion
+//#region src/style/style_layer/color_relief_style_layer.d.ts
+type ColorRamp = {
+  elevationStops: number[];
+  colorStops: Color[];
+};
+type ColorRampTextures = {
+  elevationTexture: Texture;
+  colorTexture: Texture;
+};
+declare class ColorReliefStyleLayer extends StyleLayer {
+  colorRampExpression: StylePropertyExpression;
+  colorRampTextures: ColorRampTextures;
+  _transitionablePaint: Transitionable<ColorReliefPaintProps>;
+  _transitioningPaint: Transitioning<ColorReliefPaintProps>;
+  paint: PossiblyEvaluated<ColorReliefPaintProps, ColorReliefPaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  /**
+   * Create the color ramp, enforcing a maximum length for the vectors. This modifies the internal color ramp,
+   * so that the remapping is only performed once.
+   *
+   * @param maxLength - the maximum number of stops in the color ramp
+   *
+   * @return a `ColorRamp` object with no more than `maxLength` stops.
+   *
+   */
+  _createColorRamp(maxLength: number): ColorRamp;
+  _colorRampChanged(): boolean;
+  getColorRampTextures(context: Context, maxLength: number, unpackVector: number[]): ColorRampTextures;
+  hasOffscreenPass(): boolean;
+} //#endregion
+//#region src/data/bucket/line_bucket.d.ts
+type LineClips = {
+  start: number;
+  end: number;
+};
+type GradientTexture = {
+  texture?: Texture;
+  gradient?: RGBAImage;
+  version?: number;
+};
+/**
+ * @internal
+ * Line bucket class
+ */
+declare class LineBucket implements Bucket {
+  distance: number;
+  totalDistance: number;
+  maxLineLength: number;
+  scaledDistance: number;
+  lineClips?: LineClips;
+  e1: number;
+  e2: number;
+  index: number;
+  zoom: number;
+  overscaling: number;
+  layers: LineStyleLayer[];
+  layerIds: string[];
+  gradients: {
+    [x: string]: GradientTexture;
+  };
+  stateDependentLayers: any[];
+  stateDependentLayerIds: string[];
+  patternFeatures: BucketFeature[];
+  lineClipsArray: LineClips[];
+  layoutVertexArray: LineLayoutArray;
+  layoutVertexBuffer: VertexBuffer;
+  layoutVertexArray2: LineExtLayoutArray;
+  layoutVertexBuffer2: VertexBuffer;
+  indexArray: TriangleIndexArray;
+  indexBuffer: IndexBuffer;
+  hasDependencies: boolean;
+  programConfigurations: ProgramConfigurationSet<LineStyleLayer>;
+  segments: SegmentVector;
+  uploaded: boolean;
+  constructor(options: BucketParameters<LineStyleLayer>);
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }, dashPositions: {
+    [_: string]: DashEntry;
+  }): void;
+  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }, dashPositions?: {
+    [_: string]: DashEntry;
+  }): void;
+  isEmpty(): boolean;
+  uploadPending(): boolean;
+  upload(context: Context): void;
+  destroy(): void;
+  lineFeatureClips(feature: BucketFeature): LineClips | undefined;
+  addFeature(feature: BucketFeature, geometry: Point[][], index: number, canonical: CanonicalTileID, imagePositions: {
+    [_: string]: ImagePosition;
+  }, dashPositions: Record<string, DashEntry>, subdivisionGranularity: SubdivisionGranularitySetting): void;
+  addLine(vertices: Point[], feature: BucketFeature, join: string, cap: string, miterLimit: number, roundLimit: number, canonical: CanonicalTileID | undefined, subdivisionGranularity: SubdivisionGranularitySetting): void;
+  /**
+   * Add two vertices to the buffers.
+   *
+   * @param p - the line vertex to add buffer vertices for
+   * @param normal - vertex normal
+   * @param endLeft - extrude to shift the left vertex along the line
+   * @param endRight - extrude to shift the left vertex along the line
+   * @param segment - the segment object to add the vertex to
+   * @param round - whether this is a round cap
+   */
+  addCurrentVertex(p: Point, normal: Point, endLeft: number, endRight: number, segment: Segment, round?: boolean): void;
+  addHalfVertex({
+    x,
+    y
+  }: Point, extrudeX: number, extrudeY: number, round: boolean, up: boolean, dir: number, segment: Segment): void;
+  updateScaledDistance(): void;
+  updateDistance(prev: Point, next: Point): void;
+  private hasLineDasharray;
+  private addLineDashDependencies;
+} //#endregion
+//#region src/style/style_layer/line_style_layer_properties.g.d.ts
+type LineLayoutProps = {
+  "line-cap": DataDrivenProperty<"butt" | "round" | "square">;
+  "line-join": DataDrivenProperty<"bevel" | "round" | "miter">;
+  "line-miter-limit": DataDrivenProperty<number>;
+  "line-round-limit": DataDrivenProperty<number>;
+  "line-sort-key": DataDrivenProperty<number>;
+};
+type LineLayoutPropsPossiblyEvaluated = {
+  "line-cap": PossiblyEvaluatedPropertyValue<"butt" | "round" | "square">;
+  "line-join": PossiblyEvaluatedPropertyValue<"bevel" | "round" | "miter">;
+  "line-miter-limit": PossiblyEvaluatedPropertyValue<number>;
+  "line-round-limit": PossiblyEvaluatedPropertyValue<number>;
+  "line-sort-key": PossiblyEvaluatedPropertyValue<number>;
+};
+type LinePaintProps = {
+  "line-opacity": DataDrivenProperty<number>;
+  "line-layer-opacity": DataConstantProperty<number>;
+  "line-color": DataDrivenProperty<Color>;
+  "line-translate": DataConstantProperty<[number, number]>;
+  "line-translate-anchor": DataConstantProperty<"map" | "viewport">;
+  "line-width": DataDrivenProperty<number>;
+  "line-gap-width": DataDrivenProperty<number>;
+  "line-offset": DataDrivenProperty<number>;
+  "line-blur": DataDrivenProperty<number>;
+  "line-dasharray": CrossFadedDataDrivenProperty<number[]>;
+  "line-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
+  "line-gradient": ColorRampProperty;
+};
+type LinePaintPropsPossiblyEvaluated = {
+  "line-opacity": PossiblyEvaluatedPropertyValue<number>;
+  "line-layer-opacity": number;
+  "line-color": PossiblyEvaluatedPropertyValue<Color>;
+  "line-translate": [number, number];
+  "line-translate-anchor": "map" | "viewport";
+  "line-width": PossiblyEvaluatedPropertyValue<number>;
+  "line-gap-width": PossiblyEvaluatedPropertyValue<number>;
+  "line-offset": PossiblyEvaluatedPropertyValue<number>;
+  "line-blur": PossiblyEvaluatedPropertyValue<number>;
+  "line-dasharray": PossiblyEvaluatedPropertyValue<CrossFaded<number[]>>;
+  "line-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
+  "line-gradient": ColorRampProperty;
+}; //#endregion
+//#region src/style/style_layer/line_style_layer.d.ts
+declare class LineStyleLayer extends StyleLayer {
+  _unevaluatedLayout: Layout<LineLayoutProps>;
+  layout: PossiblyEvaluated<LineLayoutProps, LineLayoutPropsPossiblyEvaluated>;
+  gradientVersion: number;
+  stepInterpolant: boolean;
+  _transitionablePaint: Transitionable<LinePaintProps>;
+  _transitioningPaint: Transitioning<LinePaintProps>;
+  paint: PossiblyEvaluated<LinePaintProps, LinePaintPropsPossiblyEvaluated>;
+  constructor(layer: LayerSpecification, globalState: Record<string, any>);
+  _handleSpecialPaintPropertyUpdate(name: string): void;
+  gradientExpression(): StylePropertyExpression;
+  recalculate(parameters: EvaluationParameters, availableImages: string[]): void;
+  createBucket(parameters: BucketParameters<any>): LineBucket;
+  queryRadius(bucket: Bucket): number;
+  queryIntersectsFeature({
+    queryGeometry,
+    feature,
+    featureState,
+    geometry,
+    transform,
+    pixelsToTileUnits
+  }: QueryIntersectsFeatureParams): boolean;
+  isTileClipped(): boolean;
+} //#endregion
+//#region src/symbol/shaping.d.ts
 declare enum WritingMode {
   none = 0,
   horizontal = 1,
   vertical = 2,
   horizontalOnly = 3
-}
+} //#endregion
+//#region src/symbol/anchor.d.ts
 declare class Anchor extends Point {
   angle: any;
   segment?: number;
   constructor(x: number, y: number, angle: number, segment?: number);
   clone(): Anchor;
+} //#endregion
+//#region src/symbol/quads.d.ts
+/**
+ * A textured quad for rendering a single icon or glyph.
+ *
+ * The zoom range the glyph can be shown is defined by minScale and maxScale.
+ *
+ * @param tl - The offset of the top left corner from the anchor.
+ * @param tr - The offset of the top right corner from the anchor.
+ * @param bl - The offset of the bottom left corner from the anchor.
+ * @param br - The offset of the bottom right corner from the anchor.
+ * @param tex - The texture coordinates.
+ */
+type SymbolQuad = {
+  tl: Point;
+  tr: Point;
+  bl: Point;
+  br: Point;
+  tex: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  pixelOffsetTL: Point;
+  pixelOffsetBR: Point;
+  writingMode: any | void;
+  glyphOffset: [number, number];
+  sectionIndex: number;
+  isSDF: boolean;
+  minFontScaleX: number;
+  minFontScaleY: number;
+}; //#endregion
+//#region src/symbol/symbol_size.d.ts
+type SizeData = {
+  kind: "constant";
+  layoutSize: number;
+} | {
+  kind: "source";
+} | {
+  kind: "camera";
+  minZoom: number;
+  maxZoom: number;
+  minSize: number;
+  maxSize: number;
+  interpolationType: InterpolationType;
+} | {
+  kind: "composite";
+  minZoom: number;
+  maxZoom: number;
+  interpolationType: InterpolationType;
+}; //#endregion
+//#region src/data/bucket/symbol_bucket.d.ts
+type SingleCollisionBox = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  anchorPointX: number;
+  anchorPointY: number;
+};
+type CollisionArrays = {
+  textBox?: SingleCollisionBox;
+  verticalTextBox?: SingleCollisionBox;
+  iconBox?: SingleCollisionBox;
+  verticalIconBox?: SingleCollisionBox;
+  textFeatureIndex?: number;
+  verticalTextFeatureIndex?: number;
+  iconFeatureIndex?: number;
+  verticalIconFeatureIndex?: number;
+};
+type SymbolFeature = {
+  sortKey: number | void;
+  text: Formatted | void;
+  icon: ResolvedImage;
+  index: number;
+  sourceLayerIndex: number;
+  geometry: Point[][];
+  properties: any;
+  type: "Unknown" | "Point" | "LineString" | "Polygon";
+  id?: any;
+};
+type SortKeyRange = {
+  sortKey: number;
+  symbolInstanceStart: number;
+  symbolInstanceEnd: number;
+};
+declare function addDynamicAttributes(dynamicLayoutVertexArray: StructArray, p: Point, angle: number): void;
+declare class SymbolBuffers {
+  layoutVertexArray: SymbolLayoutArray;
+  layoutVertexBuffer: VertexBuffer;
+  indexArray: TriangleIndexArray;
+  indexBuffer: IndexBuffer;
+  programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>;
+  segments: SegmentVector;
+  dynamicLayoutVertexArray: SymbolDynamicLayoutArray;
+  dynamicLayoutVertexBuffer: VertexBuffer;
+  opacityVertexArray: SymbolOpacityArray;
+  opacityVertexBuffer: VertexBuffer;
+  hasVisibleVertices: boolean;
+  collisionVertexArray: CollisionVertexArray;
+  collisionVertexBuffer: VertexBuffer;
+  placedSymbolArray: PlacedSymbolArray;
+  constructor(programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>);
+  isEmpty(): boolean;
+  upload(context: Context, dynamicIndexBuffer: boolean, upload?: boolean, update?: boolean): void;
+  destroy(): void;
 }
+declare class CollisionBuffers {
+  layoutVertexArray: StructArray;
+  layoutAttributes: StructArrayMember[];
+  layoutVertexBuffer: VertexBuffer;
+  indexArray: TriangleIndexArray | LineIndexArray;
+  indexBuffer: IndexBuffer;
+  segments: SegmentVector;
+  collisionVertexArray: CollisionVertexArray;
+  collisionVertexBuffer: VertexBuffer;
+  constructor(LayoutArray: {
+    new (...args: any): StructArray;
+  }, layoutAttributes: StructArrayMember[], IndexArray: {
+    new (...args: any): TriangleIndexArray | LineIndexArray;
+  });
+  upload(context: Context): void;
+  destroy(): void;
+}
+/**
+ * @internal
+ * Unlike other buckets, which simply implement `addFeature` with type-specific
+ * logic for (essentially) triangulating feature geometries, SymbolBucket
+ * requires specialized behavior:
+ *
+ * 1. WorkerTile.parse(), the logical owner of the bucket creation process,
+ *    calls SymbolBucket.populate(), which resolves text and icon tokens on
+ *    each feature, adds each glyphs and symbols needed to the passed-in
+ *    collections options.glyphDependencies and options.iconDependencies, and
+ *    stores the feature data for use in subsequent step (this.features).
+ *
+ * 2. WorkerTile asynchronously requests from the main thread all of the glyphs
+ *    and icons needed (by this bucket and any others). When glyphs and icons
+ *    have been received, the WorkerTile creates a CollisionIndex and invokes:
+ *
+ * 3. performSymbolLayout(bucket, stacks, icons) perform texts shaping and
+ *    layout on a Symbol Bucket. This step populates:
+ *      `this.symbolInstances`: metadata on generated symbols
+ *      `this.collisionBoxArray`: collision data for use by foreground
+ *      `this.text`: SymbolBuffers for text symbols
+ *      `this.icons`: SymbolBuffers for icons
+ *      `this.iconCollisionBox`: Debug SymbolBuffers for icon collision boxes
+ *      `this.textCollisionBox`: Debug SymbolBuffers for text collision boxes
+ *    The results are sent to the foreground for rendering
+ *
+ * 4. placement.ts is run on the foreground,
+ *    and uses the CollisionIndex along with current camera settings to determine
+ *    which symbols can actually show on the map. Collided symbols are hidden
+ *    using a dynamic "OpacityVertexArray".
+ */
+declare class SymbolBucket implements Bucket {
+  static MAX_GLYPHS: number;
+  static addDynamicAttributes: typeof addDynamicAttributes;
+  collisionBoxArray: CollisionBoxArray;
+  zoom: number;
+  overscaling: number;
+  layers: SymbolStyleLayer[];
+  layerIds: string[];
+  stateDependentLayers: SymbolStyleLayer[];
+  stateDependentLayerIds: string[];
+  index: number;
+  sdfIcons: boolean;
+  iconsInText: boolean;
+  iconsNeedLinear: boolean;
+  bucketInstanceId: number;
+  justReloaded: boolean;
+  hasDependencies: boolean;
+  textSizeData: SizeData;
+  iconSizeData: SizeData;
+  glyphOffsetArray: GlyphOffsetArray;
+  lineVertexArray: SymbolLineVertexArray;
+  features: SymbolFeature[];
+  symbolInstances: SymbolInstanceArray;
+  textAnchorOffsets: TextAnchorOffsetArray;
+  collisionArrays: CollisionArrays[];
+  sortKeyRanges: SortKeyRange[];
+  pixelRatio: number;
+  tilePixelRatio: number;
+  compareText: {
+    [_: string]: Point[];
+  };
+  fadeStartTime: number;
+  sortFeaturesByKey: boolean;
+  sortFeaturesByY: boolean;
+  canOverlap: boolean;
+  sortedAngle: number;
+  featureSortOrder: number[];
+  collisionCircleArray: number[];
+  text: SymbolBuffers;
+  icon: SymbolBuffers;
+  textCollisionBox: CollisionBuffers;
+  iconCollisionBox: CollisionBuffers;
+  uploaded: boolean;
+  sourceLayerIndex: number;
+  sourceID: string;
+  symbolInstanceIndexes: number[];
+  writingModes: WritingMode[];
+  allowVerticalPlacement: boolean;
+  hasRTLText: boolean;
+  constructor(options: BucketParameters<SymbolStyleLayer>);
+  createArrays(): void;
+  private calculateGlyphDependencies;
+  populate(features: IndexedFeature[], options: PopulateParameters, canonical: CanonicalTileID): void;
+  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+    [_: string]: ImagePosition;
+  }): void;
+  isEmpty(): boolean;
+  uploadPending(): boolean;
+  upload(context: Context): void;
+  destroyDebugData(): void;
+  destroy(): void;
+  addToLineVertexArray(anchor: Anchor, line: Point[]): {
+    lineStartIndex: number;
+    lineLength: number;
+  };
+  addSymbols(arrays: SymbolBuffers, quads: SymbolQuad[], sizeVertex: any, lineOffset: [number, number], alongLine: boolean, feature: SymbolFeature, writingMode: WritingMode, labelAnchor: Anchor, lineStartIndex: number, lineLength: number, associatedIconIndex: number, canonical: CanonicalTileID): void;
+  _addCollisionDebugVertex(layoutVertexArray: StructArray, collisionVertexArray: StructArray, point: Point, anchorX: number, anchorY: number, extrude: Point): number;
+  addCollisionDebugVertices(x1: number, y1: number, x2: number, y2: number, arrays: CollisionBuffers, boxAnchorPoint: Point, symbolInstance: SymbolInstance): void;
+  addDebugCollisionBoxes(startIndex: number, endIndex: number, symbolInstance: SymbolInstance, isText: boolean): void;
+  generateCollisionDebugBuffers(): void;
+  _deserializeCollisionBoxesForSymbol(collisionBoxArray: CollisionBoxArray, textStartIndex: number, textEndIndex: number, verticalTextStartIndex: number, verticalTextEndIndex: number, iconStartIndex: number, iconEndIndex: number, verticalIconStartIndex: number, verticalIconEndIndex: number): CollisionArrays;
+  deserializeCollisionBoxes(collisionBoxArray: CollisionBoxArray): void;
+  hasTextData(): boolean;
+  hasIconData(): boolean;
+  hasDebugData(): CollisionBuffers;
+  hasTextCollisionBoxData(): boolean;
+  hasIconCollisionBoxData(): boolean;
+  addIndicesForPlacedSymbol(iconOrText: SymbolBuffers, placedSymbolIndex: number): void;
+  getSortedSymbolIndexes(angle: number): number[];
+  addToSortKeyRanges(symbolInstanceIndex: number, sortKey: number): void;
+  sortFeatures(angle: number): void;
+} //#endregion
+//#region src/style/style_layer/symbol_style_layer_properties.g.d.ts
 type SymbolLayoutProps = {
   "symbol-placement": DataConstantProperty<"point" | "line" | "line-center">;
   "symbol-spacing": DataConstantProperty<number>;
@@ -6147,7 +8250,7 @@ type SymbolLayoutProps = {
   "text-pitch-alignment": DataConstantProperty<"map" | "viewport" | "auto">;
   "text-rotation-alignment": DataConstantProperty<"map" | "viewport" | "viewport-glyph" | "auto">;
   "text-field": DataDrivenProperty<Formatted>;
-  "text-font": DataDrivenProperty<Array<string>>;
+  "text-font": DataDrivenProperty<string[]>;
   "text-size": DataDrivenProperty<number>;
   "text-max-width": DataDrivenProperty<number>;
   "text-line-height": DataConstantProperty<number>;
@@ -6193,7 +8296,7 @@ type SymbolLayoutPropsPossiblyEvaluated = {
   "text-pitch-alignment": "map" | "viewport" | "auto";
   "text-rotation-alignment": "map" | "viewport" | "viewport-glyph" | "auto";
   "text-field": PossiblyEvaluatedPropertyValue<Formatted>;
-  "text-font": PossiblyEvaluatedPropertyValue<Array<string>>;
+  "text-font": PossiblyEvaluatedPropertyValue<string[]>;
   "text-size": PossiblyEvaluatedPropertyValue<number>;
   "text-max-width": PossiblyEvaluatedPropertyValue<number>;
   "text-line-height": number;
@@ -6246,7 +8349,8 @@ type SymbolPaintPropsPossiblyEvaluated = {
   "text-halo-blur": PossiblyEvaluatedPropertyValue<number>;
   "text-translate": [number, number];
   "text-translate-anchor": "map" | "viewport";
-};
+}; //#endregion
+//#region src/style/style_layer/symbol_style_layer.d.ts
 declare class SymbolStyleLayer extends StyleLayer {
   _unevaluatedLayout: Layout<SymbolLayoutProps>;
   layout: PossiblyEvaluated<SymbolLayoutProps, SymbolLayoutPropsPossiblyEvaluated>;
@@ -6254,259 +8358,126 @@ declare class SymbolStyleLayer extends StyleLayer {
   _transitioningPaint: Transitioning<SymbolPaintProps>;
   paint: PossiblyEvaluated<SymbolPaintProps, SymbolPaintPropsPossiblyEvaluated>;
   constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  recalculate(parameters: EvaluationParameters, availableImages: Array<string>): void;
-  getValueAndResolveTokens(name: any, feature: Feature, canonical: CanonicalTileID, availableImages: Array<string>): any;
+  recalculate(parameters: EvaluationParameters, availableImages: string[]): void;
+  getValueAndResolveTokens(name: any, feature: Feature, canonical: CanonicalTileID, availableImages: string[]): any;
   createBucket(parameters: BucketParameters<any>): SymbolBucket;
   queryRadius(): number;
   queryIntersectsFeature(): boolean;
   _setPaintOverrides(): void;
   _handleOverridablePaintPropertyUpdate<T, R>(name: string, oldValue: PropertyValue<T, R>, newValue: PropertyValue<T, R>): boolean;
   static hasPaintOverride(layout: PossiblyEvaluated<SymbolLayoutProps, SymbolLayoutPropsPossiblyEvaluated>, propertyName: string): boolean;
-}
-type SymbolQuad = {
-  tl: Point;
-  tr: Point;
-  bl: Point;
-  br: Point;
-  tex: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  };
-  pixelOffsetTL: Point;
-  pixelOffsetBR: Point;
-  writingMode: any | void;
-  glyphOffset: [number, number];
-  sectionIndex: number;
-  isSDF: boolean;
-  minFontScaleX: number;
-  minFontScaleY: number;
+} //#endregion
+//#region src/style/style_layer/typed_style_layer.d.ts
+type TypedStyleLayer = CircleStyleLayer | FillStyleLayer | FillExtrusionStyleLayer | HeatmapStyleLayer | HillshadeStyleLayer | ColorReliefStyleLayer | LineStyleLayer | SymbolStyleLayer; //#endregion
+//#region src/data/program_configuration.d.ts
+type BinderUniform = {
+  name: string;
+  property: string;
+  binding: Uniform<any>;
 };
-type SizeData = {
-  kind: "constant";
-  layoutSize: number;
-} | {
-  kind: "source";
-} | {
-  kind: "camera";
-  minZoom: number;
-  maxZoom: number;
-  minSize: number;
-  maxSize: number;
-  interpolationType: InterpolationType;
-} | {
-  kind: "composite";
-  minZoom: number;
-  maxZoom: number;
-  interpolationType: InterpolationType;
-};
-type SingleCollisionBox = {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  anchorPointX: number;
-  anchorPointY: number;
-};
-type CollisionArrays = {
-  textBox?: SingleCollisionBox;
-  verticalTextBox?: SingleCollisionBox;
-  iconBox?: SingleCollisionBox;
-  verticalIconBox?: SingleCollisionBox;
-  textFeatureIndex?: number;
-  verticalTextFeatureIndex?: number;
-  iconFeatureIndex?: number;
-  verticalIconFeatureIndex?: number;
-};
-type SymbolFeature = {
-  sortKey: number | void;
-  text: Formatted | void;
-  icon: ResolvedImage;
-  index: number;
-  sourceLayerIndex: number;
-  geometry: Array<Array<Point>>;
-  properties: any;
-  type: "Unknown" | "Point" | "LineString" | "Polygon";
-  id?: any;
-};
-type SortKeyRange = {
-  sortKey: number;
-  symbolInstanceStart: number;
-  symbolInstanceEnd: number;
-};
-declare function addDynamicAttributes(dynamicLayoutVertexArray: StructArray, p: Point, angle: number): void;
-declare class SymbolBuffers {
-  layoutVertexArray: SymbolLayoutArray;
-  layoutVertexBuffer: VertexBuffer;
-  indexArray: TriangleIndexArray;
-  indexBuffer: IndexBuffer;
-  programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>;
-  segments: SegmentVector;
-  dynamicLayoutVertexArray: SymbolDynamicLayoutArray;
-  dynamicLayoutVertexBuffer: VertexBuffer;
-  opacityVertexArray: SymbolOpacityArray;
-  opacityVertexBuffer: VertexBuffer;
-  hasVisibleVertices: boolean;
-  collisionVertexArray: CollisionVertexArray;
-  collisionVertexBuffer: VertexBuffer;
-  placedSymbolArray: PlacedSymbolArray;
-  constructor(programConfigurations: ProgramConfigurationSet<SymbolStyleLayer>);
-  isEmpty(): boolean;
-  upload(context: Context, dynamicIndexBuffer: boolean, upload?: boolean, update?: boolean): void;
-  destroy(): void;
-}
-declare class CollisionBuffers {
-  layoutVertexArray: StructArray;
-  layoutAttributes: Array<StructArrayMember>;
-  layoutVertexBuffer: VertexBuffer;
-  indexArray: TriangleIndexArray | LineIndexArray;
-  indexBuffer: IndexBuffer;
-  segments: SegmentVector;
-  collisionVertexArray: CollisionVertexArray;
-  collisionVertexBuffer: VertexBuffer;
-  constructor(LayoutArray: {
-    new (...args: any): StructArray;
-  }, layoutAttributes: Array<StructArrayMember>, IndexArray: {
-    new (...args: any): TriangleIndexArray | LineIndexArray;
-  });
-  upload(context: Context): void;
-  destroy(): void;
-}
-declare class SymbolBucket implements Bucket {
-  static MAX_GLYPHS: number;
-  static addDynamicAttributes: typeof addDynamicAttributes;
-  collisionBoxArray: CollisionBoxArray;
-  zoom: number;
-  overscaling: number;
-  layers: Array<SymbolStyleLayer>;
-  layerIds: Array<string>;
-  stateDependentLayers: Array<SymbolStyleLayer>;
-  stateDependentLayerIds: Array<string>;
-  index: number;
-  sdfIcons: boolean;
-  iconsInText: boolean;
-  iconsNeedLinear: boolean;
-  bucketInstanceId: number;
-  justReloaded: boolean;
-  hasDependencies: boolean;
-  textSizeData: SizeData;
-  iconSizeData: SizeData;
-  glyphOffsetArray: GlyphOffsetArray;
-  lineVertexArray: SymbolLineVertexArray;
-  features: Array<SymbolFeature>;
-  symbolInstances: SymbolInstanceArray;
-  textAnchorOffsets: TextAnchorOffsetArray;
-  collisionArrays: Array<CollisionArrays>;
-  sortKeyRanges: Array<SortKeyRange>;
-  pixelRatio: number;
-  tilePixelRatio: number;
-  compareText: {
-    [_: string]: Array<Point>;
-  };
-  fadeStartTime: number;
-  sortFeaturesByKey: boolean;
-  sortFeaturesByY: boolean;
-  canOverlap: boolean;
-  sortedAngle: number;
-  featureSortOrder: Array<number>;
-  collisionCircleArray: Array<number>;
-  text: SymbolBuffers;
-  icon: SymbolBuffers;
-  textCollisionBox: CollisionBuffers;
-  iconCollisionBox: CollisionBuffers;
-  uploaded: boolean;
-  sourceLayerIndex: number;
-  sourceID: string;
-  symbolInstanceIndexes: Array<number>;
-  writingModes: WritingMode[];
-  allowVerticalPlacement: boolean;
-  hasRTLText: boolean;
-  constructor(options: BucketParameters<SymbolStyleLayer>);
-  createArrays(): void;
-  private calculateGlyphDependencies;
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
+type PaintOptions = {
+  imagePositions: {
     [_: string]: ImagePosition;
-  }): void;
-  isEmpty(): boolean;
-  uploadPending(): boolean;
-  upload(context: Context): void;
-  destroyDebugData(): void;
+  };
+  dashPositions?: {
+    [_: string]: DashEntry;
+  };
+  canonical?: CanonicalTileID;
+  formattedSection?: FormattedSection;
+  globalState?: Record<string, any>;
+};
+/**
+ *  `Binder` is the interface definition for the strategies for constructing,
+ *  uploading, and binding paint property data as GLSL attributes. Most style-
+ *  spec properties have a 1:1 relationship to shader attribute/uniforms, but
+ *  some require multiple values per feature to be passed to the GPU, and in
+ *  those cases we bind multiple attributes/uniforms.
+ *
+ *  It has three implementations, one for each of the three strategies we use:
+ *
+ *  * For _constant_ properties -- those whose value is a constant, or the constant
+ *    result of evaluating a camera expression at a particular camera position -- we
+ *    don't need a vertex attribute buffer, and instead use a uniform.
+ *  * For data expressions, we use a vertex buffer with a single attribute value,
+ *    the evaluated result of the source function for the given feature.
+ *  * For composite expressions, we use a vertex buffer with two attributes: min and
+ *    max values covering the range of zooms at which we expect the tile to be
+ *    displayed. These values are calculated by evaluating the composite expression for
+ *    the given feature at strategically chosen zoom levels. In addition to this
+ *    attribute data, we also use a uniform value which the shader uses to interpolate
+ *    between the min and max value at the final displayed zoom level. The use of a
+ *    uniform allows us to cheaply update the value on every frame.
+ *
+ *  Note that the shader source varies depending on whether we're using a uniform or
+ *  attribute. We dynamically compile shaders at runtime to accommodate this.
+ */
+interface AttributeBinder {
+  populatePaintArray(length: number, feature: Feature, options: PaintOptions): void;
+  updatePaintArray(start: number, length: number, feature: Feature, featureState: FeatureState, options: PaintOptions): void;
+  upload(a: Context): void;
   destroy(): void;
-  addToLineVertexArray(anchor: Anchor, line: Array<Point>): {
-    lineStartIndex: number;
-    lineLength: number;
+}
+interface UniformBinder {
+  uniformNames: string[];
+  setUniform(uniform: Uniform<any>, globals: GlobalProperties, currentValue: PossiblyEvaluatedPropertyValue<any>, uniformName: string): void;
+  getBinding(context: Context, location: WebGLUniformLocation, name: string): Partial<Uniform<any>>;
+}
+/**
+ * @internal
+ * ProgramConfiguration contains the logic for binding style layer properties and tile
+ * layer feature data into GL program uniforms and vertex attributes.
+ *
+ * Non-data-driven property values are bound to shader uniforms. Data-driven property
+ * values are bound to vertex attributes. In order to support a uniform GLSL syntax over
+ * both, the [shaders](../shaders/README.md) define a `#pragma` abstraction, which
+ * ProgramConfiguration is responsible for implementing. At runtime,
+ * it examines the attributes of a particular layer, combines this with fixed knowledge
+ * about how layers of the particular type are implemented, and determines which uniforms
+ * and vertex attributes will be required. It can then substitute the appropriate text
+ * into the shader source code, create and link a program, and bind the uniforms and
+ * vertex attributes in preparation for drawing.
+ *
+ * When a vector tile is parsed, this same configuration information is used to
+ * populate the attribute buffers needed for data-driven styling using the zoom
+ * level and feature property data.
+ */
+declare class ProgramConfiguration {
+  binders: {
+    [_: string]: AttributeBinder | UniformBinder;
   };
-  addSymbols(arrays: SymbolBuffers, quads: Array<SymbolQuad>, sizeVertex: any, lineOffset: [number, number], alongLine: boolean, feature: SymbolFeature, writingMode: WritingMode, labelAnchor: Anchor, lineStartIndex: number, lineLength: number, associatedIconIndex: number, canonical: CanonicalTileID): void;
-  _addCollisionDebugVertex(layoutVertexArray: StructArray, collisionVertexArray: StructArray, point: Point, anchorX: number, anchorY: number, extrude: Point): any;
-  addCollisionDebugVertices(x1: number, y1: number, x2: number, y2: number, arrays: CollisionBuffers, boxAnchorPoint: Point, symbolInstance: SymbolInstance): void;
-  addDebugCollisionBoxes(startIndex: number, endIndex: number, symbolInstance: SymbolInstance, isText: boolean): void;
-  generateCollisionDebugBuffers(): void;
-  _deserializeCollisionBoxesForSymbol(collisionBoxArray: CollisionBoxArray, textStartIndex: number, textEndIndex: number, verticalTextStartIndex: number, verticalTextEndIndex: number, iconStartIndex: number, iconEndIndex: number, verticalIconStartIndex: number, verticalIconEndIndex: number): CollisionArrays;
-  deserializeCollisionBoxes(collisionBoxArray: CollisionBoxArray): void;
-  hasTextData(): boolean;
-  hasIconData(): boolean;
-  hasDebugData(): CollisionBuffers;
-  hasTextCollisionBoxData(): boolean;
-  hasIconCollisionBoxData(): boolean;
-  addIndicesForPlacedSymbol(iconOrText: SymbolBuffers, placedSymbolIndex: number): void;
-  getSortedSymbolIndexes(angle: number): any[];
-  addToSortKeyRanges(symbolInstanceIndex: number, sortKey: number): void;
-  sortFeatures(angle: number): void;
+  cacheKey: string;
+  _buffers: VertexBuffer[];
+  constructor(layer: TypedStyleLayer, zoom: number, filterProperties: (_: string) => boolean);
+  getMaxValue(property: string): number;
+  populatePaintArrays(newLength: number, feature: Feature, options: PaintOptions): void;
+  setConstantPatternPositions(posTo: ImagePosition, posFrom: ImagePosition): void;
+  setConstantDashPositions(dashTo: DashEntry, dashFrom: DashEntry): void;
+  updatePaintArrays(featureStates: FeatureStates, featureMap: FeaturePositionMap, vtLayer: VectorTileLayerLike, layer: TypedStyleLayer, options: PaintOptions): boolean;
+  defines(): string[];
+  getBinderAttributes(): string[];
+  getBinderUniforms(): string[];
+  getPaintVertexBuffers(): VertexBuffer[];
+  getUniforms(context: Context, locations: UniformLocations): BinderUniform[];
+  setUniforms(context: Context, binderUniforms: BinderUniform[], properties: any, globals: GlobalProperties): void;
+  updatePaintBuffers(crossfade?: CrossfadeParameters): void;
+  upload(context: Context): void;
+  destroy(): void;
 }
-interface SymbolsByKeyEntry {
-  index?: KDBush;
-  positions?: {
-    x: number;
-    y: number;
-  }[];
-  crossTileIDs: number[];
-}
-declare class TileLayerIndex {
-  tileID: OverscaledTileID;
-  bucketInstanceId: number;
-  _symbolsByKey: Record<number, SymbolsByKeyEntry>;
-  constructor(tileID: OverscaledTileID, symbolInstances: SymbolInstanceArray, bucketInstanceId: number);
-  getScaledCoordinates(symbolInstance: SymbolInstance, childTileID: OverscaledTileID): {
-    x: number;
-    y: number;
+declare class ProgramConfigurationSet<Layer extends TypedStyleLayer> {
+  programConfigurations: {
+    [_: string]: ProgramConfiguration;
   };
-  findMatches(symbolInstances: SymbolInstanceArray, newTileID: OverscaledTileID, zoomCrossTileIDs: {
-    [crossTileID: number]: boolean;
-  }): void;
-  getCrossTileIDsLists(): number[][];
-}
-declare class CrossTileIDs {
-  maxCrossTileID: number;
-  constructor();
-  generate(): number;
-}
-declare class CrossTileSymbolLayerIndex {
-  indexes: { [zoom in string | number]: { [tileId in string | number]: TileLayerIndex } };
-  usedCrossTileIDs: { [zoom in string | number]: {
-    [crossTileID: number]: boolean;
-  } };
-  lng: number;
-  constructor();
-  handleWrapJump(lng: number): void;
-  addBucket(tileID: OverscaledTileID, bucket: SymbolBucket, crossTileIDs: CrossTileIDs): boolean;
-  removeBucketCrossTileIDs(zoom: string | number, removedBucket: TileLayerIndex): void;
-  removeStaleBuckets(currentIDs: { [k in string | number]: boolean }): boolean;
-}
-declare class CrossTileSymbolIndex {
-  layerIndexes: {
-    [layerId: string]: CrossTileSymbolLayerIndex;
-  };
-  crossTileIDs: CrossTileIDs;
-  maxBucketInstanceId: number;
-  bucketsInCurrentPlacement: {
-    [_: number]: boolean;
-  };
-  constructor();
-  addLayer(styleLayer: StyleLayer, tiles: Array<Tile>, lng: number): boolean;
-  pruneUnusedLayers(usedLayers: Array<string>): void;
-}
+  needsUpload: boolean;
+  _featureMap: FeaturePositionMap;
+  _bufferOffset: number;
+  constructor(layers: readonly Layer[], zoom: number, filterProperties?: (_: string) => boolean);
+  populatePaintArrays(length: number, feature: Feature, index: number, options: PaintOptions): void;
+  updatePaintArrays(featureStates: FeatureStates, vtLayer: VectorTileLayerLike, layers: readonly TypedStyleLayer[], options: PaintOptions): void;
+  get(layerId: string): ProgramConfiguration;
+  upload(context: Context): void;
+  destroy(): void;
+} //#endregion
+//#region src/webgl/depth_mode.d.ts
 declare class DepthMode {
   func: DepthFuncType;
   mask: DepthMaskType;
@@ -6515,7 +8486,8 @@ declare class DepthMode {
   static ReadWrite: boolean;
   constructor(depthFunc: DepthFuncType, depthMask: DepthMaskType, depthRange: DepthRangeType);
   static disabled: Readonly<DepthMode>;
-}
+} //#endregion
+//#region src/webgl/stencil_mode.d.ts
 declare class StencilMode {
   test: StencilTestGL;
   ref: number;
@@ -6525,7 +8497,8 @@ declare class StencilMode {
   pass: StencilOpConstant;
   constructor(test: StencilTestGL, ref: number, mask: number, fail: StencilOpConstant, depthFail: StencilOpConstant, pass: StencilOpConstant);
   static disabled: Readonly<StencilMode>;
-}
+} //#endregion
+//#region src/webgl/color_mode.d.ts
 declare class ColorMode {
   blendFunction: BlendFuncType;
   blendColor: Color;
@@ -6535,538 +8508,143 @@ declare class ColorMode {
   static disabled: Readonly<ColorMode>;
   static unblended: Readonly<ColorMode>;
   static alphaBlended: Readonly<ColorMode>;
-}
-/**
- * A dash entry
- */
-type DashEntry = {
-  y: number;
-  height: number;
-  width: number;
+} //#endregion
+//#region src/webgl/cull_face_mode.d.ts
+declare class CullFaceMode {
+  enable: boolean;
+  mode: CullFaceModeType;
+  frontFace: FrontFaceType;
+  constructor(enable: boolean, mode: CullFaceModeType, frontFace: FrontFaceType);
+  static disabled: Readonly<CullFaceMode>;
+  /**
+   * The standard GL cull mode. Culls backfacing triangles when counterclockwise vertex order is used.
+   * Use for 3D geometry such as terrain.
+   */
+  static backCCW: Readonly<CullFaceMode>;
+  /**
+   * Opposite of {@link backCCW}. Culls front-facing triangles when counterclockwise vertex order is used.
+   */
+  static frontCCW: Readonly<CullFaceMode>;
+} //#endregion
+//#region src/style/sky_properties.g.d.ts
+type SkyProps = {
+  "sky-color": DataConstantProperty<Color>;
+  "horizon-color": DataConstantProperty<Color>;
+  "fog-color": DataConstantProperty<Color>;
+  "fog-ground-blend": DataConstantProperty<number>;
+  "horizon-fog-blend": DataConstantProperty<number>;
+  "sky-horizon-blend": DataConstantProperty<number>;
+  "atmosphere-blend": DataConstantProperty<number>;
 };
-declare class LineAtlas {
-  width: number;
-  height: number;
-  nextRow: number;
-  bytes: number;
-  data: Uint8Array;
-  dashEntry: {
-    [_: string]: DashEntry;
-  };
-  dirty: boolean;
-  texture: WebGLTexture;
-  constructor(width: number, height: number);
-  /**
-   * Get or create a dash line pattern.
-   *
-   * @param dasharray - the key (represented by numbers) to get the dash texture
-   * @param round - whether to add circle caps in between dash segments
-   * @returns position of dash texture in {@link DashEntry}
-   */
-  getDash(dasharray: Array<number>, round: boolean): DashEntry;
-  getDashRanges(dasharray: Array<number>, lineAtlasWidth: number, stretch: number): any[];
-  addRoundDash(ranges: any, stretch: number, n: number): void;
-  addRegularDash(ranges: any): void;
-  addDash(dasharray: Array<number>, round: boolean): DashEntry;
-  bind(context: Context): void;
-}
-/**
- * A type of MapLibre resource.
- */
-declare const enum ResourceType {
-  Glyphs = "Glyphs",
-  Image = "Image",
-  Source = "Source",
-  SpriteImage = "SpriteImage",
-  SpriteJSON = "SpriteJSON",
-  Style = "Style",
-  Tile = "Tile",
-  Unknown = "Unknown"
-}
-/**
- * This function is used to transform a request.
- * It is used just before executing the relevant request.
- */
-type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters | Promise<RequestParameters> | undefined;
-declare class RequestManager {
-  _transformRequestFn: RequestTransformFunction | null;
-  constructor(transformRequestFn?: RequestTransformFunction | null);
-  transformRequest(url: string, type: ResourceType): RequestParameters | Promise<RequestParameters>;
-  setTransformRequest(transformRequest: RequestTransformFunction | null): void;
-}
-declare function loadGlyphRange(fontstack: string, range: number, urlTemplate: string, requestManager: RequestManager): Promise<{
-  [_: number]: StyleGlyph | null;
-}>;
-type Entry = {
-  glyphs: {
-    [id: number]: StyleGlyph | null;
-  };
-  requests: {
-    [range: number]: Promise<{
-      [_: number]: StyleGlyph | null;
-    }>;
-  };
-  ranges: {
-    [range: number]: boolean | null;
-  };
-  tinySDF?: TinySDF;
-  ideographTinySDF?: TinySDF;
-};
-declare class GlyphManager {
-  requestManager: RequestManager;
-  localIdeographFontFamily: string | false;
-  entries: {
-    [stack: string]: Entry;
-  };
-  url: string;
-  lang?: string;
-  static loadGlyphRange: typeof loadGlyphRange;
-  static TinySDF: typeof TinySDF;
-  constructor(requestManager: RequestManager, localIdeographFontFamily?: string | false, lang?: string);
-  setURL(url?: string | null): void;
-  getGlyphs(glyphs: {
-    [stack: string]: Array<number>;
-  }): Promise<GetGlyphsResponse>;
-  _getAndCacheGlyphsPromise(stack: string, id: number): Promise<{
-    stack: string;
-    id: number;
-    glyph: StyleGlyph;
-  }>;
-  _downloadAndCacheRangePromise(stack: string, id: number): Promise<{
-    stack: string;
-    id: number;
-    glyph: StyleGlyph;
-  }>;
-  _warnOnMissingGlyphRange(glyph: StyleGlyph, range: number, id: number, err: Error): void;
-  /**
-   * Returns whether the given codepoint should be rendered locally.
-   */
-  _charUsesLocalIdeographFontFamily(id: number): boolean;
-  /**
-   * Draws a glyph offscreen using TinySDF, creating a TinySDF instance lazily.
-   */
-  _drawGlyph(entry: Entry, stack: string, id: number): StyleGlyph;
-  _createTinySDF(stack: String | false): TinySDF;
-  /**
-   * Sniffs the font style out of a font family name.
-   */
-  _fontStyle(fontFamily: string): string;
-  /**
-   * Sniffs the font weight out of a font family name.
-   */
-  _fontWeight(fontFamily: string): string;
+type SkyPropsPossiblyEvaluated = {
+  "sky-color": Color;
+  "horizon-color": Color;
+  "fog-color": Color;
+  "fog-ground-blend": number;
+  "horizon-fog-blend": number;
+  "sky-horizon-blend": number;
+  "atmosphere-blend": number;
+}; //#endregion
+//#region src/render/mesh.d.ts
+declare class Mesh {
+  vertexBuffer: VertexBuffer;
+  indexBuffer: IndexBuffer;
+  segments: SegmentVector;
+  constructor(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, segments: SegmentVector);
   destroy(): void;
-}
-type PoolObject = {
-  id: number;
-  fbo: Framebuffer;
-  texture: Texture;
-  stamp: number;
-  inUse: boolean;
-};
-declare class RenderPool {
-  private readonly _context;
-  private readonly _size;
-  private readonly _tileSize;
-  private _objects;
+} //#endregion
+//#region src/style/sky.d.ts
+declare class Sky extends Evented {
+  properties: PossiblyEvaluated<SkyProps, SkyPropsPossiblyEvaluated>;
   /**
-   * An index array of recently used pool objects.
-   * Items that are used recently are last in the array
+   * This is used to cache the gl mesh for the sky, it should be initialized only once.
    */
-  private _recentlyUsed;
-  private _stamp;
-  constructor(_context: Context, _size: number, _tileSize: number);
-  destruct(): void;
-  private _createObject;
-  getObjectForId(id: number): PoolObject;
-  useObject(obj: PoolObject): void;
-  stampObject(obj: PoolObject): void;
-  getOrCreateFreeObject(): PoolObject;
-  freeObject(obj: PoolObject): void;
-  freeAllObjects(): void;
-  isFull(): boolean;
-}
-declare class RenderToTexture {
-  painter: Painter;
-  terrain: Terrain;
-  pool: RenderPool;
+  mesh: Mesh | undefined;
+  atmosphereMesh: Mesh | undefined;
+  _transitionable: Transitionable<SkyProps>;
+  _transitioning: Transitioning<SkyProps>;
+  constructor(sky?: SkySpecification);
+  setSky(sky?: SkySpecification, options?: StyleSetterOptions): void;
+  getSky(): SkySpecification;
+  updateTransitions(parameters: TransitionParameters): void;
+  hasTransition(): boolean;
+  recalculate(parameters: EvaluationParameters): void;
+  _validate(validate: Validator, value: unknown, options?: StyleSetterOptions): boolean;
   /**
-   * coordsAscending contains a list of all tiles which should be rendered for one render-to-texture tile
-   * e.g. render 4 raster-tiles with size 256px to the 512px render-to-texture tile
+   * Currently fog is a very simple implementation, and should only used
+   * to create an atmosphere near the horizon.
+   * But because the fog is drawn from the far-clipping-plane to
+   * map-center, and because the fog does nothing know about the horizon,
+   * this method does a fadeout in respect of pitch. So, when the horizon
+   * gets out of view, which is at about pitch 70, this methods calculates
+   * the corresponding opacity values. Below pitch 60 the fog is completely
+   * invisible.
    */
-  _coordsAscending: {
-    [_: string]: {
-      [_: string]: Array<OverscaledTileID>;
-    };
-  };
-  /**
-   * fingerprint string representing the unique state of source tiles and revision
-   * for a given render-to-texture tile. Used to detect changes and trigger re-rendering.
-   * Format: "sorted_tile_keys#revision"
-   */
-  _rttFingerprints: {
-    [sourceId: string]: {
-      [rttTileKey: string]: string;
-    };
-  };
-  /**
-   * store for render-stacks
-   * a render stack is a set of layers which should be rendered into one texture
-   * every stylesheet can have multiple stacks. A new stack is created if layers which should
-   * not rendered to texture sit between layers which should rendered to texture. e.g. hillshading or symbols
-   */
-  _stacks: Array<Array<string>>;
-  /**
-   * remember the previous processed layer to check if a new stack is needed
-   */
-  _prevType: string;
-  /**
-   * a list of tiles that can potentially rendered
-   */
-  _renderableTiles: Array<Tile>;
-  /**
-   * a list of tiles that should be rendered to screen in the next render-call
-   */
-  _rttTiles: Array<Tile>;
-  /**
-   * a list of all layer-ids which should be rendered
-   */
-  _renderableLayerIds: Array<string>;
-  constructor(painter: Painter, terrain: Terrain);
-  destruct(): void;
-  getTexture(tile: Tile): Texture;
-  prepareForRender(style: Style, zoom: number): void;
-  /**
-   * due that switching textures is relatively slow, the render
-   * layer-by-layer context is not practicable. To bypass this problem
-   * this lines of code stack all layers and later render all at once.
-   * Because of the stylesheet possibility to mixing render-to-texture layers
-   * and 'live'-layers (f.e. symbols) it is necessary to create more stacks. For example
-   * a symbol-layer is in between of fill-layers.
-   * @param layer - the layer to render
-   * @param renderOptions - flags describing how to render the layer
-   * @returns if true layer is rendered to texture, otherwise false
-   */
-  renderLayer(layer: StyleLayer, renderOptions: RenderOptions): boolean;
-}
-type RenderPass = "offscreen" | "opaque" | "translucent";
-type PainterOptions = {
-  showOverdrawInspector: boolean;
-  showTileBoundaries: boolean;
-  showPadding: boolean;
-  rotating: boolean;
-  zooming: boolean;
-  moving: boolean;
-  fadeDuration: number;
-  anisotropicFilterPitch: number;
-};
-type RenderOptions = {
-  isRenderingToTexture: boolean;
-  isRenderingGlobe: boolean;
-};
+  calculateFogBlendOpacity(pitch: number): number;
+} //#endregion
+//#region src/webgl/program/terrain_program.d.ts
+type TerrainPreludeUniformsType = {
+  "u_depth": Uniform1i;
+  "u_terrain": Uniform1i;
+  "u_terrain_dim": Uniform1f;
+  "u_terrain_matrix": UniformMatrix4f;
+  "u_terrain_unpack": Uniform4f;
+  "u_terrain_exaggeration": Uniform1f;
+}; //#endregion
+//#region src/geo/edge_insets.d.ts
 /**
- * @internal
- * Initialize a new painter object.
+ * An `EdgeInset` object represents screen space padding applied to the edges of the viewport.
+ * This shifts the apparent center or the vanishing point of the map. This is useful for adding floating UI elements
+ * on top of the map and having the vanishing point shift as UI elements resize.
+ *
+ * @group Geography and Geometry
  */
-declare class Painter {
-  context: Context;
-  transform: IReadonlyTransform;
-  renderToTexture: RenderToTexture;
-  _tileTextures: {
-    [_: number]: Array<Texture>;
-  };
-  numSublayers: number;
-  depthEpsilon: number;
-  emptyProgramConfiguration: ProgramConfiguration;
-  width: number;
-  height: number;
-  pixelRatio: number;
-  tileExtentBuffer: VertexBuffer;
-  tileExtentSegments: SegmentVector;
-  tileExtentMesh: Mesh;
-  debugBuffer: VertexBuffer;
-  debugSegments: SegmentVector;
-  rasterBoundsBuffer: VertexBuffer;
-  rasterBoundsSegments: SegmentVector;
-  rasterBoundsBufferPosOnly: VertexBuffer;
-  rasterBoundsSegmentsPosOnly: SegmentVector;
-  viewportBuffer: VertexBuffer;
-  viewportSegments: SegmentVector;
-  quadTriangleIndexBuffer: IndexBuffer;
-  tileBorderIndexBuffer: IndexBuffer;
-  _tileClippingMaskIDs: {
-    [_: string]: number;
-  };
-  stencilClearMode: StencilMode;
-  style: Style;
-  options: PainterOptions;
-  lineAtlas: LineAtlas;
-  imageManager: ImageManager;
-  glyphManager: GlyphManager;
-  depthRangeFor3D: DepthRangeType;
-  opaquePassCutoff: number;
-  renderPass: RenderPass;
-  currentLayer: number;
-  currentStencilSource: string;
-  nextStencilID: number;
-  id: string;
-  _showOverdrawInspector: boolean;
-  cache: {
-    [_: string]: Program<any>;
-  };
-  crossTileSymbolIndex: CrossTileSymbolIndex;
-  symbolFadeChange: number;
-  debugOverlayTexture: Texture;
-  debugOverlayCanvas: HTMLCanvasElement;
-  terrainFacilitator: {
-    dirty: boolean;
-    matrix: mat4;
-    renderTime: number;
-  };
-  constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, transform: IReadonlyTransform);
-  resize(width: number, height: number, pixelRatio: number): void;
-  setup(): void;
-  clearStencil(): void;
-  _renderTileClippingMasks(layer: StyleLayer, tileIDs: Array<OverscaledTileID>, renderToTexture: boolean): void;
-  _renderTileMasks(tileStencilRefs: {
-    [_: string]: number;
-  }, tileIDs: Array<OverscaledTileID>, renderToTexture: boolean, useBorders: boolean): void;
+/**
+ * Options for setting padding on calls to methods such as {@link Map.fitBounds}, {@link Map.fitScreenCoordinates}, and {@link Map.setPadding}. Adjust these options to set the amount of padding in pixels added to the edges of the canvas. Set a uniform padding on all edges or individual values for each edge. All properties of this object must be
+ * non-negative integers.
+ *
+ * @group Geography and Geometry
+ *
+ * @example
+ * ```ts
+ * let bbox = [[-79, 43], [-73, 45]];
+ * map.fitBounds(bbox, {
+ *   padding: {top: 10, bottom:25, left: 15, right: 5}
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * let bbox = [[-79, 43], [-73, 45]];
+ * map.fitBounds(bbox, {
+ *   padding: 20
+ * });
+ * ```
+ * @see [Fit to the bounds of a LineString](https://maplibre.org/maplibre-gl-js/docs/examples/zoomto-linestring/)
+ * @see [Fit a map to a bounding box](https://maplibre.org/maplibre-gl-js/docs/examples/fitbounds/)
+ */
+type PaddingOptions = RequireAtLeastOne<{
   /**
-   * Fills the depth buffer with the geometry of all supplied tiles.
-   * Does not change the color buffer or the stencil buffer.
+   * Padding in pixels from the top of the map canvas.
    */
-  _renderTilesDepthBuffer(): void;
-  stencilModeFor3D(): StencilMode;
-  stencilModeForClipping(tileID: OverscaledTileID): StencilMode;
-  getStencilConfigForOverlapAndUpdateStencilID(tileIDs: Array<OverscaledTileID>): [{
-    [_: number]: Readonly<StencilMode>;
-  }, Array<OverscaledTileID>];
-  stencilConfigForOverlapTwoPass(tileIDs: Array<OverscaledTileID>): [{
-    [_: number]: Readonly<StencilMode>;
-  }, {
-    [_: number]: Readonly<StencilMode>;
-  }, Array<OverscaledTileID>];
-  colorModeForRenderPass(): Readonly<ColorMode>;
-  getDepthModeForSublayer(n: number, mask: DepthMaskType, func?: DepthFuncType | null): Readonly<DepthMode>;
-  getDepthModeFor3D(): Readonly<DepthMode>;
-  opaquePassEnabledForLayer(): boolean;
-  render(style: Style, options: PainterOptions): void;
+  top: number;
   /**
-   * Update the depth and coords framebuffers, if the contents of those frame buffers is out of date.
-   * If requireExact is false, then the contents of those frame buffers is not updated if it is close
-   * to accurate (that is, the camera has not moved much since it was updated last).
+   * Padding in pixels from the bottom of the map canvas.
    */
-  maybeDrawDepthAndCoords(requireExact: boolean): void;
-  renderLayer(painter: Painter, tileManager: TileManager, layer: StyleLayer, coords: Array<OverscaledTileID>, renderOptions: RenderOptions): void;
-  static readonly MAX_TEXTURE_POOL_SIZE_PER_BUCKET = 50;
-  saveTileTexture(texture: Texture): void;
-  getTileTexture(size: number): Texture;
+  bottom: number;
   /**
-   * Checks whether a pattern image is needed, and if it is, whether it is not loaded.
-   *
-   * @returns true if a needed image is missing and rendering needs to be skipped.
+   * Padding in pixels from the left of the map canvas.
    */
-  isPatternMissing(image?: CrossFaded<ResolvedImage> | null): boolean;
+  right: number;
   /**
-   * Finds the required shader and its variant (base/terrain/globe, etc.) and binds it, compiling a new shader if required.
-   * @param name - Name of the desired shader.
-   * @param programConfiguration - Configuration of shader's inputs.
-   * @param forceSimpleProjection - Whether to force the use of a shader variant with simple mercator projection vertex shader.
-   * @param defines - Additional macros to be injected at the beginning of the shader. Expected format is `['#define XYZ']`, etc.
-   * False by default. Use true when drawing with a simple projection matrix is desired, eg. when drawing a fullscreen quad.
-   * @returns
+   * Padding in pixels from the right of the map canvas.
    */
-  useProgram(name: string, programConfiguration?: ProgramConfiguration | null, forceSimpleProjection?: boolean, defines?: Array<string>): Program<any>;
-  setCustomLayerDefaults(): void;
-  setBaseState(): void;
-  initDebugOverlayCanvas(): void;
-  destroy(): void;
-  overLimit(): boolean;
-}
-type TerrainData = {
-  "u_depth": number;
-  "u_terrain": number;
-  "u_terrain_dim": number;
-  "u_terrain_matrix": mat4;
-  "u_terrain_unpack": number[];
-  "u_terrain_exaggeration": number;
-  texture: WebGLTexture;
-  depthTexture: WebGLTexture;
-  tile: Tile;
-};
-declare class Terrain {
-  /**
-   * The style this terrain corresponds to
-   */
-  painter: Painter;
-  /**
-   * the tilemanager this terrain is based on
-   */
-  tileManager: TerrainTileManager;
-  /**
-   * the TerrainSpecification object passed to this instance
-   */
-  options: TerrainSpecification;
-  /**
-   * define the meshSize per tile.
-   */
-  meshSize: number;
-  /**
-   * multiplicator for the elevation. Used to make terrain more "extreme".
-   */
-  exaggeration: number;
-  /**
-   * to not see pixels in the render-to-texture tiles it is good to render them bigger
-   * this number is the multiplicator (must be a power of 2) for the current tileSize.
-   * So to get good results with not too much memory footprint a value of 2 should be fine.
-   */
-  qualityFactor: number;
-  /**
-   * holds the framebuffer object in size of the screen to render the coords & depth into a texture.
-   */
-  _fbo: Framebuffer;
-  _fboCoordsTexture: Texture;
-  _fboDepthTexture: Texture;
-  _emptyDepthTexture: Texture;
-  /**
-   * GL Objects for the terrain-mesh
-   * The mesh is a regular mesh, which has the advantage that it can be reused for all tiles.
-   */
-  _meshCache: {
-    [key: string]: Mesh;
-  };
-  /**
-   * coords index contains a list of tileID.keys. This index is used to identify
-   * the tile via the alpha-cannel in the coords-texture.
-   * As the alpha-channel has 1 Byte a max of 255 tiles can rendered without an error.
-   */
-  coordsIndex: Array<string>;
-  /**
-   * tile-coords encoded in the rgb channel, _coordsIndex is in the alpha-channel.
-   */
-  _coordsTexture: Texture;
-  /**
-   * accuracy of the coords. 2 * tileSize should be enough.
-   */
-  _coordsTextureSize: number;
-  /**
-   * variables for an empty dem texture, which is used while the raster-dem tile is loading.
-   */
-  _emptyDemUnpack: number[];
-  _emptyDemTexture: Texture;
-  _emptyDemMatrix: mat4;
-  /**
-   * as of overzooming of raster-dem tiles in high zoomlevels, this cache contains
-   * matrices to transform from vector-tile coords to raster-dem-tile coords.
-   */
-  _demMatrixCache: {
-    [_: string]: {
-      matrix: mat4;
-      coord: OverscaledTileID;
-    };
-  };
-  constructor(painter: Painter, tileManager: TileManager, options: TerrainSpecification);
-  destroy(): void;
-  /**
-   * Get the elevation-value from original dem-data for a given tile-coordinate.
-   * Coordinates that fall outside `[0, extent)` are normalized to the
-   * appropriate neighbor tile before lookup.
-   * @param tileID - the tile to get the elevation for
-   * @param x - x coordinate relative to the tile, may be outside `[0, extent)`
-   * @param y - y coordinate relative to the tile, may be outside `[0, extent)`
-   * @param extent - optional, default 8192
-   * @returns the elevation
-   */
-  getDEMElevation(tileID: OverscaledTileID, x: number, y: number, extent?: number): number;
-  /**
-   * Get the elevation for given {@link LngLat} in respect of exaggeration.
-   * @param lnglat - the location
-   * @param zoom - the zoom, use {@link getElevationForLngLat} if you don't want a specific zoom level, but more accurate results.
-   * @returns the elevation
-   */
-  getElevationForLngLatZoom(lnglat: LngLat, zoom: number): number;
-  /**
-   * Get the elevation for given {@link LngLat} in respect of exaggeration.
-   * This will traverse up the zoom levels to find the first tile with data to return.
-   * @param lnglat - the location
-   * @returns the elevation
-   */
-  getElevationForLngLat(lnglat: LngLat, transform: IReadonlyTransform): number;
-  /**
-   * Get the elevation for given coordinate in respect of exaggeration.
-   * @param tileID - the tile id
-   * @param x - x coordinate relative to the tile, may be outside `[0, extent)`
-   * @param y - y coordinate relative to the tile, may be outside `[0, extent)`
-   * @param extent - optional, default 8192
-   * @returns the elevation
-   */
-  getElevation(tileID: OverscaledTileID, x: number, y: number, extent?: number): number;
-  /**
-   * returns a Terrain Object for a tile. Unless the tile corresponds to data (e.g. tile is loading), return a flat dem object
-   * @param tileID - the tile to get the terrain for
-   * @returns the terrain data to use in the program
-   */
-  getTerrainData(tileID: OverscaledTileID): TerrainData;
-  /**
-   * get a framebuffer as big as the map-div, which will be used to render depth & coords into a texture
-   * @param texture - the texture
-   * @returns the frame buffer
-   */
-  getFramebuffer(texture: string): Framebuffer;
-  /**
-   * create coords texture, needed to grab coordinates from canvas
-   * encode coords coordinate into 4 bytes:
-   *   - 8 lower bits for x
-   *   - 8 lower bits for y
-   *   - 4 higher bits for x
-   *   - 4 higher bits for y
-   *   - 8 bits for coordsIndex (1 .. 255) (= number of terraintile), is later set in draw_terrain uniform value
-   * @returns the texture
-   */
-  getCoordsTexture(): Texture;
-  /**
-   * Reads a pixel from the coords-framebuffer and translate this to mercator, or null, if the pixel doesn't lie on the terrain's surface (but the sky instead).
-   * @param p - Screen-Coordinate
-   * @returns Mercator coordinate for a screen pixel, or null, if the pixel is not covered by terrain (is in the sky).
-   */
-  pointCoordinate(p: Point): MercatorCoordinate;
-  /**
-   * Reads the depth value from the depth-framebuffer at a given screen pixel
-   * @param p - Screen coordinate
-   * @returns depth value in clip space (between 0 and 1)
-   */
-  depthAtPoint(p: Point): number;
-  /**
-   * create a regular mesh which will be used by all terrain-tiles
-   * @returns the created regular mesh
-   */
-  getTerrainMesh(tileId: OverscaledTileID): Mesh;
-  /**
-   * Calculates a height of the frame around the terrain-mesh to avoid stitching between
-   * tile boundaries in different zoomlevels.
-   * @param zoom - current zoomlevel
-   * @returns the elevation delta in meters
-   */
-  getMeshFrameDelta(zoom: number): number;
-  getMinTileElevationForLngLatZoom(lnglat: LngLat, zoom: number): number;
-  /**
-   * Get the minimum and maximum elevation contained in a tile. This includes any
-   * exaggeration included in the terrain.
-   *
-   * @param tileID - ID of the tile to be used as a source for the min/max elevation
-   * @returns the minimum and maximum elevation found in the tile, including the terrain's
-   * exaggeration
-   */
-  getMinMaxElevation(tileID: OverscaledTileID): {
-    minElevation: number | null;
-    maxElevation: number | null;
-  };
-  _getOverscaledTileIDFromLngLatZoom(lnglat: LngLat, zoom: number): {
-    tileID: OverscaledTileID;
-    mercatorX: number;
-    mercatorY: number;
-  };
-}
+  left: number;
+}>; //#endregion
+//#region src/symbol/projection.d.ts
+/**
+ * The result of projecting a point to the screen, with some additional information about the projection.
+ */
 type PointProjection = {
   /**
    * The projected point.
@@ -7085,6 +8663,13 @@ type PointProjection = {
 type IndexToPointCache = {
   [lineIndex: number]: Point;
 };
+/**
+ * @internal
+ * We calculate label-plane projected points for line vertices as we place glyphs along the line
+ * Since we will use the same vertices for potentially many glyphs, cache the results for this bucket
+ * over the course of the render. Each vertex location also potentially has one offset equivalent
+ * for us to hold onto. The vertex indices are per-symbol-bucket.
+ */
 type ProjectionCache = {
   /**
    * tile-unit vertices projected into label-plane units
@@ -7106,6 +8691,10 @@ type ProjectionCache = {
    */
   anyProjectionOccluded: boolean;
 };
+/**
+ * @internal
+ * Arguments necessary to project a vertex to the label plane
+ */
 type SymbolProjectionContext = {
   /**
    * Used to cache results, save cost if projecting the same vertex multiple times
@@ -7123,7 +8712,7 @@ type SymbolProjectionContext = {
    * Function to get elevation at a point
    * @param x - the x coordinate
    * @param y - the y coordinate
-  */
+   */
   getElevation: (x: number, y: number) => number;
   /**
    * Only for creating synthetic vertices if vertex would otherwise project behind plane of camera,
@@ -7148,18 +8737,31 @@ type SymbolProjectionContext = {
    * Translation in tile units, computed using text-translate and text-translate-anchor paint style properties.
    */
   translation: [number, number];
-};
+}; //#endregion
+//#region src/geo/projection/projection_data.d.ts
+type ProjectionMatrix = Mat4f32 | Mat4f64;
+/**
+ * Projection data used by renderer shader uniforms. Renderer matrices are stored
+ * as 32-bit floats so WebGL can consume them directly without per-upload copies.
+ */
+type RendererProjectionData = ProjectionData<Mat4f32>;
+/**
+ * Projection data exposed to custom layers. Some matrices are stored as 64-bit
+ * floats so custom layer code can apply additional CPU-side transforms before
+ * converting to 32-bit floats for WebGL upload when necessary.
+ */
+type CustomLayerProjectionData = ProjectionData<ProjectionMatrix, ProjectionMatrix>;
 /**
  * This type contains all data necessary to project a tile to screen in MapLibre's shader system.
  * Contains data used for both mercator and globe projection.
  */
-type ProjectionData = {
+type ProjectionData<MainMatrix extends mat4 = mat4, FallbackMatrix extends mat4 = MainMatrix> = {
   /**
    * The main projection matrix. For mercator projection, it usually projects in-tile coordinates 0..EXTENT to screen,
    * for globe projection, it projects a unit sphere planet to screen.
    * Uniform name: `u_projection_matrix`.
    */
-  mainMatrix: mat4;
+  mainMatrix: MainMatrix;
   /**
    * The extent of current tile in the mercator square.
    * Used by globe projection.
@@ -7191,8 +8793,12 @@ type ProjectionData = {
    * Used by globe projection to fall back to mercator projection in an animated way.
    * Uniform name: `u_projection_fallback_matrix`.
    */
-  fallbackMatrix: mat4;
+  fallbackMatrix: FallbackMatrix;
 };
+/**
+ * Parameters object for the transform's `getProjectionData` function.
+ * Contains the requested tile ID and more.
+ */
 type ProjectionDataParams = {
   /**
    * The ID of the current tile
@@ -7210,7 +8816,97 @@ type ProjectionDataParams = {
    * Set to true if the globe matrix should be applied (i.e. when rendering globe)
    */
   applyGlobeMatrix?: boolean;
+}; //#endregion
+//#region src/util/primitives/aabb.d.ts
+declare class Aabb implements IBoundingVolume {
+  min: vec3;
+  max: vec3;
+  center: vec3;
+  constructor(min_: vec3, max_: vec3);
+  quadrant(index: number): Aabb;
+  distanceX(point: number[]): number;
+  distanceY(point: number[]): number;
+  /**
+   * Performs a frustum-aabb intersection test.
+   */
+  intersectsFrustum(frustum: Frustum): IntersectionResult;
+  /**
+   * Performs a halfspace-aabb intersection test.
+   */
+  intersectsPlane(plane: vec4): IntersectionResult;
+} //#endregion
+//#region src/util/primitives/frustum.d.ts
+declare class Frustum {
+  points: vec4[];
+  planes: vec4[];
+  aabb: Aabb;
+  constructor(points: vec4[], planes: vec4[], aabb: Aabb);
+  static fromInvProjectionMatrix(invProj: mat4, worldSize?: number, zoom?: number, horizonPlane?: vec4, flippedNearFar?: boolean): Frustum;
+} //#endregion
+//#region src/util/primitives/bounding_volume.d.ts
+declare const enum IntersectionResult {
+  None = 0,
+  Partial = 1,
+  Full = 2
+}
+interface IBoundingVolume {
+  /**
+   * Performs an intersection test with a frustum.
+   */
+  intersectsFrustum(frustum: Frustum): IntersectionResult;
+  /**
+   * Performs an intersection test with a half-space defined by a plane equation.
+   * The half-space is assumed to lie on the positive side of the plane.
+   */
+  intersectsPlane(plane: vec4): IntersectionResult;
+} //#endregion
+//#region src/geo/projection/covering_tiles.d.ts
+type CoveringTilesOptions = {
+  /**
+   * Smallest allowed tile zoom.
+   */
+  minzoom?: number;
+  /**
+   * Largest allowed tile zoom.
+   */
+  maxzoom?: number;
+  /**
+   * Whether to round or floor the target zoom level. If true, the value will be rounded to the closest integer. Otherwise the value will be floored.
+   */
+  roundZoom?: boolean;
+  /**
+   * Tile size, expressed in screen pixels.
+   */
+  tileSize: number;
 };
+type CoveringTilesOptionsInternal = CoveringTilesOptions & {
+  /**
+   * `true` if tiles should be sent back to the worker for each overzoomed zoom level, `false` if not.
+   * Fill this option when computing covering tiles for a source.
+   * When true, any tile at `maxzoom` level that should be overscaled to a greater zoom will have
+   * its zoom set to the overscaled greater zoom. When false, such tiles will have zoom set to `maxzoom`.
+   */
+  reparseOverscaled?: boolean;
+  /**
+   * When terrain is present, tile visibility will be computed in regards to the min and max elevations for each tile.
+   */
+  terrain?: Terrain;
+  /**
+   * Optional function to redefine how tiles are loaded at high pitch angles.
+   */
+  calculateTileZoom?: CalculateTileZoomFunction;
+};
+/**
+ * Function to define how tiles are loaded at high pitch angles
+ * @param requestedCenterZoom - the requested zoom level, valid at the center point.
+ * @param distanceToTile2D - 2D distance from the camera to the candidate tile, in mercator units.
+ * @param distanceToTileZ - vertical distance from the camera to the candidate tile, in mercator units.
+ * @param distanceToCenter3D - distance from camera to center point, in mercator units
+ * @param cameraVerticalFOV - camera vertical field of view, in degrees
+ * @return the desired zoom level for this tile. May not be an integer.
+ */
+type CalculateTileZoomFunction = (requestedCenterZoom: number, distanceToTile2D: number, distanceToTileZ: number, distanceToCenter3D: number, cameraVerticalFOV: number) => number; //#endregion
+//#region src/geo/projection/covering_tiles_details_provider.d.ts
 interface CoveringTilesDetailsProvider {
   /**
    * Returns the distance from the point to the tile
@@ -7256,7 +8952,8 @@ interface CoveringTilesDetailsProvider {
    * Prepare cache for the next frame.
    */
   prepareNextFrame(): void;
-}
+} //#endregion
+//#region src/geo/transform_interface.d.ts
 /**
  * The callback defining how the transform constrains the viewport's lnglat and zoom to respect the longitude and latitude bounds.
  * @see [Customize the map transform constrain](https://maplibre.org/maplibre-gl-js/docs/examples/customize-the-map-transform-constrain/)
@@ -7328,6 +9025,10 @@ interface ITransformGetters {
   get autoCalculateNearFarZ(): boolean;
   get constrainOverride(): TransformConstrainFunction;
 }
+/**
+ * @internal
+ * All the functions that may mutate a transform.
+ */
 interface ITransformMutators {
   clone(): ITransform;
   /**
@@ -7442,7 +9143,7 @@ interface ITransformMutators {
    * Used in mercator transform to precompute tile matrices (posMatrix).
    * @param coords - Array of tile IDs that will be rendered.
    */
-  populateCache(coords: Array<OverscaledTileID>): void;
+  populateCache(coords: OverscaledTileID[]): void;
   /**
    * @internal
    * Sets the transform's transition state from one projection to another.
@@ -7451,6 +9152,12 @@ interface ITransformMutators {
    */
   setTransitionState(value: number, error: number): void;
 }
+/**
+ * @internal
+ * A variant of {@link ITransform} without any mutating functions.
+ * Note that an instance of {@link IReadonlyTransform} may still be mutated
+ * by code that has a reference to in under the {@link ITransform} type.
+ */
 interface IReadonlyTransform extends ITransformGetters {
   /**
    * Distance from camera origin to view plane, in pixels.
@@ -7499,7 +9206,7 @@ interface IReadonlyTransform extends ITransformGetters {
    * Return any "wrapped" copies of a given tile coordinate that are visible
    * in the current view.
    */
-  getVisibleUnwrappedCoordinates(tileID: CanonicalTileID): Array<UnwrappedTileID>;
+  getVisibleUnwrappedCoordinates(tileID: CanonicalTileID): UnwrappedTileID[];
   /**
    * @internal
    * Return the camera frustum for the current view.
@@ -7613,7 +9320,7 @@ interface IReadonlyTransform extends ITransformGetters {
    * screen where the *base* of a visible extrusion could be.
    *
    */
-  getCameraQueryGeometry(queryGeometry: Array<Point>): Array<Point>;
+  getCameraQueryGeometry(queryGeometry: Point[]): Point[];
   /**
    * Return the distance to the camera in clip space from a LngLat.
    * This can be compared to the value from the depth buffer (terrain.depthAtPoint)
@@ -7635,7 +9342,7 @@ interface IReadonlyTransform extends ITransformGetters {
    * Generates a `ProjectionData` instance to be used while rendering the supplied tile.
    * @param params - Parameters for the projection data generation.
    */
-  getProjectionData(params: ProjectionDataParams): ProjectionData;
+  getProjectionData(params: ProjectionDataParams): RendererProjectionData;
   /**
    * @internal
    * Returns whether the supplied location is occluded in this projection.
@@ -7676,94 +9383,640 @@ interface IReadonlyTransform extends ITransformGetters {
    */
   projectTileCoordinates(x: number, y: number, unwrappedTileID: UnwrappedTileID, getElevation: (x: number, y: number) => number): PointProjection;
   /**
-   * Returns a matrix that will place, rotate and scale a model to display at the given location and altitude
-   * while also being projected by the custom layer matrix.
-   * This function is intended to be called from custom layers.
-   * @param location - Location of the model.
-   * @param altitude - Altitude of the model. May be undefined.
-   */
-  getMatrixForModel(location: LngLatLike, altitude?: number): mat4;
-  /**
    * Return projection data such that coordinates in mercator projection in range 0..1 will get projected to the map correctly.
    */
-  getProjectionDataForCustomLayer(applyGlobeMatrix: boolean): ProjectionData;
+  getProjectionDataForCustomLayer(applyGlobeMatrix: boolean): CustomLayerProjectionData;
   /**
    * Returns a tile-specific projection matrix. Used for symbol placement fast-path for mercator transform.
    */
   getFastPathSimpleProjectionMatrix(tileID: OverscaledTileID): mat4 | undefined;
 }
-interface ITransform extends IReadonlyTransform, ITransformMutators {}
-type QueryParameters = {
-  scale: number;
-  pixelPosMatrix: mat4;
-  transform: IReadonlyTransform;
-  tileSize: number;
-  queryGeometry: Array<Point>;
-  cameraQueryGeometry: Array<Point>;
-  queryPadding: number;
-  getElevation: undefined | ((x: number, y: number) => number);
-  params: {
-    filter?: FilterSpecification;
-    layers?: Set<string> | null;
-    availableImages?: Array<string>;
-    globalState?: Record<string, any>;
-  };
-};
-type QueryResults = {
-  [_: string]: QueryResultsItem[];
-};
-type QueryResultsItem = {
-  featureIndex: number;
-  feature: GeoJSONFeature;
-  intersectionZ?: boolean | number;
+/**
+ * @internal
+ * The transform stores everything needed to project or otherwise transform points on a map,
+ * including most of the map's view state - center, zoom, pitch, etc.
+ * A transform is cloneable, which is used when a given map state must be retained for multiple frames, mostly during symbol placement.
+ */
+interface ITransform extends IReadonlyTransform, ITransformMutators {} //#endregion
+//#region src/source/canvas_source.d.ts
+/**
+ * Options to add a canvas source type to the map.
+ */
+type CanvasSourceSpecification = {
+  /**
+   * Source type. Must be `"canvas"`.
+   */
+  type: "canvas";
+  /**
+   * Four geographical coordinates denoting where to place the corners of the canvas, specified in `[longitude, latitude]` pairs.
+   */
+  coordinates: [[number, number], [number, number], [number, number], [number, number]];
+  /**
+   * Whether the canvas source is animated. If the canvas is static (i.e. pixels do not need to be re-read on every frame), `animate` should be set to `false` to improve performance.
+   * @defaultValue true
+   */
+  animate?: boolean;
+  /**
+   * Canvas source from which to read pixels. Can be a string representing the ID of the canvas element, or the `HTMLCanvasElement` itself.
+   */
+  canvas?: string | HTMLCanvasElement;
 };
 /**
- * An in memory index class to allow fast interaction with features
+ * A data source containing the contents of an HTML canvas. See {@link CanvasSourceSpecification} for detailed documentation of options.
+ *
+ * @group Sources
+ *
+ * @example
+ * ```ts
+ * // add to map
+ * map.addSource('some id', {
+ *    type: 'canvas',
+ *    canvas: 'idOfMyHTMLCanvas',
+ *    animate: true,
+ *    coordinates: [
+ *        [-76.54, 39.18],
+ *        [-76.52, 39.18],
+ *        [-76.52, 39.17],
+ *        [-76.54, 39.17]
+ *    ]
+ * });
+ *
+ * // update
+ * let mySource = map.getSource('some id');
+ * mySource.setCoordinates([
+ *     [-76.54335737228394, 39.18579907229748],
+ *     [-76.52803659439087, 39.1838364847587],
+ *     [-76.5295386314392, 39.17683392507606],
+ *     [-76.54520273208618, 39.17876344106642]
+ * ]);
+ *
+ * map.removeSource('some id');  // remove
+ * ```
  */
-declare class FeatureIndex {
-  tileID: OverscaledTileID;
-  x: number;
-  y: number;
-  z: number;
-  grid: TransferableGridIndex;
-  grid3D: TransferableGridIndex;
-  featureIndexArray: FeatureIndexArray;
-  promoteId?: PromoteIdSpecification;
-  encoding: string;
-  rawTileData: ArrayBuffer;
-  bucketLayerIDs: Array<Array<string>>;
-  vtLayers: {
-    [_: string]: VectorTileLayerLike;
+type CanonicalTileRange = {
+  minTileY: number;
+  maxTileY: number;
+  /**
+   * Image can exceed the boundary of a single "world" (tile 0/0/0),
+   * so we need to know the tile range for wrapping.
+   */
+  minTileXWrapped: number;
+  maxTileXWrapped: number;
+  minWrap: number;
+  maxWrap: number;
+};
+/**
+ * A data source containing an image.
+ * (See the [Style Specification](https://maplibre.org/maplibre-style-spec/#sources-image) for detailed documentation of options.)
+ *
+ * @group Sources
+ *
+ * @example
+ * ```ts
+ * // add to map
+ * map.addSource('some id', {
+ *    type: 'image',
+ *    url: 'https://www.maplibre.org/images/foo.png',
+ *    coordinates: [
+ *        [-76.54, 39.18],
+ *        [-76.52, 39.18],
+ *        [-76.52, 39.17],
+ *        [-76.54, 39.17]
+ *    ]
+ * });
+ *
+ * // update coordinates
+ * let mySource = map.getSource('some id');
+ * mySource.setCoordinates([
+ *     [-76.54335737228394, 39.18579907229748],
+ *     [-76.52803659439087, 39.1838364847587],
+ *     [-76.5295386314392, 39.17683392507606],
+ *     [-76.54520273208618, 39.17876344106642]
+ * ]);
+ *
+ * // update url and coordinates simultaneously
+ * mySource.updateImage({
+ *    url: 'https://www.maplibre.org/images/bar.png',
+ *    coordinates: [
+ *        [-76.54335737228394, 39.18579907229748],
+ *        [-76.52803659439087, 39.1838364847587],
+ *        [-76.5295386314392, 39.17683392507606],
+ *        [-76.54520273208618, 39.17876344106642]
+ *    ]
+ * })
+ *
+ * map.removeSource('some id');  // remove
+ * ```
+ */
+//#endregion
+//#region src/tile/terrain_tile_manager.d.ts
+/**
+ * @internal
+ * This class is a helper for the Terrain-class, it:
+ *
+ * - loads raster-dem tiles
+ * - manages all renderToTexture tiles.
+ * - caches previous rendered tiles.
+ * - finds all necessary renderToTexture tiles for a OverscaledTileID area
+ * - finds the corresponding raster-dem tile for OverscaledTileID
+ */
+declare class TerrainTileManager extends Evented {
+  /**
+   * tile manager for the raster-dem source.
+   */
+  tileManager: TileManager;
+  /**
+   * stores all render-to-texture tiles.
+   */
+  _tiles: {
+    [_: string]: Tile;
   };
-  sourceLayerCoder: DictionaryCoder;
-  constructor(tileID: OverscaledTileID, promoteId?: PromoteIdSpecification | null);
-  insert(feature: VectorTileFeatureLike, geometry: Array<Array<Point>>, featureIndex: number, sourceLayerIndex: number, bucketIndex: number, is3D?: boolean): void;
-  loadVTLayers(): {
-    [_: string]: VectorTileLayerLike;
+  /**
+   * contains a list of tileID-keys for the current scene. (only for performance)
+   */
+  _renderableTilesKeys: string[];
+  /**
+   * raster-dem-tile for a TileID cache.
+   */
+  _sourceTileCache: {
+    [_: string]: string;
   };
-  query(args: QueryParameters, styleLayers: {
-    [_: string]: StyleLayer;
-  }, serializedLayers: {
-    [_: string]: any;
-  }, sourceFeatureState: SourceFeatureState): QueryResults;
-  loadMatchingFeature(result: QueryResults, bucketIndex: number, sourceLayerIndex: number, featureIndex: number, filter: FeatureFilter, filterLayerIDs: Set<string> | undefined, availableImages: Array<string>, styleLayers: {
-    [_: string]: StyleLayer;
-  }, serializedLayers: {
-    [_: string]: any;
-  }, sourceFeatureState?: SourceFeatureState, intersectionTest?: (feature: VectorTileFeatureLike, styleLayer: StyleLayer, featureState: any, id: string | number | void) => boolean | number): void;
-  lookupSymbolFeatures(symbolFeatureIndexes: Array<number>, serializedLayers: {
-    [_: string]: StyleLayer;
-  }, bucketIndex: number, sourceLayerIndex: number, filterParams: {
-    filterSpec: FilterSpecification;
-    globalState: Record<string, any>;
-  }, filterLayerIDs: Set<string> | null, availableImages: Array<string>, styleLayers: {
-    [_: string]: StyleLayer;
-  }): QueryResults;
-  hasLayer(id: string): boolean;
-  getId(feature: VectorTileFeatureLike, sourceLayerId: string): string | number;
-}
+  /**
+   * minimum zoomlevel to render the terrain.
+   */
+  minzoom: number;
+  /**
+   * maximum zoomlevel to render the terrain.
+   */
+  maxzoom: number;
+  /**
+   * render-to-texture tileSize in scene.
+   */
+  tileSize: number;
+  /**
+   * raster-dem tiles will load for performance the actualZoom - deltaZoom zoom-level.
+   */
+  deltaZoom: number;
+  /**
+   * used to determine whether depth & coord framebuffers need updating
+   */
+  _lastTilesetChange: number;
+  constructor(tileManager: TileManager);
+  destruct(): void;
+  getSource(): Source;
+  /**
+   * Load Terrain Tiles, create internal render-to-texture tiles, free GPU memory.
+   * @param transform - the operation to do
+   * @param terrain - the terrain
+   */
+  update(transform: ITransform, terrain: Terrain): void;
+  /**
+   * Release the RTT objects for `tileID` (and its ancestors/descendants),
+   */
+  releaseRTT(tileID: OverscaledTileID): void;
+  /**
+   * Release the A RTT objects for all tiles.
+   */
+  releaseAllRTT(): void;
+  /**
+   * get a list of tiles, which are loaded and should be rendered in the current scene
+   * @returns the renderable tiles
+   */
+  getRenderableTiles(): Tile[];
+  /**
+   * get terrain tile by the TileID key
+   * @param id - the tile id
+   * @returns the tile
+   */
+  getTileByID(id: string): Tile;
+  /**
+   * Searches for the corresponding current renderable terrain-tiles
+   * @param tileID - the tile to look for
+   * @returns the tiles that were found
+   */
+  getTerrainCoords(tileID: OverscaledTileID, terrainTileRanges?: {
+    [zoom: string]: CanonicalTileRange;
+  }): Record<string, OverscaledTileID>;
+  /**
+   * Searches for the corresponding current renderable terrain-tiles.
+   * Includes terrain tiles that are either:
+   * - the same as the tileID
+   * - a parent of the tileID
+   * - a child of the tileID
+   * @param tileID - the tile to look for
+   * @returns the tiles that were found
+   */
+  _getTerrainCoordsForRegularTile(tileID: OverscaledTileID): Record<string, OverscaledTileID>;
+  /**
+   * Searches for the corresponding current renderable terrain-tiles.
+   * Includes terrain tiles that are within terrain tile ranges.
+   * @param tileID - the tile to look for
+   * @returns the tiles that were found
+   */
+  _getTerrainCoordsForTileRanges(tileID: OverscaledTileID, terrainTileRanges: {
+    [zoom: string]: CanonicalTileRange;
+  }): Record<string, OverscaledTileID>;
+  /**
+   * find the covering raster-dem tile
+   * @param tileID - the tile to look for
+   * @param searchForDEM - Optional parameter to search for (parent) source tiles with loaded dem.
+   * @returns the tile
+   */
+  getSourceTile(tileID: OverscaledTileID, searchForDEM?: boolean): Tile | undefined;
+  findTileInCaches(key: string): Tile | undefined;
+  /**
+   * gets whether any tiles were loaded after a specific time. This is used to update depth & coords framebuffers.
+   * @param time - the time
+   * @returns true if any tiles came into view at or after the specified time
+   */
+  anyTilesAfterTime(time?: number): boolean;
+  /**
+   * Checks whether a tile is within the canonical tile ranges.
+   * @param tileID - Tile to check
+   * @param canonicalTileRanges - Canonical tile ranges
+   * @returns
+   */
+  private _isWithinTileRanges;
+} //#endregion
+//#region src/render/terrain.d.ts
+/**
+ * @internal
+ * A terrain GPU related object
+ */
+type TerrainData = {
+  "u_depth": number;
+  "u_terrain": number;
+  "u_terrain_dim": number;
+  "u_terrain_matrix": mat4;
+  "u_terrain_unpack": number[];
+  "u_terrain_exaggeration": number;
+  texture: WebGLTexture;
+  depthTexture: WebGLTexture;
+  tile: Tile;
+};
+/**
+ * @internal
+ * This is the main class which handles most of the 3D Terrain logic. It has the following topics:
+ *
+ * 1. loads raster-dem tiles via the internal tileManager this.tileManager
+ * 2. creates a depth-framebuffer, which is used to calculate the visibility of coordinates
+ * 3. creates a coords-framebuffer, which is used the get to tile-coordinate for a screen-pixel
+ * 4. stores all render-to-texture tiles in the this.tileManager._tiles
+ * 5. calculates the elevation for a specific tile-coordinate
+ * 6. creates a terrain-mesh
+ *
+ * A note about the GPU resource-usage:
+ *
+ * Framebuffers:
+ *
+ * - one for the depth & coords framebuffer with the size of the map-div.
+ * - one for rendering a tile to texture with the size of tileSize (= 512x512).
+ *
+ * Textures:
+ *
+ * - one texture for an empty raster-dem tile with size 1x1
+ * - one texture for an empty depth-buffer, when terrain is disabled with size 1x1
+ * - one texture for an each loaded raster-dem with size of the source.tileSize
+ * - one texture for the coords-framebuffer with the size of the map-div.
+ * - one texture for the depth-framebuffer with the size of the map-div.
+ * - one texture for the encoded tile-coords with the size 2*tileSize (=1024x1024)
+ * - finally for each render-to-texture tile (= this._tiles) a set of textures
+ * for each render stack (The stack-concept is documented in painter.ts).
+ *
+ * Normally there exists 1-3 Textures per tile, depending on the stylesheet.
+ * Each Textures has the size 2*tileSize (= 1024x1024). Also there exists a
+ * cache of the last 150 newest rendered tiles.
+ *
+ */
+declare class Terrain {
+  /**
+   * The style this terrain corresponds to
+   */
+  painter: Painter;
+  /**
+   * the tilemanager this terrain is based on
+   */
+  tileManager: TerrainTileManager;
+  /**
+   * the TerrainSpecification object passed to this instance
+   */
+  options: TerrainSpecification;
+  /**
+   * define the meshSize per tile.
+   */
+  meshSize: number;
+  /**
+   * multiplicator for the elevation. Used to make terrain more "extreme".
+   */
+  exaggeration: number;
+  /**
+   * to not see pixels in the render-to-texture tiles it is good to render them bigger
+   * this number is the multiplicator (must be a power of 2) for the current tileSize.
+   * So to get good results with not too much memory footprint a value of 2 should be fine.
+   */
+  qualityFactor: number;
+  /**
+   * holds the framebuffer object in size of the screen to render the coords & depth into a texture.
+   */
+  _fbo: Framebuffer;
+  _fboCoordsTexture: Texture;
+  _fboDepthTexture: Texture;
+  _emptyDepthTexture: Texture;
+  /**
+   * GL Objects for the terrain-mesh
+   * The mesh is a regular mesh, which has the advantage that it can be reused for all tiles.
+   */
+  _meshCache: {
+    [key: string]: Mesh;
+  };
+  /**
+   * coords index contains a list of tileID.keys. This index is used to identify
+   * the tile via the alpha-cannel in the coords-texture.
+   * As the alpha-channel has 1 Byte a max of 255 tiles can rendered without an error.
+   */
+  coordsIndex: string[];
+  /**
+   * tile-coords encoded in the rgb channel, _coordsIndex is in the alpha-channel.
+   */
+  _coordsTexture: Texture;
+  /**
+   * accuracy of the coords. 2 * tileSize should be enough.
+   */
+  _coordsTextureSize: number;
+  /**
+   * variables for an empty dem texture, which is used while the raster-dem tile is loading.
+   */
+  _emptyDemUnpack: number[];
+  _emptyDemTexture: Texture;
+  _emptyDemMatrix: mat4;
+  /**
+   * as of overzooming of raster-dem tiles in high zoomlevels, this cache contains
+   * matrices to transform from vector-tile coords to raster-dem-tile coords.
+   */
+  _demMatrixCache: {
+    [_: string]: {
+      matrix: mat4;
+      coord: OverscaledTileID;
+    };
+  };
+  /**
+   * Controls how terrain skirt length is calculated.
+   * @see {@link MapOptions.terrainSkirtLength}
+   */
+  _terrainSkirtLength: "none" | "auto";
+  constructor(painter: Painter, tileManager: TileManager, options: TerrainSpecification, terrainSkirtLength?: "none" | "auto");
+  destroy(): void;
+  /**
+   * Get the elevation-value from original dem-data for a given tile-coordinate.
+   * Coordinates that fall outside `[0, extent)` are normalized to the
+   * appropriate neighbor tile before lookup.
+   * @param tileID - the tile to get the elevation for
+   * @param x - x coordinate relative to the tile, may be outside `[0, extent)`
+   * @param y - y coordinate relative to the tile, may be outside `[0, extent)`
+   * @param extent - optional, default 8192
+   * @returns the elevation
+   */
+  getDEMElevation(tileID: OverscaledTileID, x: number, y: number, extent?: number): number;
+  /**
+   * Get the elevation for given {@link LngLat} in respect of exaggeration.
+   * @param lnglat - the location
+   * @param zoom - the zoom, use {@link getElevationForLngLat} if you don't want a specific zoom level, but more accurate results.
+   * @returns the elevation
+   */
+  getElevationForLngLatZoom(lnglat: LngLat, zoom: number): number;
+  /**
+   * Get the elevation for given {@link LngLat} in respect of exaggeration.
+   * This will traverse up the zoom levels to find the first tile with data to return.
+   * @param lnglat - the location
+   * @returns the elevation
+   */
+  getElevationForLngLat(lnglat: LngLat, transform: IReadonlyTransform): number;
+  /**
+   * Get the elevation for given coordinate in respect of exaggeration.
+   * @param tileID - the tile id
+   * @param x - x coordinate relative to the tile, may be outside `[0, extent)`
+   * @param y - y coordinate relative to the tile, may be outside `[0, extent)`
+   * @param extent - optional, default 8192
+   * @returns the elevation
+   */
+  getElevation(tileID: OverscaledTileID, x: number, y: number, extent?: number): number;
+  /**
+   * returns a Terrain Object for a tile. Unless the tile corresponds to data (e.g. tile is loading), return a flat dem object
+   * @param tileID - the tile to get the terrain for
+   * @returns the terrain data to use in the program
+   */
+  getTerrainData(tileID: OverscaledTileID): TerrainData;
+  /**
+   * get a framebuffer as big as the map-div, which will be used to render depth & coords into a texture
+   * @param texture - the texture
+   * @returns the frame buffer
+   */
+  getFramebuffer(texture: string): Framebuffer;
+  /**
+   * create coords texture, needed to grab coordinates from canvas
+   * encode coords coordinate into 4 bytes:
+   *   - 8 lower bits for x
+   *   - 8 lower bits for y
+   *   - 4 higher bits for x
+   *   - 4 higher bits for y
+   *   - 8 bits for coordsIndex (1 .. 255) (= number of terraintile), is later set in draw_terrain uniform value
+   * @returns the texture
+   */
+  getCoordsTexture(): Texture;
+  /**
+   * Reads a pixel from the coords-framebuffer and translate this to mercator, or null, if the pixel doesn't lie on the terrain's surface (but the sky instead).
+   * @param p - Screen-Coordinate
+   * @returns Mercator coordinate for a screen pixel, or null, if the pixel is not covered by terrain (is in the sky).
+   */
+  pointCoordinate(p: Point): MercatorCoordinate;
+  /**
+   * Reads the depth value from the depth-framebuffer at a given screen pixel
+   * @param p - Screen coordinate
+   * @returns depth value in clip space (between 0 and 1)
+   */
+  depthAtPoint(p: Point): number;
+  /**
+   * create a regular mesh which will be used by all terrain-tiles
+   * @returns the created regular mesh
+   */
+  getTerrainMesh(tileId: OverscaledTileID): Mesh;
+  /**
+   * Calculates the height of the tile skirts for the "auto" strategy.
+   * @see {@link MapOptions.terrainSkirtLength}
+   * @param zoom - current zoomlevel
+   * @returns the elevation delta in meters
+   */
+  getSkirtLength(zoom: number): number;
+  getMinTileElevationForLngLatZoom(lnglat: LngLat, zoom: number): number;
+  /**
+   * Get the minimum and maximum elevation contained in a tile. This includes any
+   * exaggeration included in the terrain.
+   *
+   * @param tileID - ID of the tile to be used as a source for the min/max elevation
+   * @returns the minimum and maximum elevation found in the tile, including the terrain's
+   * exaggeration
+   */
+  getMinMaxElevation(tileID: OverscaledTileID): {
+    minElevation: number | null;
+    maxElevation: number | null;
+  };
+  _getOverscaledTileIDFromLngLatZoom(lnglat: LngLat, zoom: number): {
+    tileID: OverscaledTileID;
+    mercatorX: number;
+    mercatorY: number;
+  };
+  /** Add an extra frame around the mesh to avoid hairline gaps (stitching) on tile boundaries with different zoomlevels.
+   * @see {@link MapOptions.terrainSkirtLength}
+   */
+  _buildSkirts(vertexArray: Pos3dArray, indexArray: TriangleIndexArray, meshSize: number, delta: number, northPole: boolean, southPole: boolean): void;
+} //#endregion
+//#region src/webgl/program/projection_program.d.ts
+type ProjectionPreludeUniformsType = {
+  "u_projection_matrix": UniformMatrix4f;
+  "u_projection_tile_mercator_coords": Uniform4f;
+  "u_projection_clipping_plane": Uniform4f;
+  "u_projection_transition": Uniform1f;
+  "u_projection_fallback_matrix": UniformMatrix4f;
+}; //#endregion
+//#region src/webgl/program.d.ts
+type DrawMode = WebGLRenderingContextBase["LINES"] | WebGLRenderingContextBase["TRIANGLES"] | WebGL2RenderingContext["LINE_STRIP"];
+/**
+ * @internal
+ * A webgl program to execute in the GPU space
+ */
+declare class Program<Us extends UniformBindings> {
+  program: WebGLProgram;
+  attributes: {
+    [_: string]: number;
+  };
+  numAttributes: number;
+  fixedUniforms: Us;
+  terrainUniforms: TerrainPreludeUniformsType;
+  projectionUniforms: ProjectionPreludeUniformsType;
+  binderUniforms: BinderUniform[];
+  failedToCreate: boolean;
+  constructor(context: Context, source: PreparedShader, configuration: ProgramConfiguration, fixedUniforms: (b: Context, a: UniformLocations) => Us, showOverdrawInspector: boolean, useTerrain: boolean, projectionPrelude: PreparedShader, projectionDefine: string, extraDefines?: string[]);
+  draw(context: Context, drawMode: DrawMode, depthMode: Readonly<DepthMode>, stencilMode: Readonly<StencilMode>, colorMode: Readonly<ColorMode>, cullFaceMode: Readonly<CullFaceMode>, uniformValues: UniformValues<Us>, terrain: TerrainData, projectionData: ProjectionData, layerID: string, layoutVertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, segments: SegmentVector, currentProperties?: any, zoom?: number | null, configuration?: ProgramConfiguration | null, dynamicLayoutBuffer?: VertexBuffer | null, dynamicLayoutBuffer2?: VertexBuffer | null, dynamicLayoutBuffer3?: VertexBuffer | null): void;
+} //#endregion
+//#region src/webgl/vertex_buffer.d.ts
+/**
+ * @internal
+ * The `VertexBuffer` class turns a `StructArray` into a WebGL buffer. Each member of the StructArray's
+ * Struct type is converted to a WebGL attribute.
+ */
+declare class VertexBuffer {
+  length: number;
+  attributes: readonly StructArrayMember[];
+  itemSize: number;
+  dynamicDraw: boolean;
+  context: Context;
+  buffer: WebGLBuffer;
+  /**
+   * @param dynamicDraw - Whether this buffer will be repeatedly updated.
+   */
+  constructor(context: Context, array: StructArray, attributes: readonly StructArrayMember[], dynamicDraw?: boolean);
+  bind(): void;
+  updateData(array: StructArray): void;
+  enableAttributes(gl: WebGL2RenderingContext, program: Program<any>): void;
+  /**
+   * Set the attribute pointers in a WebGL context
+   * @param gl - The WebGL context
+   * @param program - The active WebGL program
+   * @param vertexOffset - Index of the starting vertex of the segment
+   */
+  setVertexAttribPointers(gl: WebGL2RenderingContext, program: Program<any>, vertexOffset?: number | null): void;
+  /**
+   * Destroy the GL buffer bound to the given WebGL context
+   */
+  destroy(): void;
+} //#endregion
+//#region src/webgl/context.d.ts
+type ClearArgs = {
+  color?: Color;
+  depth?: number;
+  stencil?: number;
+};
+/**
+ * @internal
+ * A webgl wrapper class to allow injection, mocking and abstraction
+ */
+declare class Context {
+  gl: WebGL2RenderingContext;
+  currentNumAttributes: number;
+  maxTextureSize: number;
+  clearColor: ClearColor;
+  clearDepth: ClearDepth;
+  clearStencil: ClearStencil;
+  colorMask: ColorMask;
+  depthMask: DepthMask;
+  stencilMask: StencilMask;
+  stencilFunc: StencilFunc;
+  stencilOp: StencilOp;
+  stencilTest: StencilTest;
+  depthRange: DepthRange;
+  depthTest: DepthTest;
+  depthFunc: DepthFunc;
+  blend: Blend;
+  blendFunc: BlendFunc;
+  blendColor: BlendColor;
+  blendEquation: BlendEquation;
+  cullFace: CullFace;
+  cullFaceSide: CullFaceSide;
+  frontFace: FrontFace;
+  program: ProgramValue;
+  activeTexture: ActiveTextureUnit;
+  viewport: Viewport;
+  bindFramebuffer: BindFramebuffer;
+  bindRenderbuffer: BindRenderbuffer;
+  bindTexture: BindTexture;
+  bindVertexBuffer: BindVertexBuffer;
+  bindElementBuffer: BindElementBuffer;
+  bindVertexArray: BindVertexArray;
+  pixelStoreUnpack: PixelStoreUnpack;
+  pixelStoreUnpackPremultiplyAlpha: PixelStoreUnpackPremultiplyAlpha;
+  pixelStoreUnpackFlipY: PixelStoreUnpackFlipY;
+  extTextureFilterAnisotropic: EXT_texture_filter_anisotropic | null;
+  extTextureFilterAnisotropicMax?: GLfloat;
+  constructor(gl: WebGL2RenderingContext);
+  setDefault(): void;
+  setDirty(): void;
+  createIndexBuffer(array: TriangleIndexArray | LineIndexArray | LineStripIndexArray, dynamicDraw?: boolean): IndexBuffer;
+  createVertexBuffer(array: StructArray, attributes: readonly StructArrayMember[], dynamicDraw?: boolean): VertexBuffer;
+  createRenderbuffer(storageFormat: number, width: number, height: number): WebGLRenderbuffer;
+  createFramebuffer(width: number, height: number, hasDepth: boolean, hasStencil: boolean): Framebuffer;
+  clear({
+    color,
+    depth,
+    stencil
+  }: ClearArgs): void;
+  setCullFace(cullFaceMode: Readonly<CullFaceMode>): void;
+  setDepthMode(depthMode: Readonly<DepthMode>): void;
+  setStencilMode(stencilMode: Readonly<StencilMode>): void;
+  setColorMode(colorMode: Readonly<ColorMode>): void;
+  createVertexArray(): WebGLVertexArrayObject | undefined;
+  deleteVertexArray(x: WebGLVertexArrayObject | undefined): void;
+  unbindVAO(): void;
+} //#endregion
+//#region src/tile/tile_bounds.d.ts
+//#endregion
+//#region src/data/dem_data.d.ts
+/**
+ * The possible DEM encoding types
+ */
 type DEMEncoding = "mapbox" | "terrarium" | "custom";
+/**
+ * DEMData is a data structure for decoding, backfilling, and storing elevation data for processing in the hillshade shaders
+ * data can be populated either from a png raw image tile or from serialized data sent back from a worker. When data is initially
+ * loaded from a image tile, we decode the pixel values using the appropriate decoding formula, but we store the
+ * elevation data as an Int32 value. we add 65536 (2^16) to eliminate negative values and enable the use of
+ * integer overflow when creating the texture used in the hillshadePrepare step.
+ *
+ * DEMData also handles the backfilling of data from a tile's neighboring tiles. This is necessary because we use a pixel's 8
+ * surrounding pixel values to compute the slope at that pixel, and we cannot accurately calculate the slope at pixels on a
+ * tile's edge without backfilling from neighboring tiles.
+ */
 declare class DEMData {
+  private static readonly byteViewCache;
   uid: string | number;
   data: Uint32Array;
   stride: number;
@@ -7775,18 +10028,19 @@ declare class DEMData {
   blueFactor: number;
   baseShift: number;
   /**
-   * Constructs a `DEMData` object
-   * @param uid - the tile's unique id
-   * @param data - RGBAImage data has uniform 1px padding on all sides: square tile edge size defines stride
+  * Constructs a `DEMData` object
+  * @param uid - the tile's unique id
+  * @param data - RGBAImage data has uniform 1px padding on all sides: square tile edge size defines stride
   // and dim is calculated as stride - 2.
-   * @param encoding - the encoding type of the data
-   * @param redFactor - the red channel factor used to unpack the data, used for `custom` encoding only
-   * @param greenFactor - the green channel factor used to unpack the data, used for `custom` encoding only
-   * @param blueFactor - the blue channel factor used to unpack the data, used for `custom` encoding only
-   * @param baseShift - the base shift used to unpack the data, used for `custom` encoding only
-   */
+  * @param encoding - the encoding type of the data
+  * @param redFactor - the red channel factor used to unpack the data, used for `custom` encoding only
+  * @param greenFactor - the green channel factor used to unpack the data, used for `custom` encoding only
+  * @param blueFactor - the blue channel factor used to unpack the data, used for `custom` encoding only
+  * @param baseShift - the base shift used to unpack the data, used for `custom` encoding only
+  */
   constructor(uid: string | number, data: RGBAImage | ImageData, encoding: DEMEncoding, redFactor?: number, greenFactor?: number, blueFactor?: number, baseShift?: number);
   get(x: number, y: number): number;
+  sampleBilinear(x: number, y: number): number;
   getUnpackVector(): number[];
   _idx(x: number, y: number): number;
   unpack(r: number, g: number, b: number): number;
@@ -7797,76 +10051,22 @@ declare class DEMData {
   };
   getPixels(): RGBAImage;
   backfillBorder(borderTile: DEMData, dx: number, dy: number): void;
-}
-type CircleGranularity = 1 | 3 | 5 | 7;
-declare class SubdivisionGranularityExpression {
-  /**
-   * A tile of zoom level 0 will be subdivided to this granularity level.
-   * Each subsequent zoom level will have its granularity halved.
-   */
-  private readonly _baseZoomGranularity;
-  /**
-   * No tile will have granularity level smaller than this.
-   */
-  private readonly _minGranularity;
-  constructor(baseZoomGranularity: number, minGranularity: number);
-  getGranularityForZoomLevel(zoomLevel: number): number;
-}
-declare class SubdivisionGranularitySetting {
-  /**
-   * Granularity settings used for fill and fill-extrusion layers (for fill, both polygons and their anti-aliasing outlines).
-   */
-  readonly fill: SubdivisionGranularityExpression;
-  /**
-   * Granularity used for the line layer.
-   */
-  readonly line: SubdivisionGranularityExpression;
-  /**
-   * Granularity used for geometry covering the entire tile: raster tiles, etc.
-   */
-  readonly tile: SubdivisionGranularityExpression;
-  /**
-   * Granularity used for stencil masks for tiles.
-   */
-  readonly stencil: SubdivisionGranularityExpression;
-  /**
-   * Controls the granularity of `pitch-alignment: map` circles and heatmap kernels.
-   * More granular circles will more closely follow the map's surface.
-   */
-  readonly circle: CircleGranularity;
-  constructor(options: {
-    /**
-     * Granularity settings used for fill and fill-extrusion layers (for fill, both polygons and their anti-aliasing outlines).
-     */
-    fill: SubdivisionGranularityExpression;
-    /**
-     * Granularity used for the line layer.
-     */
-    line: SubdivisionGranularityExpression;
-    /**
-     * Granularity used for geometry covering the entire tile: stencil masks, raster tiles, etc.
-     */
-    tile: SubdivisionGranularityExpression;
-    /**
-     * Granularity used for stencil masks for tiles.
-     */
-    stencil: SubdivisionGranularityExpression;
-    /**
-     * Controls the granularity of `pitch-alignment: map` circles and heatmap kernels.
-     * More granular circles will more closely follow the map's surface.
-     */
-    circle: CircleGranularity;
-  });
-  /**
-   * Granularity settings that disable subdivision altogether.
-   */
-  static readonly noSubdivision: SubdivisionGranularitySetting;
-}
+  private _getByteView;
+  private _unpackAtIndex;
+} //#endregion
+//#region src/source/worker_source.d.ts
+type TileEncoding = "mlt" | "mvt";
+/**
+ * Parameters to identify a tile
+ */
 type TileParameters = {
   type: string;
   source: string;
   uid: string | number;
 };
+/**
+ * Parameters that are send when requesting to load a tile to the worker
+ */
 type WorkerTileParameters = TileParameters & {
   tileID: OverscaledTileID;
   request?: RequestParameters;
@@ -7879,7 +10079,7 @@ type WorkerTileParameters = TileParameters & {
   collectResourceTiming?: boolean;
   returnDependencies?: boolean;
   subdivisionGranularity: SubdivisionGranularitySetting;
-  encoding?: string;
+  encoding?: TileEncoding;
   /**
    * Provide this property when the requested tile has a higher canonical Z than source maxzoom.
    * This allows the worker to know that it needs to overzoom from a source tile.
@@ -7887,10 +10087,16 @@ type WorkerTileParameters = TileParameters & {
   overzoomParameters?: OverzoomParameters;
   etag?: string;
 };
+/**
+ * Parameters needed in order to load a tile that is overzoomed from a source tile
+ */
 type OverzoomParameters = {
   maxZoomTileID: CanonicalTileID;
   overzoomRequest: RequestParameters;
 };
+/**
+ * The parameters needed in order to load a DEM tile
+ */
 type WorkerDEMTileParameters = TileParameters & {
   rawImageData: RGBAImage | ImageBitmap | ImageData;
   encoding: DEMEncoding;
@@ -7899,16 +10105,19 @@ type WorkerDEMTileParameters = TileParameters & {
   blueFactor: number;
   baseShift: number;
 };
+/**
+ * The worker tile's result type
+ */
 type WorkerTileWithData = ExpiryData & {
-  buckets: Array<Bucket>;
+  buckets: Bucket[];
   imageAtlas: ImageAtlas;
   dashPositions: Record<string, DashEntry>;
   glyphAtlasImage: AlphaImage;
   featureIndex: FeatureIndex;
   collisionBoxArray: CollisionBoxArray;
   rawTileData?: ArrayBuffer;
-  encoding?: string;
-  resourceTiming?: Array<PerformanceResourceTiming>;
+  encoding?: TileEncoding;
+  resourceTiming?: PerformanceResourceTiming[];
   glyphMap?: {
     [_: string]: {
       [_: number]: StyleGlyph;
@@ -7922,10 +10131,347 @@ type WorkerTileWithData = ExpiryData & {
 };
 type WorkerTileWithoutData = ExpiryData & {
   etagUnmodified: true;
-  resourceTiming?: Array<PerformanceResourceTiming>;
+  resourceTiming?: PerformanceResourceTiming[];
 };
 type WorkerTileResult = WorkerTileWithData | WorkerTileWithoutData;
-type OverlapMode = "never" | "always" | "cooperative";
+/**
+ * This is how the @see {@link WorkerSource} constructor should look like.
+ */
+type LoadTileResult = {
+  /**
+   * Indicates that the tile requested was not modified.
+   */
+  unmodified?: boolean;
+};
+/**
+ * A source containing vector tiles in [Maplibre Vector Tile format](https://maplibre.org/maplibre-tile-spec/) or [Mapbox Vector Tile format](https://docs.mapbox.com/vector-tiles/reference/).
+ * (See the [Style Specification](https://maplibre.org/maplibre-style-spec/) for detailed documentation of options.)
+ *
+ * @group Sources
+ *
+ * @example
+ * ```ts
+ * map.addSource('some id', {
+ *     type: 'vector',
+ *     url: 'https://demotiles.maplibre.org/tiles/tiles.json'
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * map.addSource('some id', {
+ *     type: 'vector',
+ *     tiles: ['https://d25uarhxywzl1j.cloudfront.net/v0.1/{z}/{x}/{y}.mvt'],
+ *     minzoom: 6,
+ *     maxzoom: 14
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * map.getSource('some id').setUrl("https://demotiles.maplibre.org/tiles/tiles.json");
+ * ```
+ *
+ * @example
+ * ```ts
+ * map.getSource('some id').setTiles(['https://d25uarhxywzl1j.cloudfront.net/v0.1/{z}/{x}/{y}.mvt']);
+ * ```
+ * @see [Add a vector tile source](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-vector-tile-source/)
+ */
+//#endregion
+//#region src/tile/tile_manager.d.ts
+type TileResult = {
+  tile: Tile;
+  tileID: OverscaledTileID;
+  queryGeometry: Point[];
+  cameraQueryGeometry: Point[];
+  scale: number;
+};
+/**
+ * @internal
+ * `TileManager` is responsible for
+ *
+ *  - creating an instance of `Source`
+ *  - caching tiles loaded from an instance of `Source`
+ *  - handling incoming source data events events from `Map` and coordinating updates
+ *  - providing the current renderable tile coordinates to the `Painter`
+ *  - loading the tiles needed to render a given viewport
+ *  - retaining the tiles needed as substitutes for pending loading tiles
+ *  - retaining the tiles needed for fading between parents and children (for raster sources)
+ *  - reloading tiles when source data or dependencies change
+ *  - handling tile expiration and refresh timers
+ *  - unloading cached tiles not needed to render a given viewport
+ *  - managing tile state and feature state
+ */
+declare class TileManager extends Evented {
+  id: string;
+  dispatcher: Dispatcher;
+  map: Map$1;
+  style: Style;
+  _source: Source;
+  /**
+   * @internal
+   * signifies that the TileJSON is loaded if applicable.
+   * if the source type does not come with a TileJSON, the flag signifies the
+   * source data has loaded (i.e geojson has been tiled on the worker and is ready)
+   */
+  _sourceLoaded: boolean;
+  _sourceErrored: boolean;
+  _inViewTiles: InViewTiles;
+  _prevLng: number;
+  _outOfViewCache: TileCache;
+  _timers: Record<string, ReturnType<typeof setTimeout>>;
+  _maxTileCacheSize: number;
+  _maxTileCacheZoomLevels: number;
+  _paused: boolean;
+  _shouldReloadOnResume: boolean;
+  transform: ITransform;
+  terrain: Terrain;
+  used: boolean;
+  usedForTerrain: boolean;
+  tileSize: number;
+  _state: SourceFeatureState;
+  _didEmitContent: boolean;
+  _updated: boolean;
+  _rasterFadeDuration: number;
+  _maxFadingAncestorLevels: number;
+  static maxUnderzooming: number;
+  static maxOverzooming: number;
+  constructor(id: string, options: SourceSpecification | CanvasSourceSpecification, dispatcher: Dispatcher);
+  onAdd(map: Map$1): void;
+  onRemove(map: Map$1): void;
+  /**
+   * Return true if no tile data is pending, tiles will not change unless
+   * an additional API call is received.
+   */
+  loaded(): boolean;
+  getSource(): Source;
+  getState(): SourceFeatureState;
+  pause(): void;
+  resume(): void;
+  _loadTile(tile: Tile, id: string, state: TileState): Promise<void>;
+  _unloadTile(tile: Tile): void;
+  _abortTile(tile: Tile): void;
+  serialize(): any;
+  prepare(context: Context): void;
+  /**
+   * Return all tile ids ordered with z-order, and cast to numbers
+   */
+  getIds(): string[];
+  getRenderableIds(symbolLayer?: boolean): string[];
+  hasRenderableParent(tileID: OverscaledTileID): boolean;
+  /**
+   * Reload tiles based on the current state of the source.
+   * @param sourceDataChanged - If `true`, reload all tiles using a state of 'expired', otherwise reload only non-errored tiles using state of 'reloading'.
+   * @param shouldReloadTileOptions - Set of options associated with a `MapSourceDataChangedEvent` that can be passed back to the associated `Source` determine whether a tile should be reloaded.
+   */
+  reload(sourceDataChanged?: boolean, shouldReloadTileOptions?: any): void;
+  _reloadTile(id: string, state: TileState): Promise<void>;
+  _tileLoaded(tile: Tile, id: string, previousState: TileState, result: LoadTileResult): void;
+  /**
+   * Get a specific tile by TileID
+   */
+  getTile(tileID: OverscaledTileID): Tile;
+  /**
+   * Get a specific tile by id
+   */
+  getTileByID(id: string): Tile | undefined;
+  /**
+   * Retain the uppermost loaded children of each provided target tile, within a variable covering zoom range.
+   *
+   * On pitched maps, different parts of the screen show different zoom levels simultaneously.
+   * Ideal tiles are generated using coveringTiles() above, which returns the ideal tile set for
+   * the current pitched plane, which can carry tiles of varying zooms (overscaledZ).
+   * See: https://maplibre.org/maplibre-gl-js/docs/examples/level-of-detail-control/
+   *
+   * A fixed `maxCoveringZoom` on a pitched map would incorrectly intersect with some
+   * ideal tiles and cause distant high-pitch tiles to skip their uppermost children.
+   *
+   * To solve this, we calculate the max covering zoom for each ideal tile separately using its
+   * `overscaledZ`. This effectively makes the "max covering zoom plane" parallel to the
+   * "ideal tile plane," ensuring that we correctly capture the uppermost children
+   * of each ideal tile across the pitched view.
+   *
+   * Analogy: imagine two sheets of paper in 3D space:
+   *   - one sheet = ideal tiles at varying overscaledZ
+   *   - the second sheet = maxCoveringZoom
+   *
+   * @param retainTileMap - this parameters will be updated with the child tiles to keep
+   * @param idealTilesWithoutData - which of the ideal tiles currently does not have loaded data
+   * @return a set of tiles that need to be loaded
+   */
+  _retainLoadedChildren(retainTileMap: Record<string, OverscaledTileID>, idealTilesWithoutData: Set<OverscaledTileID>): Set<OverscaledTileID>;
+  /**
+   * Return dictionary of qualified loaded descendents for each provided target tile id
+   */
+  _getLoadedDescendents(targetTileIDs: Set<OverscaledTileID>): Record<string, Tile[]>;
+  /**
+   * Determine if tile ids fully cover the current generation.
+   * - 1st generation: need 4 children or 1 overscaled child
+   * - 2nd generation: need 16 children or 1 overscaled child
+   */
+  _areDescendentsComplete(generationIDs: OverscaledTileID[], generationZ: number, ancestorZ: number): boolean;
+  /**
+   * Get a currently loaded tile.
+   * - a cached tile is not a loaded tile
+   * @returns the tile if it's in view and had data, null otherwise.
+   */
+  getLoadedTile(tileID: OverscaledTileID): Tile | null;
+  /**
+   * Resizes the tile cache based on the current viewport's size
+   * or the maxTileCacheSize option passed during map creation
+   *
+   * Larger viewports use more tiles and need larger caches. Larger viewports
+   * are more likely to be found on devices with more memory and on pages where
+   * the map is more important.
+   */
+  updateCacheSize(transform: IReadonlyTransform): void;
+  handleWrapJump(lng: number): void;
+  /**
+   * Removes tiles that are outside the viewport and adds new tiles that
+   * are inside the viewport.
+   */
+  update(transform: ITransform, terrain?: Terrain): void;
+  /**
+   * Remove raster tiles that are no longer retained
+   */
+  _cleanUpRasterTiles(retain: Record<string, OverscaledTileID>): void;
+  /**
+   * Remove vector tiles that are no longer retained and also not needed for symbol fading
+   */
+  _cleanUpVectorTiles(retain: Record<string, OverscaledTileID>): void;
+  /**
+   * Add ideal tiles needed for 3D terrain rendering
+   */
+  _addTerrainIdealTiles(idealTileIDs: OverscaledTileID[]): OverscaledTileID[];
+  releaseSymbolFadeTiles(): void;
+  /**
+   * Set tiles to be retained on update of the source. For ideal tiles that do not have data, retain their loaded
+   * children so they can be displayed as substitutes pending load of each ideal tile (to reduce flickering).
+   * If no loaded children are available, fallback to seeking loaded parents as an alternative substitute.
+   */
+  _updateRetainedTiles(idealTileIDs: OverscaledTileID[], zoom: number): Record<string, OverscaledTileID>;
+  /**
+   * Add a tile, given its coordinate, to the pyramid.
+   */
+  _addTile(tileID: OverscaledTileID): Tile;
+  /**
+   * Set a timeout to reload the tile after it expires
+   */
+  _setTileReloadTimer(id: string, tile: Tile): void;
+  _clearTileReloadTimer(id: string): void;
+  _resetTileReloadTimers(): void;
+  /**
+   * Reload any currently renderable tiles that are match one of the incoming `tileId` x/y/z
+   */
+  refreshTiles(tileIds: ICanonicalTileID[]): void;
+  /**
+   * Remove a tile, given its id, from the pyramid
+   */
+  _removeTile(id: string): void;
+  /** @internal
+   * Handles incoming source data messages (i.e. after the source has been updated via a worker that has fired
+   * to map.ts data event). For sources with mutable data, the 'content' event fires when the underlying data
+   * to a source has changed. (i.e. GeoJSONSource.setData and ImageSource.setCoordinates)
+   */
+  private _dataHandler;
+  /**
+   * Remove all tiles from this pyramid
+   */
+  clearTiles(): void;
+  /**
+   * Search through our current tiles and attempt to find the tiles that
+   * cover the given bounds.
+   * @param pointQueryGeometry - coordinates of the corners of bounding rectangle
+   * @returns result items have `{tile, minX, maxX, minY, maxY}`, where min/max bounding values are the given bounds transformed in into the coordinate space of this tile.
+   */
+  tilesIn(pointQueryGeometry: Point[], maxPitchScaleFactor: number, has3DLayer: boolean): TileResult[];
+  private transformBbox;
+  getVisibleCoordinates(symbolLayer?: boolean): OverscaledTileID[];
+  hasTransition(): boolean;
+  setRasterFadeDuration(fadeDuration: number): void;
+  /**
+   * Set the value of a particular state for a feature
+   */
+  setFeatureState(sourceLayer: string, featureId: number | string, state: any): void;
+  /**
+   * Resets the value of a particular state key for a feature
+   */
+  removeFeatureState(sourceLayer?: string, featureId?: number | string, key?: string): void;
+  /**
+   * Get the entire state object for a feature
+   */
+  getFeatureState(sourceLayer: string, featureId: number | string): FeatureState;
+  /**
+   * Sets the set of keys that the tile depends on. This allows tiles to
+   * be reloaded when their dependencies change.
+   */
+  setDependencies(tileKey: string, namespace: string, dependencies: string[]): void;
+  /**
+   * Reloads all tiles that depend on the given keys.
+   */
+  reloadTilesForDependencies(namespaces: string[], keys: string[]): void;
+  areTilesLoaded(): boolean;
+} //#endregion
+//#region src/symbol/cross_tile_symbol_index.d.ts
+type SymbolsByKeyEntry = {
+  index?: KDBush;
+  positions?: Array<{
+    x: number;
+    y: number;
+  }>;
+  crossTileIDs: number[];
+};
+declare class TileLayerIndex {
+  tileID: OverscaledTileID;
+  bucketInstanceId: number;
+  _symbolsByKey: Record<number, SymbolsByKeyEntry>;
+  constructor(tileID: OverscaledTileID, symbolInstances: SymbolInstanceArray, bucketInstanceId: number);
+  getScaledCoordinates(symbolInstance: SymbolInstance, childTileID: OverscaledTileID): {
+    x: number;
+    y: number;
+  };
+  findMatches(symbolInstances: SymbolInstanceArray, newTileID: OverscaledTileID, zoomCrossTileIDs: {
+    [crossTileID: number]: boolean;
+  }): void;
+  getCrossTileIDsLists(): number[][];
+}
+declare class CrossTileIDs {
+  maxCrossTileID: number;
+  constructor();
+  generate(): number;
+}
+declare class CrossTileSymbolLayerIndex {
+  indexes: { [zoom in string | number]: { [tileId in string | number]: TileLayerIndex } };
+  usedCrossTileIDs: { [zoom in string | number]: {
+    [crossTileID: number]: boolean;
+  } };
+  lng: number;
+  constructor();
+  handleWrapJump(lng: number): void;
+  addBucket(tileID: OverscaledTileID, bucket: SymbolBucket, crossTileIDs: CrossTileIDs): boolean;
+  removeBucketCrossTileIDs(zoom: string | number, removedBucket: TileLayerIndex): void;
+  removeStaleBuckets(currentIDs: { [k in string | number]: boolean }): boolean;
+}
+declare class CrossTileSymbolIndex {
+  layerIndexes: {
+    [layerId: string]: CrossTileSymbolLayerIndex;
+  };
+  crossTileIDs: CrossTileIDs;
+  maxBucketInstanceId: number;
+  bucketsInCurrentPlacement: {
+    [_: number]: boolean;
+  };
+  constructor();
+  addLayer(styleLayer: StyleLayer, tiles: Tile[], lng: number): boolean;
+  pruneUnusedLayers(usedLayers: string[]): void;
+} //#endregion
+//#region src/style/style_layer/overlap_mode.d.ts
+/**
+ * The overlap mode for properties like `icon-overlap`and `text-overlap`
+ */
+type OverlapMode = "never" | "always" | "cooperative"; //#endregion
+//#region src/symbol/grid_index.d.ts
 type QueryResult<T> = {
   key: T;
   x1: number;
@@ -7933,16 +10479,31 @@ type QueryResult<T> = {
   x2: number;
   y2: number;
 };
+/**
+ * A key for the grid
+ */
 type GridKey = {
   overlapMode?: OverlapMode;
 };
+/**
+ * @internal
+ * GridIndex is a data structure for testing the intersection of
+ * circles and rectangles in a 2d plane.
+ * It is optimized for rapid insertion and querying.
+ * GridIndex splits the plane into a set of "cells" and keeps track
+ * of which geometries intersect with each cell. At query time,
+ * full geometry comparisons are only done for items that share
+ * at least one cell. As long as the geometries are relatively
+ * uniformly distributed across the plane, this greatly reduces
+ * the number of comparisons necessary.
+ */
 declare class GridIndex<T extends GridKey> {
-  circleKeys: Array<T>;
-  boxKeys: Array<T>;
-  boxCells: Array<Array<number>>;
-  circleCells: Array<Array<number>>;
-  bboxes: Array<number>;
-  circles: Array<number>;
+  circleKeys: T[];
+  boxKeys: T[];
+  boxCells: number[][];
+  circleCells: number[][];
+  bboxes: number[];
+  circles: number[];
   xCellCount: number;
   yCellCount: number;
   width: number;
@@ -7968,14 +10529,15 @@ declare class GridIndex<T extends GridKey> {
   private _convertToYCellCoord;
   private _circlesCollide;
   private _circleAndRectCollide;
-}
+} //#endregion
+//#region src/symbol/collision_index.d.ts
 type PlacedCircles = {
-  circles: Array<number>;
+  circles: number[];
   offscreen: boolean;
   collisionDetected: boolean;
 };
 type PlacedBox = {
-  box: Array<number>;
+  box: number[];
   placeable: boolean;
   offscreen: boolean;
   occluded: boolean;
@@ -7986,6 +10548,17 @@ type FeatureKey = {
   collisionGroupID: number;
   overlapMode: OverlapMode;
 };
+/**
+ * @internal
+ * A collision index used to prevent symbols from overlapping. It keep tracks of
+ * where previous symbols have been placed and is used to check if a new
+ * symbol overlaps with any previously added symbols.
+ *
+ * There are two steps to insertion: first placeCollisionBox/Circles checks if
+ * there's room for a symbol, then insertCollisionBox/Circles actually puts the
+ * symbol in the index. The two step process allows paired symbols to be inserted
+ * together even if they overlap.
+ */
 declare class CollisionIndex {
   grid: GridIndex<FeatureKey>;
   ignoredGrid: GridIndex<FeatureKey>;
@@ -7999,21 +10572,21 @@ declare class CollisionIndex {
   constructor(transform: IReadonlyTransform, grid?: GridIndex<FeatureKey>, ignoredGrid?: GridIndex<FeatureKey>);
   placeCollisionBox(collisionBox: SingleCollisionBox, overlapMode: OverlapMode, textPixelRatio: number, tileID: OverscaledTileID, unwrappedTileID: UnwrappedTileID, pitchWithMap: boolean, rotateWithMap: boolean, translation: [number, number], collisionGroupPredicate?: (key: FeatureKey) => boolean, getElevation?: (x: number, y: number) => number, shift?: Point, simpleProjectionMatrix?: mat4): PlacedBox;
   placeCollisionCircles(overlapMode: OverlapMode, symbol: PlacedSymbol, lineVertexArray: SymbolLineVertexArray, glyphOffsetArray: GlyphOffsetArray, fontSize: number, unwrappedTileID: UnwrappedTileID, pitchedLabelPlaneMatrix: mat4, showCollisionCircles: boolean, pitchWithMap: boolean, collisionGroupPredicate: (key: FeatureKey) => boolean, circlePixelDiameter: number, textPixelPadding: number, translation: [number, number], getElevation: (x: number, y: number) => number): PlacedCircles;
-  projectPathToScreenSpace(projectedPath: Array<Point>, projectionContext: SymbolProjectionContext): Array<PointProjection>;
+  projectPathToScreenSpace(projectedPath: Point[], projectionContext: SymbolProjectionContext): PointProjection[];
   /**
    * Because the geometries in the CollisionIndex are an approximation of the shape of
    * symbols on the map, we use the CollisionIndex to look up the symbol part of
    * `queryRenderedFeatures`.
    */
-  queryRenderedSymbols(viewportQueryGeometry: Array<Point>): {};
-  insertCollisionBox(collisionBox: Array<number>, overlapMode: OverlapMode, ignorePlacement: boolean, bucketInstanceId: number, featureIndex: number, collisionGroupID: number): void;
-  insertCollisionCircles(collisionCircles: Array<number>, overlapMode: OverlapMode, ignorePlacement: boolean, bucketInstanceId: number, featureIndex: number, collisionGroupID: number): void;
+  queryRenderedSymbols(viewportQueryGeometry: Point[]): Record<number, number[]>;
+  insertCollisionBox(collisionBox: number[], overlapMode: OverlapMode, ignorePlacement: boolean, bucketInstanceId: number, featureIndex: number, collisionGroupID: number): void;
+  insertCollisionCircles(collisionCircles: number[], overlapMode: OverlapMode, ignorePlacement: boolean, bucketInstanceId: number, featureIndex: number, collisionGroupID: number): void;
   projectAndGetPerspectiveRatio(x: number, y: number, unwrappedTileID: UnwrappedTileID, getElevation?: (x: number, y: number) => number, simpleProjectionMatrix?: mat4): {
     x: number;
     y: number;
     perspectiveRatio: number;
     isOccluded: boolean;
-    signedDistanceFromCamera: any;
+    signedDistanceFromCamera: number;
   };
   getPerspectiveRatio(x: number, y: number, unwrappedTileID: UnwrappedTileID, getElevation?: (x: number, y: number) => number): number;
   isOffscreen(x1: number, y1: number, x2: number, y2: number): boolean;
@@ -8023,7 +10596,8 @@ declare class CollisionIndex {
    * Applies all layout+paint properties of the given box in order to find as good approximation of its screen-space bounding box as possible.
    */
   private _projectCollisionBox;
-}
+} //#endregion
+//#region src/style/style_layer/variable_text_anchor.d.ts
 declare enum TextAnchorEnum {
   "center" = 1,
   "left" = 2,
@@ -8035,7 +10609,8 @@ declare enum TextAnchorEnum {
   "bottom-left" = 8,
   "bottom-right" = 9
 }
-type TextAnchor = keyof typeof TextAnchorEnum;
+type TextAnchor = keyof typeof TextAnchorEnum; //#endregion
+//#region src/symbol/placement.d.ts
 declare class OpacityState {
   opacity: number;
   placed: boolean;
@@ -8060,7 +10635,7 @@ declare class RetainedQueryData {
   sourceLayerIndex: number;
   bucketIndex: number;
   tileID: OverscaledTileID;
-  featureSortOrder: Array<number>;
+  featureSortOrder: number[];
   constructor(bucketInstanceId: number, featureIndex: FeatureIndex, sourceLayerIndex: number, bucketIndex: number, tileID: OverscaledTileID);
 }
 type CollisionGroup = {
@@ -8127,15 +10702,15 @@ declare class Placement {
   collisionGroups: CollisionGroups;
   prevPlacement: Placement;
   zoomAtLastRecencyCheck: number;
-  collisionCircleArrays: { [k in any]: Array<number> };
+  collisionCircleArrays: { [k in any]: number[] };
   collisionBoxArrays: Map<number, Map<number, {
     text: number[];
     icon: number[];
   }>>;
   constructor(transform: ITransform, terrain: Terrain, fadeDuration: number, crossSourceCollisions: boolean, prevPlacement?: Placement);
   private _getTerrainElevationFunc;
-  getBucketParts(results: Array<BucketPart>, styleLayer: StyleLayer, tile: Tile, sortAcrossTiles: boolean): void;
-  attemptAnchorPlacement(textAnchorOffset: TextAnchorOffset, textBox: SingleCollisionBox, width: number, height: number, textBoxScale: number, rotateWithMap: boolean, pitchWithMap: boolean, textPixelRatio: number, tileID: OverscaledTileID, unwrappedTileID: any, collisionGroup: CollisionGroup, textOverlapMode: OverlapMode, symbolInstance: SymbolInstance, bucket: SymbolBucket, orientation: number, translationText: [number, number], translationIcon: [number, number], iconBox?: SingleCollisionBox | null, getElevation?: (x: number, y: number) => number, simpleProjectionMatrix?: mat4): {
+  getBucketParts(results: BucketPart[], styleLayer: StyleLayer, tile: Tile, sortAcrossTiles: boolean): void;
+  attemptAnchorPlacement(textAnchorOffset: TextAnchorOffset, textBox: SingleCollisionBox, width: number, height: number, textBoxScale: number, rotateWithMap: boolean, pitchWithMap: boolean, textPixelRatio: number, tileID: OverscaledTileID, unwrappedTileID: UnwrappedTileID, collisionGroup: CollisionGroup, textOverlapMode: OverlapMode, symbolInstance: SymbolInstance, bucket: SymbolBucket, orientation: number, translationText: [number, number], translationIcon: [number, number], iconBox?: SingleCollisionBox | null, getElevation?: (x: number, y: number) => number, simpleProjectionMatrix?: mat4): {
     shift: Point;
     placedGlyphBoxes: PlacedBox;
   };
@@ -8144,1134 +10719,131 @@ declare class Placement {
   markUsedJustification(bucket: SymbolBucket, placedAnchor: TextAnchor, symbolInstance: SymbolInstance, orientation: number): void;
   markUsedOrientation(bucket: SymbolBucket, orientation: number, symbolInstance: SymbolInstance): void;
   commit(now: number): void;
-  updateLayerOpacities(styleLayer: StyleLayer, tiles: Array<Tile>): void;
+  updateLayerOpacities(styleLayer: StyleLayer, tiles: Tile[]): void;
   updateBucketOpacities(bucket: SymbolBucket, tileID: OverscaledTileID, seenCrossTileIDs: { [k in string | number]: boolean }, collisionBoxArray?: CollisionBoxArray | null): void;
   symbolFadeChange(now: number): number;
   zoomAdjustment(zoom: number): number;
   hasTransitions(now: number): boolean;
   stillRecent(now: number, zoom: number): boolean;
   setStale(): void;
-}
-/**
- * Options to pass to query the map for the rendered features
- */
-type QueryRenderedFeaturesOptions = {
-  /**
-   * An array or set of [style layer IDs](https://maplibre.org/maplibre-style-spec/#layer-id) for the query to inspect.
-   * Only features within these layers will be returned. If this parameter is undefined, all layers will be checked.
-   */
-  layers?: Array<string> | Set<string>;
-  /**
-   * A [filter](https://maplibre.org/maplibre-style-spec/layers/#filter) to limit query results.
-   */
-  filter?: FilterSpecification;
-  /**
-   * An array of string representing the available images
-   */
-  availableImages?: Array<string>;
-  /**
-   * Whether to check if the [options.filter] conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
-   */
-  validate?: boolean;
-};
-type QueryRenderedFeaturesOptionsStrict = Omit<QueryRenderedFeaturesOptions, "layers"> & {
-  layers: Set<string> | null;
-  globalState?: Record<string, any>;
-};
-/**
- * The options object related to the {@link Map.querySourceFeatures} method
- */
-type QuerySourceFeatureOptions = {
-  /**
-   * The name of the source layer to query. *For vector tile sources, this parameter is required.* For GeoJSON sources, it is ignored.
-   */
-  sourceLayer?: string;
-  /**
-   * A [filter](https://maplibre.org/maplibre-style-spec/layers/#filter)
-   * to limit query results.
-   */
-  filter?: FilterSpecification;
-  /**
-   * Whether to check if the [parameters.filter] conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
-   * @defaultValue true
-   */
-  validate?: boolean;
-};
-type QuerySourceFeatureOptionsStrict = QuerySourceFeatureOptions & {
-  globalState?: Record<string, any>;
-};
-type QueryRenderedFeaturesResults = {
-  [key: string]: QueryRenderedFeaturesResultsItem[];
-};
-type QueryRenderedFeaturesResultsItem = QueryResultsItem & {
-  feature: MapGeoJSONFeature;
-};
-type TileState = "loading" | "loaded" | "reloading" | "unloaded" | "errored" | "expired";
-type CrossFadeArgs = {
-  fadingRole: FadingRoles;
-  fadingDirection: FadingDirections;
-  fadingParentID?: OverscaledTileID;
-  fadeEndTime: number;
-};
-declare enum FadingRoles {
-  Base = 0,
-  Parent = 1
-}
-declare enum FadingDirections {
-  Departing = 0,
-  Incoming = 1
-}
-/**
- * A tile object is the combination of a Coordinate, which defines
- * its place, as well as a unique ID and data tracking for its content
- */
-declare class Tile {
-  tileID: OverscaledTileID;
-  uid: number;
-  uses: number;
-  tileSize: number;
-  buckets: {
-    [_: string]: Bucket;
-  };
-  latestFeatureIndex: FeatureIndex | null;
-  latestRawTileData: ArrayBuffer;
-  latestEncoding: string;
-  imageAtlas: ImageAtlas;
-  imageAtlasTexture: Texture;
-  dashPositions: {
-    [_: string]: DashEntry;
-  };
-  glyphAtlasImage: AlphaImage;
-  glyphAtlasTexture: Texture;
-  etag?: string;
-  expirationTime: any;
-  expiredRequestCount: number;
-  state: TileState;
-  fadingRole: FadingRoles;
-  fadingDirection: FadingDirections;
-  fadingParentID: OverscaledTileID;
-  selfFading: boolean;
-  timeAdded: number;
-  fadeEndTime: number;
-  fadeOpacity: number;
-  collisionBoxArray: CollisionBoxArray;
-  redoWhenDone: boolean;
-  showCollisionBoxes: boolean;
-  placementSource: any;
-  actor: Actor;
-  vtLayers: {
-    [_: string]: VectorTileLayerLike;
-  };
-  neighboringTiles: Record<string, {
-    backfilled: boolean;
-  }>;
-  dem: DEMData;
-  demMatrix: mat4;
-  aborted: boolean;
-  needsHillshadePrepare: boolean;
-  needsTerrainPrepare: boolean;
-  abortController: AbortController;
-  texture: any;
-  fbo: Framebuffer;
-  demTexture: Texture;
-  refreshedUponExpiration: boolean;
-  reloadPromise: {
-    resolve: () => void;
-    reject: () => void;
-  };
-  resourceTiming: Array<PerformanceResourceTiming>;
-  queryPadding: number;
-  symbolFadeHoldUntil: number;
-  hasSymbolBuckets: boolean;
-  hasRTLText: boolean;
-  dependencies: any;
-  rtt: Array<{
-    id: number;
-    stamp: number;
-  }>;
-  rttFingerprint: {
-    [sourceId: string]: string;
-  };
-  /**
-   * @param tileID - the tile ID
-   * @param size - The tile size
-   */
-  constructor(tileID: OverscaledTileID, size: number);
-  isRenderable(symbolLayer: boolean): boolean;
-  /**
-   * @internal
-   * Many-to-one crossfade between a base tile and parent/ancestor tile (when zooming)
-   */
-  setCrossFadeLogic({
-    fadingRole,
-    fadingDirection,
-    fadingParentID,
-    fadeEndTime
-  }: CrossFadeArgs): void;
-  /**
-   * Self fading for edge tiles (when panning map)
-   */
-  setSelfFadeLogic(fadeEndTime: number): void;
-  resetFadeLogic(): void;
-  wasRequested(): boolean;
-  clearTextures(painter: any): void;
-  /**
-   * Given a data object with a 'buffers' property, load it into
-   * this tile's elementGroups and buffers properties and set loaded
-   * to true. If the data is null, like in the case of an empty
-   * GeoJSON tile, no-op but still set loaded to true.
-   * @param data - The data from the worker
-   * @param painter - the painter
-   * @param justReloaded - `true` to just reload
-   */
-  loadVectorData(data: WorkerTileResult, painter: Painter, justReloaded?: boolean | null): void;
-  /**
-   * Release any data or WebGL resources referenced by this tile.
-   */
-  unloadVectorData(): void;
-  getBucket(layer: StyleLayer): Bucket;
-  upload(context: Context): void;
-  prepare(imageManager: ImageManager): void;
-  queryRenderedFeatures(layers: {
-    [_: string]: StyleLayer;
-  }, serializedLayers: {
-    [_: string]: any;
-  }, sourceFeatureState: SourceFeatureState, queryGeometry: Array<Point>, cameraQueryGeometry: Array<Point>, scale: number, params: Pick<QueryRenderedFeaturesOptionsStrict, "filter" | "layers" | "availableImages"> | undefined, transform: IReadonlyTransform, maxPitchScaleFactor: number, pixelPosMatrix: mat4, getElevation: undefined | ((x: number, y: number) => number)): QueryResults;
-  querySourceFeatures(result: Array<GeoJSONFeature>, params?: QuerySourceFeatureOptionsStrict): void;
-  hasData(): boolean;
-  patternsLoaded(): boolean;
-  setExpiryData(data: ExpiryData): void;
-  getExpiryTimeout(): number;
-  setFeatureState(states: LayerFeatureStates, painter: any): void;
-  holdingForSymbolFade(): boolean;
-  symbolFadeFinished(): boolean;
-  clearSymbolFadeHold(): void;
-  setSymbolHoldDuration(duration: number): void;
-  setDependencies(namespace: string, dependencies: Array<string>): void;
-  hasDependency(namespaces: Array<string>, keys: Array<string>): boolean;
-}
-type FeatureStates = {
-  [featureId: string]: FeatureState;
-};
-type LayerFeatureStates = {
-  [layer: string]: FeatureStates;
-};
-declare class SourceFeatureState {
-  state: LayerFeatureStates;
-  stateChanges: LayerFeatureStates;
-  deletedStates: {};
-  revision: number;
-  constructor();
-  updateState(sourceLayer: string, featureId: number | string, newState: any): void;
-  removeFeatureState(sourceLayer: string, featureId?: number | string, key?: string): void;
-  getState(sourceLayer: string, featureId: number | string): FeatureState;
-  initializeTileState(tile: Tile, painter: any): void;
-  coalesceChanges(inViewTiles: InViewTiles, painter: any): void;
-}
-declare class CircleBucket<Layer extends CircleStyleLayer | HeatmapStyleLayer> implements Bucket {
-  index: number;
-  zoom: number;
-  overscaling: number;
-  layerIds: Array<string>;
-  layers: Array<Layer>;
-  stateDependentLayers: Array<Layer>;
-  stateDependentLayerIds: Array<string>;
-  layoutVertexArray: CircleLayoutArray;
-  layoutVertexBuffer: VertexBuffer;
-  indexArray: TriangleIndexArray;
-  indexBuffer: IndexBuffer;
-  hasDependencies: boolean;
-  programConfigurations: ProgramConfigurationSet<Layer>;
-  segments: SegmentVector;
-  uploaded: boolean;
-  constructor(options: BucketParameters<Layer>);
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
-    [_: string]: ImagePosition;
-  }): void;
-  isEmpty(): boolean;
-  uploadPending(): boolean;
-  upload(context: Context): void;
-  destroy(): void;
-  addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, canonical: CanonicalTileID, granularity?: CircleGranularity): void;
-}
-type CircleLayoutProps = {
-  "circle-sort-key": DataDrivenProperty<number>;
-};
-type CircleLayoutPropsPossiblyEvaluated = {
-  "circle-sort-key": PossiblyEvaluatedPropertyValue<number>;
-};
-type CirclePaintProps = {
-  "circle-radius": DataDrivenProperty<number>;
-  "circle-color": DataDrivenProperty<Color>;
-  "circle-blur": DataDrivenProperty<number>;
-  "circle-opacity": DataDrivenProperty<number>;
-  "circle-translate": DataConstantProperty<[number, number]>;
-  "circle-translate-anchor": DataConstantProperty<"map" | "viewport">;
-  "circle-pitch-scale": DataConstantProperty<"map" | "viewport">;
-  "circle-pitch-alignment": DataConstantProperty<"map" | "viewport">;
-  "circle-stroke-width": DataDrivenProperty<number>;
-  "circle-stroke-color": DataDrivenProperty<Color>;
-  "circle-stroke-opacity": DataDrivenProperty<number>;
-};
-type CirclePaintPropsPossiblyEvaluated = {
-  "circle-radius": PossiblyEvaluatedPropertyValue<number>;
-  "circle-color": PossiblyEvaluatedPropertyValue<Color>;
-  "circle-blur": PossiblyEvaluatedPropertyValue<number>;
-  "circle-opacity": PossiblyEvaluatedPropertyValue<number>;
-  "circle-translate": [number, number];
-  "circle-translate-anchor": "map" | "viewport";
-  "circle-pitch-scale": "map" | "viewport";
-  "circle-pitch-alignment": "map" | "viewport";
-  "circle-stroke-width": PossiblyEvaluatedPropertyValue<number>;
-  "circle-stroke-color": PossiblyEvaluatedPropertyValue<Color>;
-  "circle-stroke-opacity": PossiblyEvaluatedPropertyValue<number>;
-};
-declare class CircleStyleLayer extends StyleLayer {
-  _unevaluatedLayout: Layout<CircleLayoutProps>;
-  layout: PossiblyEvaluated<CircleLayoutProps, CircleLayoutPropsPossiblyEvaluated>;
-  _transitionablePaint: Transitionable<CirclePaintProps>;
-  _transitioningPaint: Transitioning<CirclePaintProps>;
-  paint: PossiblyEvaluated<CirclePaintProps, CirclePaintPropsPossiblyEvaluated>;
-  constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  createBucket(parameters: BucketParameters<any>): CircleBucket<any>;
-  queryRadius(bucket: Bucket): number;
-  queryIntersectsFeature({
-    queryGeometry,
-    feature,
-    featureState,
-    geometry,
-    transform,
-    pixelsToTileUnits,
-    unwrappedTileID,
-    getElevation
-  }: QueryIntersectsFeatureParams): boolean;
-}
-declare class FillBucket implements Bucket {
-  index: number;
-  zoom: number;
-  overscaling: number;
-  layers: Array<FillStyleLayer>;
-  layerIds: Array<string>;
-  stateDependentLayers: Array<FillStyleLayer>;
-  stateDependentLayerIds: Array<string>;
-  patternFeatures: Array<BucketFeature>;
-  layoutVertexArray: FillLayoutArray;
-  layoutVertexBuffer: VertexBuffer;
-  indexArray: TriangleIndexArray;
-  indexBuffer: IndexBuffer;
-  indexArray2: LineIndexArray;
-  indexBuffer2: IndexBuffer;
-  hasDependencies: boolean;
-  programConfigurations: ProgramConfigurationSet<FillStyleLayer>;
-  segments: SegmentVector;
-  segments2: SegmentVector;
-  uploaded: boolean;
-  constructor(options: BucketParameters<FillStyleLayer>);
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
-    [_: string]: ImagePosition;
-  }): void;
-  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }): void;
-  isEmpty(): boolean;
-  uploadPending(): boolean;
-  upload(context: Context): void;
-  destroy(): void;
-  addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }, subdivisionGranularity: SubdivisionGranularitySetting): void;
-}
-type FillLayoutProps = {
-  "fill-sort-key": DataDrivenProperty<number>;
-};
-type FillLayoutPropsPossiblyEvaluated = {
-  "fill-sort-key": PossiblyEvaluatedPropertyValue<number>;
-};
-type FillPaintProps = {
-  "fill-antialias": DataConstantProperty<boolean>;
-  "fill-opacity": DataDrivenProperty<number>;
-  "fill-color": DataDrivenProperty<Color>;
-  "fill-outline-color": DataDrivenProperty<Color>;
-  "fill-translate": DataConstantProperty<[number, number]>;
-  "fill-translate-anchor": DataConstantProperty<"map" | "viewport">;
-  "fill-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
-};
-type FillPaintPropsPossiblyEvaluated = {
-  "fill-antialias": boolean;
-  "fill-opacity": PossiblyEvaluatedPropertyValue<number>;
-  "fill-color": PossiblyEvaluatedPropertyValue<Color>;
-  "fill-outline-color": PossiblyEvaluatedPropertyValue<Color>;
-  "fill-translate": [number, number];
-  "fill-translate-anchor": "map" | "viewport";
-  "fill-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
-};
-declare class FillStyleLayer extends StyleLayer {
-  _unevaluatedLayout: Layout<FillLayoutProps>;
-  layout: PossiblyEvaluated<FillLayoutProps, FillLayoutPropsPossiblyEvaluated>;
-  _transitionablePaint: Transitionable<FillPaintProps>;
-  _transitioningPaint: Transitioning<FillPaintProps>;
-  paint: PossiblyEvaluated<FillPaintProps, FillPaintPropsPossiblyEvaluated>;
-  constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  recalculate(parameters: EvaluationParameters, availableImages: Array<string>): void;
-  createBucket(parameters: BucketParameters<any>): FillBucket;
-  queryRadius(): number;
-  queryIntersectsFeature({
-    queryGeometry,
-    geometry,
-    transform,
-    pixelsToTileUnits
-  }: QueryIntersectsFeatureParams): boolean;
-  isTileClipped(): boolean;
-}
-declare class FillExtrusionBucket implements Bucket {
-  index: number;
-  zoom: number;
-  overscaling: number;
-  layers: Array<FillExtrusionStyleLayer>;
-  layerIds: Array<string>;
-  stateDependentLayers: Array<FillExtrusionStyleLayer>;
-  stateDependentLayerIds: Array<string>;
-  layoutVertexArray: FillExtrusionLayoutArray;
-  layoutVertexBuffer: VertexBuffer;
-  centroidVertexArray: PosArray;
-  centroidVertexBuffer: VertexBuffer;
-  indexArray: TriangleIndexArray;
-  indexBuffer: IndexBuffer;
-  hasDependencies: boolean;
-  programConfigurations: ProgramConfigurationSet<FillExtrusionStyleLayer>;
-  segments: SegmentVector;
-  uploaded: boolean;
-  features: Array<BucketFeature>;
-  constructor(options: BucketParameters<FillExtrusionStyleLayer>);
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
-    [_: string]: ImagePosition;
-  }): void;
-  isEmpty(): boolean;
-  uploadPending(): boolean;
-  upload(context: Context): void;
-  destroy(): void;
-  addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }, subdivisionGranularity: SubdivisionGranularitySetting): void;
-  private processPolygon;
-  /**
-   * Generates side faces for the supplied geometry. Assumes `geometry` to be a line string, like the output of {@link subdivideVertexLine}.
-   * For rings, it is assumed that the first and last vertex of `geometry` are equal.
-   */
-  private _generateSideFaces;
-}
-type FillExtrusionPaintProps = {
-  "fill-extrusion-opacity": DataConstantProperty<number>;
-  "fill-extrusion-color": DataDrivenProperty<Color>;
-  "fill-extrusion-translate": DataConstantProperty<[number, number]>;
-  "fill-extrusion-translate-anchor": DataConstantProperty<"map" | "viewport">;
-  "fill-extrusion-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
-  "fill-extrusion-height": DataDrivenProperty<number>;
-  "fill-extrusion-base": DataDrivenProperty<number>;
-  "fill-extrusion-vertical-gradient": DataConstantProperty<boolean>;
-};
-type FillExtrusionPaintPropsPossiblyEvaluated = {
-  "fill-extrusion-opacity": number;
-  "fill-extrusion-color": PossiblyEvaluatedPropertyValue<Color>;
-  "fill-extrusion-translate": [number, number];
-  "fill-extrusion-translate-anchor": "map" | "viewport";
-  "fill-extrusion-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
-  "fill-extrusion-height": PossiblyEvaluatedPropertyValue<number>;
-  "fill-extrusion-base": PossiblyEvaluatedPropertyValue<number>;
-  "fill-extrusion-vertical-gradient": boolean;
-};
-declare class FillExtrusionStyleLayer extends StyleLayer {
-  _transitionablePaint: Transitionable<FillExtrusionPaintProps>;
-  _transitioningPaint: Transitioning<FillExtrusionPaintProps>;
-  paint: PossiblyEvaluated<FillExtrusionPaintProps, FillExtrusionPaintPropsPossiblyEvaluated>;
-  constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  createBucket(parameters: BucketParameters<FillExtrusionStyleLayer>): FillExtrusionBucket;
-  queryRadius(): number;
-  is3D(): boolean;
-  queryIntersectsFeature({
-    queryGeometry,
-    feature,
-    featureState,
-    geometry,
-    transform,
-    pixelsToTileUnits,
-    pixelPosMatrix
-  }: QueryIntersectsFeatureParams): boolean | number;
-}
-type HillshadePaintProps = {
-  "hillshade-illumination-direction": DataConstantProperty<NumberArray>;
-  "hillshade-illumination-altitude": DataConstantProperty<NumberArray>;
-  "hillshade-illumination-anchor": DataConstantProperty<"map" | "viewport">;
-  "hillshade-exaggeration": DataConstantProperty<number>;
-  "hillshade-shadow-color": DataConstantProperty<ColorArray>;
-  "hillshade-highlight-color": DataConstantProperty<ColorArray>;
-  "hillshade-accent-color": DataConstantProperty<Color>;
-  "hillshade-method": DataConstantProperty<"standard" | "basic" | "combined" | "igor" | "multidirectional">;
+} //#endregion
+//#region src/webgl/draw/draw_symbol.d.ts
+declare function drawSymbols(painter: Painter, tileManager: TileManager, layer: SymbolStyleLayer, coords: OverscaledTileID[], variableOffsets: { [_ in CrossTileID]: VariableOffset }, renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_circle.d.ts
+declare function drawCircles(painter: Painter, tileManager: TileManager, layer: CircleStyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_heatmap.d.ts
+declare function drawHeatmap(painter: Painter, tileManager: TileManager, layer: HeatmapStyleLayer, tileIDs: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_line.d.ts
+declare function drawLine(painter: Painter, tileManager: TileManager, layer: LineStyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_fill.d.ts
+declare function drawFill(painter: Painter, tileManager: TileManager, layer: FillStyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_fill_extrusion.d.ts
+declare function drawFillExtrusion(painter: Painter, tileManager: TileManager, layer: FillExtrusionStyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_hillshade.d.ts
+declare function drawHillshade(painter: Painter, tileManager: TileManager, layer: HillshadeStyleLayer, tileIDs: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_color_relief.d.ts
+declare function drawColorRelief(painter: Painter, tileManager: TileManager, layer: ColorReliefStyleLayer, tileIDs: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/style/style_layer/raster_style_layer_properties.g.d.ts
+type RasterPaintProps = {
+  "raster-opacity": DataConstantProperty<number>;
+  "raster-hue-rotate": DataConstantProperty<number>;
+  "raster-brightness-min": DataConstantProperty<number>;
+  "raster-brightness-max": DataConstantProperty<number>;
+  "raster-saturation": DataConstantProperty<number>;
+  "raster-contrast": DataConstantProperty<number>;
   "resampling": DataConstantProperty<"linear" | "nearest">;
+  "raster-resampling": DataConstantProperty<"linear" | "nearest">;
+  "raster-fade-duration": DataConstantProperty<number>;
 };
-type HillshadePaintPropsPossiblyEvaluated = {
-  "hillshade-illumination-direction": NumberArray;
-  "hillshade-illumination-altitude": NumberArray;
-  "hillshade-illumination-anchor": "map" | "viewport";
-  "hillshade-exaggeration": number;
-  "hillshade-shadow-color": ColorArray;
-  "hillshade-highlight-color": ColorArray;
-  "hillshade-accent-color": Color;
-  "hillshade-method": "standard" | "basic" | "combined" | "igor" | "multidirectional";
+type RasterPaintPropsPossiblyEvaluated = {
+  "raster-opacity": number;
+  "raster-hue-rotate": number;
+  "raster-brightness-min": number;
+  "raster-brightness-max": number;
+  "raster-saturation": number;
+  "raster-contrast": number;
   "resampling": "linear" | "nearest";
-};
-declare class HillshadeStyleLayer extends StyleLayer {
-  _transitionablePaint: Transitionable<HillshadePaintProps>;
-  _transitioningPaint: Transitioning<HillshadePaintProps>;
-  paint: PossiblyEvaluated<HillshadePaintProps, HillshadePaintPropsPossiblyEvaluated>;
+  "raster-resampling": "linear" | "nearest";
+  "raster-fade-duration": number;
+}; //#endregion
+//#region src/style/style_layer/raster_style_layer.d.ts
+declare class RasterStyleLayer extends StyleLayer {
+  _transitionablePaint: Transitionable<RasterPaintProps>;
+  _transitioningPaint: Transitioning<RasterPaintProps>;
+  paint: PossiblyEvaluated<RasterPaintProps, RasterPaintPropsPossiblyEvaluated>;
   constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  getIlluminationProperties(): {
-    directionRadians: number[];
-    altitudeRadians: number[];
-    shadowColor: Color[];
-    highlightColor: Color[];
-  };
-  hasOffscreenPass(): boolean;
-}
-type ColorReliefPaintProps = {
-  "color-relief-opacity": DataConstantProperty<number>;
-  "color-relief-color": ColorRampProperty;
-  "resampling": DataConstantProperty<"linear" | "nearest">;
+} //#endregion
+//#region src/webgl/draw/draw_raster.d.ts
+declare function drawRaster(painter: Painter, tileManager: TileManager, layer: RasterStyleLayer, tileIDs: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/style/style_layer/background_style_layer_properties.g.d.ts
+type BackgroundPaintProps = {
+  "background-color": DataConstantProperty<Color>;
+  "background-pattern": CrossFadedProperty<ResolvedImage>;
+  "background-opacity": DataConstantProperty<number>;
 };
-type ColorReliefPaintPropsPossiblyEvaluated = {
-  "color-relief-opacity": number;
-  "color-relief-color": ColorRampProperty;
-  "resampling": "linear" | "nearest";
-};
-type ColorRamp = {
-  elevationStops: Array<number>;
-  colorStops: Array<Color>;
-};
-type ColorRampTextures = {
-  elevationTexture: Texture;
-  colorTexture: Texture;
-};
-declare class ColorReliefStyleLayer extends StyleLayer {
-  colorRampExpression: StylePropertyExpression;
-  colorRampTextures: ColorRampTextures;
-  _transitionablePaint: Transitionable<ColorReliefPaintProps>;
-  _transitioningPaint: Transitioning<ColorReliefPaintProps>;
-  paint: PossiblyEvaluated<ColorReliefPaintProps, ColorReliefPaintPropsPossiblyEvaluated>;
+type BackgroundPaintPropsPossiblyEvaluated = {
+  "background-color": Color;
+  "background-pattern": CrossFaded<ResolvedImage>;
+  "background-opacity": number;
+}; //#endregion
+//#region src/style/style_layer/background_style_layer.d.ts
+declare class BackgroundStyleLayer extends StyleLayer {
+  _transitionablePaint: Transitionable<BackgroundPaintProps>;
+  _transitioningPaint: Transitioning<BackgroundPaintProps>;
+  paint: PossiblyEvaluated<BackgroundPaintProps, BackgroundPaintPropsPossiblyEvaluated>;
   constructor(layer: LayerSpecification, globalState: Record<string, any>);
+} //#endregion
+//#region src/webgl/draw/draw_background.d.ts
+declare function drawBackground(painter: Painter, tileManager: TileManager, layer: BackgroundStyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_debug.d.ts
+declare function drawDebugPadding(painter: Painter): void;
+declare function drawDebug(painter: Painter, tileManager: TileManager, coords: OverscaledTileID[]): void; //#endregion
+//#region src/style/style_layer/custom_style_layer.d.ts
+/**
+ * Type for an object literal that specifies a map tile.
+ */
+type UnwrappedTileIDLiteral = {
   /**
-   * Create the color ramp, enforcing a maximum length for the vectors. This modifies the internal color ramp,
-   * so that the remapping is only performed once.
-   *
-   * @param maxLength - the maximum number of stops in the color ramp
-   *
-   * @return a `ColorRamp` object with no more than `maxLength` stops.
-   *
+   * An optional wrap values.
+   * Useful in scenarios when multiple world copies are visible, such as a zoomed out map or a map centered around the antimeridian.
+   * Tiles from each world copy should have different wrap values, with wrap increasing for each copy from west to east.
    */
-  _createColorRamp(maxLength: number): ColorRamp;
-  _colorRampChanged(): boolean;
-  getColorRampTextures(context: Context, maxLength: number, unpackVector: number[]): ColorRampTextures;
-  hasOffscreenPass(): boolean;
-}
-type LineClips = {
-  start: number;
-  end: number;
-};
-type GradientTexture = {
-  texture?: Texture;
-  gradient?: RGBAImage;
-  version?: number;
-};
-declare class LineBucket implements Bucket {
-  distance: number;
-  totalDistance: number;
-  maxLineLength: number;
-  scaledDistance: number;
-  lineClips?: LineClips;
-  e1: number;
-  e2: number;
-  index: number;
-  zoom: number;
-  overscaling: number;
-  layers: Array<LineStyleLayer>;
-  layerIds: Array<string>;
-  gradients: {
-    [x: string]: GradientTexture;
-  };
-  stateDependentLayers: Array<any>;
-  stateDependentLayerIds: Array<string>;
-  patternFeatures: Array<BucketFeature>;
-  lineClipsArray: Array<LineClips>;
-  layoutVertexArray: LineLayoutArray;
-  layoutVertexBuffer: VertexBuffer;
-  layoutVertexArray2: LineExtLayoutArray;
-  layoutVertexBuffer2: VertexBuffer;
-  indexArray: TriangleIndexArray;
-  indexBuffer: IndexBuffer;
-  hasDependencies: boolean;
-  programConfigurations: ProgramConfigurationSet<LineStyleLayer>;
-  segments: SegmentVector;
-  uploaded: boolean;
-  constructor(options: BucketParameters<LineStyleLayer>);
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
-    [_: string]: ImagePosition;
-  }, dashPositions: {
-    [_: string]: DashEntry;
-  }): void;
-  addFeatures(options: PopulateParameters, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }, dashPositions?: {
-    [_: string]: DashEntry;
-  }): void;
-  isEmpty(): boolean;
-  uploadPending(): boolean;
-  upload(context: Context): void;
-  destroy(): void;
-  lineFeatureClips(feature: BucketFeature): LineClips | undefined;
-  addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, canonical: CanonicalTileID, imagePositions: {
-    [_: string]: ImagePosition;
-  }, dashPositions: Record<string, DashEntry>, subdivisionGranularity: SubdivisionGranularitySetting): void;
-  addLine(vertices: Array<Point>, feature: BucketFeature, join: string, cap: string, miterLimit: number, roundLimit: number, canonical: CanonicalTileID | undefined, subdivisionGranularity: SubdivisionGranularitySetting): void;
+  wrap?: number;
   /**
-   * Add two vertices to the buffers.
-   *
-   * @param p - the line vertex to add buffer vertices for
-   * @param normal - vertex normal
-   * @param endLeft - extrude to shift the left vertex along the line
-   * @param endRight - extrude to shift the left vertex along the line
-   * @param segment - the segment object to add the vertex to
-   * @param round - whether this is a round cap
+   * The tile's XY coordinates and zoom level.
    */
-  addCurrentVertex(p: Point, normal: Point, endLeft: number, endRight: number, segment: Segment, round?: boolean): void;
-  addHalfVertex({
-    x,
-    y
-  }: Point, extrudeX: number, extrudeY: number, round: boolean, up: boolean, dir: number, segment: Segment): void;
-  updateScaledDistance(): void;
-  updateDistance(prev: Point, next: Point): void;
-  private hasLineDasharray;
-  private addLineDashDependencies;
-}
-type LineLayoutProps = {
-  "line-cap": DataDrivenProperty<"butt" | "round" | "square">;
-  "line-join": DataDrivenProperty<"bevel" | "round" | "miter">;
-  "line-miter-limit": DataDrivenProperty<number>;
-  "line-round-limit": DataDrivenProperty<number>;
-  "line-sort-key": DataDrivenProperty<number>;
-};
-type LineLayoutPropsPossiblyEvaluated = {
-  "line-cap": PossiblyEvaluatedPropertyValue<"butt" | "round" | "square">;
-  "line-join": PossiblyEvaluatedPropertyValue<"bevel" | "round" | "miter">;
-  "line-miter-limit": PossiblyEvaluatedPropertyValue<number>;
-  "line-round-limit": PossiblyEvaluatedPropertyValue<number>;
-  "line-sort-key": PossiblyEvaluatedPropertyValue<number>;
-};
-type LinePaintProps = {
-  "line-opacity": DataDrivenProperty<number>;
-  "line-color": DataDrivenProperty<Color>;
-  "line-translate": DataConstantProperty<[number, number]>;
-  "line-translate-anchor": DataConstantProperty<"map" | "viewport">;
-  "line-width": DataDrivenProperty<number>;
-  "line-gap-width": DataDrivenProperty<number>;
-  "line-offset": DataDrivenProperty<number>;
-  "line-blur": DataDrivenProperty<number>;
-  "line-dasharray": CrossFadedDataDrivenProperty<Array<number>>;
-  "line-pattern": CrossFadedDataDrivenProperty<ResolvedImage>;
-  "line-gradient": ColorRampProperty;
-};
-type LinePaintPropsPossiblyEvaluated = {
-  "line-opacity": PossiblyEvaluatedPropertyValue<number>;
-  "line-color": PossiblyEvaluatedPropertyValue<Color>;
-  "line-translate": [number, number];
-  "line-translate-anchor": "map" | "viewport";
-  "line-width": PossiblyEvaluatedPropertyValue<number>;
-  "line-gap-width": PossiblyEvaluatedPropertyValue<number>;
-  "line-offset": PossiblyEvaluatedPropertyValue<number>;
-  "line-blur": PossiblyEvaluatedPropertyValue<number>;
-  "line-dasharray": PossiblyEvaluatedPropertyValue<CrossFaded<Array<number>>>;
-  "line-pattern": PossiblyEvaluatedPropertyValue<CrossFaded<ResolvedImage>>;
-  "line-gradient": ColorRampProperty;
-};
-declare class LineStyleLayer extends StyleLayer {
-  _unevaluatedLayout: Layout<LineLayoutProps>;
-  layout: PossiblyEvaluated<LineLayoutProps, LineLayoutPropsPossiblyEvaluated>;
-  gradientVersion: number;
-  stepInterpolant: boolean;
-  _transitionablePaint: Transitionable<LinePaintProps>;
-  _transitioningPaint: Transitioning<LinePaintProps>;
-  paint: PossiblyEvaluated<LinePaintProps, LinePaintPropsPossiblyEvaluated>;
-  constructor(layer: LayerSpecification, globalState: Record<string, any>);
-  _handleSpecialPaintPropertyUpdate(name: string): void;
-  gradientExpression(): StylePropertyExpression;
-  recalculate(parameters: EvaluationParameters, availableImages: Array<string>): void;
-  createBucket(parameters: BucketParameters<any>): LineBucket;
-  queryRadius(bucket: Bucket): number;
-  queryIntersectsFeature({
-    queryGeometry,
-    feature,
-    featureState,
-    geometry,
-    transform,
-    pixelsToTileUnits
-  }: QueryIntersectsFeatureParams): boolean;
-  isTileClipped(): boolean;
-}
-type TypedStyleLayer = CircleStyleLayer | FillStyleLayer | FillExtrusionStyleLayer | HeatmapStyleLayer | HillshadeStyleLayer | ColorReliefStyleLayer | LineStyleLayer | SymbolStyleLayer;
-type BinderUniform = {
-  name: string;
-  property: string;
-  binding: Uniform<any>;
-};
-type PaintOptions = {
-  imagePositions: {
-    [_: string]: ImagePosition;
-  };
-  dashPositions?: {
-    [_: string]: DashEntry;
-  };
-  canonical?: CanonicalTileID;
-  formattedSection?: FormattedSection;
-  globalState?: Record<string, any>;
-};
-interface AttributeBinder {
-  populatePaintArray(length: number, feature: Feature, options: PaintOptions): void;
-  updatePaintArray(start: number, length: number, feature: Feature, featureState: FeatureState, options: PaintOptions): void;
-  upload(a: Context): void;
-  destroy(): void;
-}
-interface UniformBinder {
-  uniformNames: Array<string>;
-  setUniform(uniform: Uniform<any>, globals: GlobalProperties, currentValue: PossiblyEvaluatedPropertyValue<any>, uniformName: string): void;
-  getBinding(context: Context, location: WebGLUniformLocation, name: string): Partial<Uniform<any>>;
-}
-declare class ProgramConfiguration {
-  binders: {
-    [_: string]: AttributeBinder | UniformBinder;
-  };
-  cacheKey: string;
-  _buffers: Array<VertexBuffer>;
-  constructor(layer: TypedStyleLayer, zoom: number, filterProperties: (_: string) => boolean);
-  getMaxValue(property: string): number;
-  populatePaintArrays(newLength: number, feature: Feature, options: PaintOptions): void;
-  setConstantPatternPositions(posTo: ImagePosition, posFrom: ImagePosition): void;
-  setConstantDashPositions(dashTo: DashEntry, dashFrom: DashEntry): void;
-  updatePaintArrays(featureStates: FeatureStates, featureMap: FeaturePositionMap, vtLayer: VectorTileLayerLike, layer: TypedStyleLayer, options: PaintOptions): boolean;
-  defines(): Array<string>;
-  getBinderAttributes(): Array<string>;
-  getBinderUniforms(): Array<string>;
-  getPaintVertexBuffers(): Array<VertexBuffer>;
-  getUniforms(context: Context, locations: UniformLocations): Array<BinderUniform>;
-  setUniforms(context: Context, binderUniforms: Array<BinderUniform>, properties: any, globals: GlobalProperties): void;
-  updatePaintBuffers(crossfade?: CrossfadeParameters): void;
-  upload(context: Context): void;
-  destroy(): void;
-}
-declare class ProgramConfigurationSet<Layer extends TypedStyleLayer> {
-  programConfigurations: {
-    [_: string]: ProgramConfiguration;
-  };
-  needsUpload: boolean;
-  _featureMap: FeaturePositionMap;
-  _bufferOffset: number;
-  constructor(layers: ReadonlyArray<Layer>, zoom: number, filterProperties?: (_: string) => boolean);
-  populatePaintArrays(length: number, feature: Feature, index: number, options: PaintOptions): void;
-  updatePaintArrays(featureStates: FeatureStates, vtLayer: VectorTileLayerLike, layers: ReadonlyArray<TypedStyleLayer>, options: PaintOptions): void;
-  get(layerId: string): ProgramConfiguration;
-  upload(context: Context): void;
-  destroy(): void;
-}
-declare class CullFaceMode {
-  enable: boolean;
-  mode: CullFaceModeType;
-  frontFace: FrontFaceType;
-  constructor(enable: boolean, mode: CullFaceModeType, frontFace: FrontFaceType);
-  static disabled: Readonly<CullFaceMode>;
-  /**
-   * The standard GL cull mode. Culls backfacing triangles when counterclockwise vertex order is used.
-   * Use for 3D geometry such as terrain.
-   */
-  static backCCW: Readonly<CullFaceMode>;
-  /**
-   * Opposite of {@link backCCW}. Culls front-facing triangles when counterclockwise vertex order is used.
-   */
-  static frontCCW: Readonly<CullFaceMode>;
-}
-type SkyProps = {
-  "sky-color": DataConstantProperty<Color>;
-  "horizon-color": DataConstantProperty<Color>;
-  "fog-color": DataConstantProperty<Color>;
-  "fog-ground-blend": DataConstantProperty<number>;
-  "horizon-fog-blend": DataConstantProperty<number>;
-  "sky-horizon-blend": DataConstantProperty<number>;
-  "atmosphere-blend": DataConstantProperty<number>;
-};
-type SkyPropsPossiblyEvaluated = {
-  "sky-color": Color;
-  "horizon-color": Color;
-  "fog-color": Color;
-  "fog-ground-blend": number;
-  "horizon-fog-blend": number;
-  "sky-horizon-blend": number;
-  "atmosphere-blend": number;
-};
-declare class Sky extends Evented {
-  properties: PossiblyEvaluated<SkyProps, SkyPropsPossiblyEvaluated>;
-  /**
-   * This is used to cache the gl mesh for the sky, it should be initialized only once.
-   */
-  mesh: Mesh | undefined;
-  atmosphereMesh: Mesh | undefined;
-  _transitionable: Transitionable<SkyProps>;
-  _transitioning: Transitioning<SkyProps>;
-  constructor(sky?: SkySpecification);
-  setSky(sky?: SkySpecification, options?: StyleSetterOptions): void;
-  getSky(): SkySpecification;
-  updateTransitions(parameters: TransitionParameters): void;
-  hasTransition(): boolean;
-  recalculate(parameters: EvaluationParameters): void;
-  _validate(validate: Function, value: unknown, options?: StyleSetterOptions): boolean;
-  /**
-   * Currently fog is a very simple implementation, and should only used
-   * to create an atmosphere near the horizon.
-   * But because the fog is drawn from the far-clipping-plane to
-   * map-center, and because the fog does nothing know about the horizon,
-   * this method does a fadeout in respect of pitch. So, when the horizon
-   * gets out of view, which is at about pitch 70, this methods calculates
-   * the corresponding opacity values. Below pitch 60 the fog is completely
-   * invisible.
-   */
-  calculateFogBlendOpacity(pitch: number): number;
-}
-type TerrainPreludeUniformsType = {
-  "u_depth": Uniform1i;
-  "u_terrain": Uniform1i;
-  "u_terrain_dim": Uniform1f;
-  "u_terrain_matrix": UniformMatrix4f;
-  "u_terrain_unpack": Uniform4f;
-  "u_terrain_exaggeration": Uniform1f;
-};
-type ProjectionPreludeUniformsType = {
-  "u_projection_matrix": UniformMatrix4f;
-  "u_projection_tile_mercator_coords": Uniform4f;
-  "u_projection_clipping_plane": Uniform4f;
-  "u_projection_transition": Uniform1f;
-  "u_projection_fallback_matrix": UniformMatrix4f;
-};
-type DrawMode = WebGLRenderingContextBase["LINES"] | WebGLRenderingContextBase["TRIANGLES"] | WebGL2RenderingContext["LINE_STRIP"];
-declare class Program<Us extends UniformBindings> {
-  program: WebGLProgram;
-  attributes: {
-    [_: string]: number;
-  };
-  numAttributes: number;
-  fixedUniforms: Us;
-  terrainUniforms: TerrainPreludeUniformsType;
-  projectionUniforms: ProjectionPreludeUniformsType;
-  binderUniforms: Array<BinderUniform>;
-  failedToCreate: boolean;
-  constructor(context: Context, source: PreparedShader, configuration: ProgramConfiguration, fixedUniforms: (b: Context, a: UniformLocations) => Us, showOverdrawInspector: boolean, hasTerrain: boolean, projectionPrelude: PreparedShader, projectionDefine: string, extraDefines?: Array<string>);
-  draw(context: Context, drawMode: DrawMode, depthMode: Readonly<DepthMode>, stencilMode: Readonly<StencilMode>, colorMode: Readonly<ColorMode>, cullFaceMode: Readonly<CullFaceMode>, uniformValues: UniformValues<Us>, terrain: TerrainData, projectionData: ProjectionData, layerID: string, layoutVertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, segments: SegmentVector, currentProperties?: any, zoom?: number | null, configuration?: ProgramConfiguration | null, dynamicLayoutBuffer?: VertexBuffer | null, dynamicLayoutBuffer2?: VertexBuffer | null, dynamicLayoutBuffer3?: VertexBuffer | null): void;
-}
-declare class VertexBuffer {
-  length: number;
-  attributes: ReadonlyArray<StructArrayMember>;
-  itemSize: number;
-  dynamicDraw: boolean;
-  context: Context;
-  buffer: WebGLBuffer;
-  /**
-   * @param dynamicDraw - Whether this buffer will be repeatedly updated.
-   */
-  constructor(context: Context, array: StructArray, attributes: ReadonlyArray<StructArrayMember>, dynamicDraw?: boolean);
-  bind(): void;
-  updateData(array: StructArray): void;
-  enableAttributes(gl: WebGLRenderingContext | WebGL2RenderingContext, program: Program<any>): void;
-  /**
-   * Set the attribute pointers in a WebGL context
-   * @param gl - The WebGL context
-   * @param program - The active WebGL program
-   * @param vertexOffset - Index of the starting vertex of the segment
-   */
-  setVertexAttribPointers(gl: WebGLRenderingContext | WebGL2RenderingContext, program: Program<any>, vertexOffset?: number | null): void;
-  /**
-   * Destroy the GL buffer bound to the given WebGL context
-   */
-  destroy(): void;
-}
-type ClearArgs = {
-  color?: Color;
-  depth?: number;
-  stencil?: number;
-};
-declare class Context {
-  gl: WebGLRenderingContext | WebGL2RenderingContext;
-  currentNumAttributes: number;
-  maxTextureSize: number;
-  clearColor: ClearColor;
-  clearDepth: ClearDepth;
-  clearStencil: ClearStencil;
-  colorMask: ColorMask;
-  depthMask: DepthMask;
-  stencilMask: StencilMask;
-  stencilFunc: StencilFunc;
-  stencilOp: StencilOp;
-  stencilTest: StencilTest;
-  depthRange: DepthRange;
-  depthTest: DepthTest;
-  depthFunc: DepthFunc;
-  blend: Blend;
-  blendFunc: BlendFunc;
-  blendColor: BlendColor;
-  blendEquation: BlendEquation;
-  cullFace: CullFace;
-  cullFaceSide: CullFaceSide;
-  frontFace: FrontFace;
-  program: ProgramValue;
-  activeTexture: ActiveTextureUnit;
-  viewport: Viewport;
-  bindFramebuffer: BindFramebuffer;
-  bindRenderbuffer: BindRenderbuffer;
-  bindTexture: BindTexture;
-  bindVertexBuffer: BindVertexBuffer;
-  bindElementBuffer: BindElementBuffer;
-  bindVertexArray: BindVertexArray;
-  pixelStoreUnpack: PixelStoreUnpack;
-  pixelStoreUnpackPremultiplyAlpha: PixelStoreUnpackPremultiplyAlpha;
-  pixelStoreUnpackFlipY: PixelStoreUnpackFlipY;
-  extTextureFilterAnisotropic: EXT_texture_filter_anisotropic | null;
-  extTextureFilterAnisotropicMax?: GLfloat;
-  HALF_FLOAT?: GLenum;
-  RGBA16F?: GLenum;
-  RGB16F?: GLenum;
-  constructor(gl: WebGLRenderingContext | WebGL2RenderingContext);
-  setDefault(): void;
-  setDirty(): void;
-  createIndexBuffer(array: TriangleIndexArray | LineIndexArray | LineStripIndexArray, dynamicDraw?: boolean): IndexBuffer;
-  createVertexBuffer(array: StructArray, attributes: ReadonlyArray<StructArrayMember>, dynamicDraw?: boolean): VertexBuffer;
-  createRenderbuffer(storageFormat: number, width: number, height: number): WebGLRenderbuffer;
-  createFramebuffer(width: number, height: number, hasDepth: boolean, hasStencil: boolean): Framebuffer;
-  clear({
-    color,
-    depth,
-    stencil
-  }: ClearArgs): void;
-  setCullFace(cullFaceMode: Readonly<CullFaceMode>): void;
-  setDepthMode(depthMode: Readonly<DepthMode>): void;
-  setStencilMode(stencilMode: Readonly<StencilMode>): void;
-  setColorMode(colorMode: Readonly<ColorMode>): void;
-  createVertexArray(): WebGLVertexArrayObject | undefined;
-  deleteVertexArray(x: WebGLVertexArrayObject | undefined): void;
-  unbindVAO(): void;
-}
-type TextureFormat = WebGLRenderingContextBase["RGBA"] | WebGLRenderingContextBase["ALPHA"];
-type TextureFilter = WebGLRenderingContextBase["LINEAR"] | WebGLRenderingContextBase["LINEAR_MIPMAP_NEAREST"] | WebGLRenderingContextBase["NEAREST"];
-type TextureWrap = WebGLRenderingContextBase["REPEAT"] | WebGLRenderingContextBase["CLAMP_TO_EDGE"] | WebGLRenderingContextBase["MIRRORED_REPEAT"];
-type EmptyImage = {
-  width: number;
-  height: number;
-  data: null;
-};
-type DataTextureImage = RGBAImage | AlphaImage | EmptyImage;
-type TextureImage = TexImageSource | DataTextureImage;
-declare class Texture {
-  context: Context;
-  size: [number, number];
-  texture: WebGLTexture;
-  format: TextureFormat;
-  filter: TextureFilter;
-  wrap: TextureWrap;
-  useMipmap: boolean;
-  /** Tracks the original handle to detect corruption after context loss (#2811) */
-  private _ownedHandle;
-  constructor(context: Context, image: TextureImage, format: TextureFormat, options?: {
-    premultiply?: boolean;
-    useMipmap?: boolean;
-  } | null);
-  update(image: TextureImage, options?: {
-    premultiply?: boolean;
-    useMipmap?: boolean;
-  } | null, position?: {
+  canonical: {
     x: number;
     y: number;
-  }): void;
-  private _uploadDomImage;
-  private _uploadRawData;
-  private _updateDomImage;
-  private _updateRawData;
-  bind(filter: TextureFilter, wrap: TextureWrap, minFilter?: TextureFilter | null): void;
-  isSizePowerOfTwo(): boolean;
-  destroy(): void;
-}
-declare class ImagePosition {
-  paddedRect: Rect;
-  pixelRatio: number;
-  version: number;
-  stretchY: Array<[number, number]>;
-  stretchX: Array<[number, number]>;
-  content: [number, number, number, number];
-  textFitWidth: TextFit;
-  textFitHeight: TextFit;
-  constructor(paddedRect: Rect, {
-    pixelRatio,
-    version,
-    stretchX,
-    stretchY,
-    content,
-    textFitWidth,
-    textFitHeight
-  }: StyleImage);
-  get tl(): [number, number];
-  get br(): [number, number];
-  get tlbr(): Array<number>;
-  get displaySize(): [number, number];
-}
+    z: number;
+  };
+};
 /**
- * A class holding all the images
+ * Parameters object for the {@link CustomRenderMethodInput.getProjectionData} function.
+ * Contains the requested tile ID and more.
  */
-declare class ImageAtlas {
-  image: RGBAImage;
-  iconPositions: {
-    [_: string]: ImagePosition;
-  };
-  patternPositions: {
-    [_: string]: ImagePosition;
-  };
-  haveRenderCallbacks: Array<string>;
-  uploaded: boolean;
-  constructor(icons: GetImagesResponse, patterns: GetImagesResponse);
-  addImages(images: {
-    [_: string]: StyleImage;
-  }, positions: {
-    [_: string]: ImagePosition;
-  }, bins: Array<Rect>): void;
-  patchUpdatedImages(imageManager: ImageManager, texture: Texture): void;
-  patchUpdatedImage(position: ImagePosition, image: StyleImage, texture: Texture): void;
-}
-type Pattern = {
-  bin: PotpackBox;
-  position: ImagePosition;
-};
-declare class ImageManager extends Evented {
-  images: {
-    [_: string]: StyleImage;
-  };
-  updatedImages: {
-    [_: string]: boolean;
-  };
-  callbackDispatchedThisFrame: {
-    [_: string]: boolean;
-  };
-  loaded: boolean;
+type CustomLayerProjectionDataParams = {
   /**
-   * This is used to track requests for images that are not yet available. When the image is loaded,
-   * the requestors will be notified.
+   * The coordinates of the current tile.
    */
-  requestors: Array<{
-    ids: Array<string>;
-    promiseResolve: (value: GetImagesResponse) => void;
-  }>;
-  patterns: {
-    [_: string]: Pattern;
-  };
-  atlasImage: RGBAImage;
-  atlasTexture: Texture;
-  dirty: boolean;
-  constructor();
-  destroy(): void;
-  isLoaded(): boolean;
-  setLoaded(loaded: boolean): void;
-  getImage(id: string): StyleImage;
-  addImage(id: string, image: StyleImage): void;
-  _validate(id: string, image: StyleImage): boolean;
-  _validateStretch(stretch: Array<[number, number]>, size: number): boolean;
-  _validateContent(content: [number, number, number, number], image: StyleImage): boolean;
-  updateImage(id: string, image: StyleImage, validate?: boolean): void;
-  removeImage(id: string): void;
-  listImages(): Array<string>;
-  getImages(ids: Array<string>): Promise<GetImagesResponse>;
-  _getImagesForIds(ids: Array<string>): GetImagesResponse;
-  getPixelSize(): {
-    width: number;
-    height: number;
-  };
-  getPattern(id: string): ImagePosition;
-  bind(context: Context): void;
-  _updatePatternAtlas(): void;
-  beginFrame(): void;
-  dispatchRenderCallbacks(ids: Array<string>): void;
-  cloneImages(): Record<string, StyleImage>;
-}
-type LightPosition = {
-  x: number;
-  y: number;
-  z: number;
+  tileID: UnwrappedTileIDLiteral | null;
+  /**
+   * Set to true if a pixel-aligned matrix should be used, if possible.
+   * This flag is mostly used for raster tiles under mercator projection.
+   */
+  aligned?: boolean;
+  /**
+   * Set to true if the terrain matrix should be applied when pre-rendering tiles into textures for 3D terrain.
+   */
+  applyTerrainMatrix?: boolean;
+  /**
+   * Set to true if the globe matrix should be applied when using globe projection.
+   */
+  applyGlobeMatrix?: boolean;
 };
-declare class LightPositionProperty implements Property<[number, number, number], LightPosition> {
-  specification: StylePropertySpecification;
-  constructor();
-  possiblyEvaluate(value: PropertyValue<[number, number, number], LightPosition>, parameters: EvaluationParameters): LightPosition;
-  interpolate(a: LightPosition, b: LightPosition, t: number): LightPosition;
-}
-type LightProps = {
-  "anchor": DataConstantProperty<"map" | "viewport">;
-  "position": LightPositionProperty;
-  "color": DataConstantProperty<Color>;
-  "intensity": DataConstantProperty<number>;
-};
-type LightPropsPossiblyEvaluated = {
-  "anchor": "map" | "viewport";
-  "position": LightPosition;
-  "color": Color;
-  "intensity": number;
-};
-declare class Light extends Evented {
-  _transitionable: Transitionable<LightProps>;
-  _transitioning: Transitioning<LightProps>;
-  properties: PossiblyEvaluated<LightProps, LightPropsPossiblyEvaluated>;
-  constructor(lightOptions?: LightSpecification);
-  getLight(): LightSpecification;
-  setLight(light?: LightSpecification, options?: StyleSetterOptions): void;
-  updateTransitions(parameters: TransitionParameters): void;
-  hasTransition(): boolean;
-  recalculate(parameters: EvaluationParameters): void;
-  _validate(validate: Function, value: unknown, options?: {
-    validate?: boolean;
-  }): boolean;
-}
-declare class LayerPlacement {
-  _sortAcrossTiles: boolean;
-  _currentTileIndex: number;
-  _currentPartIndex: number;
-  _seenCrossTileIDs: { [k in string | number]: boolean };
-  _bucketParts: Array<BucketPart>;
-  constructor(styleLayer: SymbolStyleLayer);
-  continuePlacement(tiles: Array<Tile>, placement: Placement, showCollisionBoxes: boolean, styleLayer: StyleLayer, shouldPausePlacement: () => boolean): boolean;
-}
-declare class PauseablePlacement {
-  placement: Placement;
-  _done: boolean;
-  _currentPlacementIndex: number;
-  _forceFullPlacement: boolean;
-  _showCollisionBoxes: boolean;
-  _inProgressLayer: LayerPlacement;
-  constructor(transform: ITransform, terrain: Terrain, order: Array<string>, forceFullPlacement: boolean, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, prevPlacement?: Placement);
-  isDone(): boolean;
-  continuePlacement(order: Array<string>, layers: {
-    [_: string]: StyleLayer;
-  }, layerTiles: {
-    [_: string]: Array<Tile>;
-  }): void;
-  commit(now: number): Placement;
-}
 /**
-* Input arguments exposed by custom render function.
-*/
+ * Input arguments exposed by custom render function.
+ */
 type CustomRenderMethodInput = {
   /**
    * This value represents the distance from the camera to the far clipping plane.
@@ -9290,16 +10862,16 @@ type CustomRenderMethodInput = {
    */
   fov: number;
   /**
-  * model view projection matrix
-  * represents the matrix converting from world space to clip space
-  * https://learnopengl.com/Getting-started/Coordinate-Systems
-  * **/
+   * Model view projection matrix.
+   * Represents the matrix converting from world space to clip space.
+   * https://learnopengl.com/Getting-started/Coordinate-Systems
+   * **/
   modelViewProjectionMatrix: mat4;
   /**
-  * projection matrix
-  * represents the matrix converting from view space to clip space
-  * https://learnopengl.com/Getting-started/Coordinate-Systems
-  */
+   * Projection matrix.
+   * Represents the matrix converting from view space to clip space.
+   * https://learnopengl.com/Getting-started/Coordinate-Systems
+   */
   projectionMatrix: mat4;
   /**
    * Data required for picking and compiling a custom shader for the current projection.
@@ -9351,12 +10923,12 @@ type CustomRenderMethodInput = {
    * For more details of this object's internals, see its doc comments in `src/geo/projection/projection_data.ts`.
    *
    * These uniforms are set so that `projectTile` in shader accepts a vec2 in range 0..1 in web mercator coordinates.
-   * Use `map.transform.getProjectionData({overscaledTileID: tileID})` to get uniforms for a given tile and pass vec2 in tile-local range 0..EXTENT instead.
+   * Use `getProjectionData({overscaledTileID: tileID})` to get uniforms for a given tile and pass vec2 in tile-local range 0..EXTENT instead.
    *
    * For projection 3D features, use `projectTileFor3D` in the shader.
    *
-   * If you just need a projection matrix, use `defaultProjectionData.projectionMatrix`.
-   * A projection matrix is sufficient for simple custom layers that also only support mercator projection.
+   * If you just need a projection matrix, use `defaultProjectionData.mainMatrix`.
+   * A projection matrix is sufficient for simple custom layers that only support mercator projection.
    *
    * Under mercator projection, when these uniforms are used, the shader's `projectTile` function projects spherical mercator
    * coordinates to gl clip space coordinates. The spherical mercator coordinate `[0, 0]` represents the
@@ -9369,13 +10941,21 @@ type CustomRenderMethodInput = {
    * passed to `projectTileFor3D` in the shader is elevation in meters above "sea level",
    * or more accurately for globe, elevation above the surface of the perfect sphere used to render the planet.
    */
-  defaultProjectionData: ProjectionData;
+  defaultProjectionData: CustomLayerProjectionData;
+  /**
+   * Generates a {@link ProjectionData} instance to be used while rendering a given tile.
+   * In custom layers, this function is only needed when rendering tiles in a completely custom way and with shaders that are compatible with both projections.
+   *
+   * @see [Add a custom layer with tiles to a globe](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-custom-layer-with-tiles-to-a-globe)
+   * @param params - Parameters for the projection data generation.
+   */
+  getProjectionData: (params: CustomLayerProjectionDataParams) => RendererProjectionData;
 };
 /**
  * @param gl - The map's gl context.
  * @param options - Argument object with render inputs like camera properties.
  */
-type CustomRenderMethod = (gl: WebGLRenderingContext | WebGL2RenderingContext, options: CustomRenderMethodInput) => void;
+type CustomRenderMethod = (gl: WebGL2RenderingContext, options: CustomRenderMethodInput) => void;
 /**
  * Interface for custom style layers. This is a specification for
  * implementers to model: it is not an exported method or class.
@@ -9404,7 +10984,7 @@ type CustomRenderMethod = (gl: WebGLRenderingContext | WebGL2RenderingContext, o
  *         this.renderingMode = '2d';
  *     }
  *
- *      onAdd(map: maplibregl.Map, gl: WebGLRenderingContext | WebGL2RenderingContext) {
+ *      onAdd(map: maplibregl.Map, gl: WebGL2RenderingContext) {
  *         const vertexSource = `
  *         uniform mat4 u_matrix;
  *         void main() {
@@ -9434,7 +11014,7 @@ type CustomRenderMethod = (gl: WebGLRenderingContext | WebGL2RenderingContext, o
  *      gl,
  *      modelViewProjectionMatrix: matrix
  *      }: {
- *      gl: WebGLRenderingContext | WebGL2RenderingContext;
+ *      gl: WebGL2RenderingContext;
  *      modelViewProjectionMatrix: Float32Array;
  *      }) {
  *         gl.useProgram(this.program);
@@ -9491,7 +11071,7 @@ interface CustomLayerInterface {
    * @param map - The Map this custom layer was just added to.
    * @param gl - The gl context for the map.
    */
-  onAdd?(map: Map$1, gl: WebGLRenderingContext | WebGL2RenderingContext): void;
+  onAdd?(map: Map$1, gl: WebGL2RenderingContext): void;
   /**
    * Optional method called when the layer has been removed from the Map with {@link Map.removeLayer}. This
    * gives the layer a chance to clean up gl resources and event listeners.
@@ -9499,2363 +11079,923 @@ interface CustomLayerInterface {
    * @param map - The Map this custom layer was just added to.
    * @param gl - The gl context for the map.
    */
-  onRemove?(map: Map$1, gl: WebGLRenderingContext | WebGL2RenderingContext): void;
+  onRemove?(map: Map$1, gl: WebGL2RenderingContext): void;
 }
-type ValidationError = {
-  message: string;
-  line: number;
-  identifier?: string;
-};
-type Validator = (a: any) => ReadonlyArray<ValidationError>;
-type ProjectionGPUContext = {
-  context: Context;
-  useProgram: (name: string) => Program<any>;
-};
-type TileMeshUsage = "stencil" | "raster";
-interface Projection {
-  /**
-   * @internal
-   * A short, descriptive name of this projection, such as 'mercator' or 'globe'.
-   */
-  get name(): ProjectionSpecification["type"];
-  /**
-   * @internal
-   * True if this projection needs to render subdivided geometry.
-   * Optimized rendering paths for non-subdivided geometry might be used throughout MapLibre.
-   * The value of this property may change during runtime, for example in globe projection depending on zoom.
-   */
-  get useSubdivision(): boolean;
-  /**
-   * Name of the shader projection variant that should be used for this projection.
-   * Note that this value may change dynamically, for example when globe projection internally transitions to mercator.
-   * Then globe projection might start reporting the mercator shader variant name to make MapLibre use faster mercator shaders.
-   */
-  get shaderVariantName(): string;
-  /**
-   * A `#define` macro that is injected into every MapLibre shader that uses this projection.
-   * @example
-   * `const define = projection.shaderDefine; // '#define GLOBE'`
-   */
-  get shaderDefine(): string;
-  /**
-   * @internal
-   * A preprocessed prelude code for both vertex and fragment shaders.
-   */
-  get shaderPreludeCode(): PreparedShader;
-  /**
-   * Vertex shader code that is injected into every MapLibre vertex shader that uses this projection.
-   */
-  get vertexShaderPreludeCode(): string;
-  /**
-   * @internal
-   * An object describing how much subdivision should be applied to rendered geometry.
-   * The subdivision settings should be a constant for a given projection.
-   * Projections that do not require subdivision should return {@link SubdivisionGranularitySetting.noSubdivision}.
-   */
-  get subdivisionGranularity(): SubdivisionGranularitySetting;
-  /**
-   * @internal
-   * A number representing the current transition state of the projection.
-   * The return value should be a number between 0 and 1,
-   * where 0 means the projection is fully in the initial state,
-   * and 1 means the projection is fully in the final state.
-   */
-  get transitionState(): number;
-  /**
-   * @internal
-   * Gets the error correction latitude in radians.
-   */
-  get latitudeErrorCorrectionRadians(): number;
-  /**
-   * @internal
-   * Cleans up any resources the projection created, especially GPU buffers.
-   */
-  destroy(): void;
-  /**
-   * @internal
-   * Runs any GPU-side tasks this projection required. Called at the beginning of every frame.
-   */
-  updateGPUdependent(renderContext: ProjectionGPUContext): void;
-  /**
-   * @internal
-   * Returns a subdivided mesh for a given tile ID, covering 0..EXTENT range.
-   * @param context - WebGL context.
-   * @param tileID - The tile coordinates for which to return a mesh. Meshes for tiles that border the top/bottom mercator edge might include extra geometry for the north/south pole.
-   * @param hasBorder - When true, the mesh will also include a small border beyond the 0..EXTENT range.
-   * @param allowPoles - When true, the mesh will also include geometry to cover the north (south) pole, if the given tileID borders the mercator range's top (bottom) edge.
-   * @param usage - Specify the usage of the tile mesh, as different usages might use different levels of subdivision.
-   */
-  getMeshFromTileID(context: Context, tileID: CanonicalTileID, hasBorder: boolean, allowPoles: boolean, usage: TileMeshUsage): Mesh;
-  /**
-   * @internal
-   * Recalculates the projection state based on the current evaluation parameters.
-   * @param params - Evaluation parameters.
-   */
-  recalculate(params: EvaluationParameters): void;
-  /**
-   * @internal
-   * Returns true if the projection is currently transitioning between two states.
-   */
+declare class CustomStyleLayer extends StyleLayer {
+  implementation: CustomLayerInterface;
+  constructor(implementation: CustomLayerInterface, globalState: Record<string, any>);
+  is3D(): boolean;
+  hasOffscreenPass(): boolean;
+  recalculate(): void;
+  updateTransitions(): void;
   hasTransition(): boolean;
-  /**
-   * @internal
-   * Sets the error query latidude in degrees
-   */
-  setErrorQueryLatitudeDegrees(value: number): any;
-}
+  serialize(): LayerSpecification;
+  onAdd: (map: Map$1) => void;
+  onRemove: (map: Map$1) => void;
+} //#endregion
+//#region src/webgl/draw/draw_custom.d.ts
+declare function drawCustom(painter: Painter, tileManager: TileManager, layer: CustomStyleLayer, renderOptions: RenderOptions): void; //#endregion
+//#region src/webgl/draw/draw_terrain.d.ts
 /**
- * A feature identifier that is bound to a source
+ * Redraw the Depth Framebuffer
+ * @param painter - the painter
+ * @param terrain - the terrain
  */
-type FeatureIdentifier = {
-  /**
-   * Unique id of the feature.
-   */
-  id?: string | number | undefined;
-  /**
-   * The id of the vector or GeoJSON source for the feature.
-   */
-  source: string;
-  /**
-   * *For vector tile sources, `sourceLayer` is required.*
-   */
-  sourceLayer?: string | undefined;
+declare function drawDepth(painter: Painter, terrain: Terrain): void;
+/**
+ * Redraw the Coords Framebuffers
+ * @param painter - the painter
+ * @param terrain - the terrain
+ */
+declare function drawCoords(painter: Painter, terrain: Terrain): void; //#endregion
+//#region src/style/light_properties.g.d.ts
+type LightProps = {
+  "anchor": DataConstantProperty<"map" | "viewport">;
+  "position": DataConstantProperty<[number, number, number]>;
+  "color": DataConstantProperty<Color>;
+  "intensity": DataConstantProperty<number>;
 };
-/**
- * The options object related to the {@link Map}'s style related methods
- */
-type StyleOptions = {
-  /**
-   * If false, style validation will be skipped. Useful in production environment.
-   */
-  validate?: boolean;
-  /**
-   * Defines a CSS
-   * font-family for locally overriding generation of Chinese, Japanese, and Korean characters.
-   * For these characters, font settings from the map's style will be ignored, except for font-weight keywords (light/regular/medium/bold).
-   * Set to `false`, to enable font settings from the map's style for these glyph ranges.
-   * Forces a full update.
-   */
-  localIdeographFontFamily?: string | false;
-};
-/**
- * Supporting type to add validation to another style related type
- */
-type StyleSetterOptions = {
-  /**
-   * Whether to check if the filter conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
-   */
-  validate?: boolean;
-};
-/**
- * Part of {@link Map.setStyle} options, transformStyle is a convenience function that allows to modify a style after it is fetched but before it is committed to the map state.
- *
- * This function exposes previous and next styles, it can be commonly used to support a range of functionalities like:
- *
- * - when previous style carries certain 'state' that needs to be carried over to a new style gracefully;
- * - when a desired style is a certain combination of previous and incoming style;
- * - when an incoming style requires modification based on external state.
- * - when an incoming style uses relative paths, which need to be converted to absolute.
- *
- * @param previous - The current style.
- * @param next - The next style.
- * @returns resulting style that will to be applied to the map
- *
- * @example
- * ```ts
- * map.setStyle('https://demotiles.maplibre.org/style.json', {
- *   transformStyle: (previousStyle, nextStyle) => ({
- *       ...nextStyle,
- *       // make relative sprite path like "../sprite" absolute
- *       sprite: new URL(nextStyle.sprite, "https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprites/").href,
- *       // make relative glyphs path like "../fonts/{fontstack}/{range}.pbf" absolute
- *       glyphs: new URL(nextStyle.glyphs, "https://demotiles.maplibre.org/font/").href,
- *       sources: {
- *           // make relative vector url like "../../" absolute
- *           ...nextStyle.sources.map(source => {
- *              if (source.url) {
- *                  source.url = new URL(source.url, "https://tiles.openfreemap.org/planet");
- *              }
- *              return source;
- *           }),
- *           // copy a source from previous style
- *           'osm': previousStyle.sources.osm
- *       },
- *       layers: [
- *           // background layer
- *           nextStyle.layers[0],
- *           // copy a layer from previous style
- *           previousStyle.layers[0],
- *           // other layers from the next style
- *           ...nextStyle.layers.slice(1).map(layer => {
- *               // hide the layers we don't need from demotiles style
- *               if (layer.id.startsWith('geolines')) {
- *                   layer.layout = {...layer.layout || {}, visibility: 'none'};
- *               // filter out US polygons
- *               } else if (layer.id.startsWith('coastline') || layer.id.startsWith('countries')) {
- *                   layer.filter = ['!=', ['get', 'ADM0_A3'], 'USA'];
- *               }
- *               return layer;
- *           })
- *       ]
- *   })
- * });
- * ```
- */
-type TransformStyleFunction = (previous: StyleSpecification | undefined, next: StyleSpecification) => StyleSpecification;
-/**
- * The options object related to the {@link Map}'s style related methods
- */
-type StyleSwapOptions = {
-  /**
-   * If false, force a 'full' update, removing the current style
-   * and building the given one instead of attempting a diff-based update.
-   */
-  diff?: boolean;
-  /**
-   * TransformStyleFunction is a convenience function
-   * that allows to modify a style after it is fetched but before it is committed to the map state. Refer to {@link TransformStyleFunction}.
-   */
-  transformStyle?: TransformStyleFunction;
-};
-/**
- * Specifies a layer to be added to a {@link Style}. In addition to a standard {@link LayerSpecification}
- * or a {@link CustomLayerInterface}, a {@link LayerSpecification} with an embedded {@link SourceSpecification} can also be provided.
- */
-type AddLayerObject = LayerSpecification | (Omit<LayerSpecification, "source"> & {
-  source: SourceSpecification;
-}) | CustomLayerInterface;
-/**
- * The Style base class
- */
-declare class Style extends Evented {
-  map: Map$1;
-  stylesheet: StyleSpecification;
-  dispatcher: Dispatcher;
-  imageManager: ImageManager;
-  glyphManager: GlyphManager;
-  lineAtlas: LineAtlas;
-  light: Light;
-  projection: Projection | undefined;
-  sky: Sky;
-  _frameRequest: AbortController;
-  _loadStyleRequest: AbortController;
-  _spriteRequest: AbortController;
-  _layers: {
-    [_: string]: StyleLayer;
-  };
-  _serializedLayers: {
-    [_: string]: LayerSpecification;
-  };
-  _order: Array<string>;
-  tileManagers: {
-    [_: string]: TileManager;
-  };
-  zoomHistory: ZoomHistory;
-  _loaded: boolean;
-  _changed: boolean;
-  _updatedSources: {
-    [_: string]: "clear" | "reload";
-  };
-  _updatedLayers: {
-    [_: string]: true;
-  };
-  _removedLayers: {
-    [_: string]: StyleLayer;
-  };
-  _changedImages: {
-    [_: string]: true;
-  };
-  _glyphsDidChange: boolean;
-  _updatedPaintProps: {
-    [layer: string]: true;
-  };
-  _layerOrderChanged: boolean;
-  _spritesImagesIds: {
-    [spriteId: string]: string[];
-  };
-  _availableImages: Array<string>;
-  _globalState: Record<string, any>;
-  crossTileSymbolIndex: CrossTileSymbolIndex;
-  pauseablePlacement: PauseablePlacement;
-  placement: Placement;
-  z: number;
-  constructor(map: Map$1, options?: StyleOptions);
-  private _setInitialValues;
-  _rtlPluginLoaded: () => void;
-  setGlobalStateProperty(name: string, value: any): this;
-  getGlobalState(): Record<string, any>;
-  setGlobalState(newStylesheetState: StateSpecification): void;
-  /**
-   * @internal
-   * Find all sources that are affected by the global state changes and reload them.
-   * Find all paint properties that are affected by the global state changes and update them.
-   * For example, if a layer filter uses global-state expression, this function will find the source id of that layer.
-   */
-  _applyGlobalStateChanges(globalStateRefs: string[]): void;
-  loadURL(url: string, options?: StyleSwapOptions & StyleSetterOptions, previousStyle?: StyleSpecification): Promise<void>;
-  loadJSON(json: StyleSpecification, options?: StyleSetterOptions & StyleSwapOptions, previousStyle?: StyleSpecification): void;
-  loadEmpty(): void;
-  _load(json: StyleSpecification, options: StyleSwapOptions & StyleSetterOptions, previousStyle?: StyleSpecification): void;
-  private _createLayers;
-  _loadSprite(sprite: SpriteSpecification, isUpdate?: boolean, completion?: (err: Error) => void): void;
-  _unloadSprite(): void;
-  _validateLayer(layer: StyleLayer): void;
-  loaded(): boolean;
-  /**
-   * @hidden
-   * take an array of string IDs, and based on this._layers, generate an array of LayerSpecification
-   * @param ids - an array of string IDs, for which serialized layers will be generated. If omitted, all serialized layers will be returned
-   * @param returnClose - if true, return a clone of the layer object
-   * @returns generated result
-   */
-  private _serializeByIds;
-  /**
-   * @hidden
-   * Lazy initialization of this._serializedLayers dictionary and return it
-   * @returns this._serializedLayers dictionary
-   */
-  private _serializedAllLayers;
-  hasTransitions(): boolean;
-  _checkLoaded(): void;
-  /**
-   * @internal
-   * Apply queued style updates in a batch and recalculate zoom-dependent paint properties.
-   */
-  update(parameters: EvaluationParameters): void;
-  _updateTilesForChangedImages(): void;
-  _updateTilesForChangedGlyphs(): void;
-  _updateWorkerLayers(updatedIds: Array<string>, removedIds: Array<string>): void;
-  _resetUpdates(): void;
-  /**
-   * Update this style's state to match the given style JSON, performing only
-   * the necessary mutations.
-   *
-   * May throw an Error ('Unimplemented: METHOD') if the mapbox-gl-style-spec
-   * diff algorithm produces an operation that is not supported.
-   *
-   * @returns true if any changes were made; false otherwise
-   */
-  setState(nextState: StyleSpecification, options?: StyleSwapOptions & StyleSetterOptions): boolean;
-  _getOperationsToPerform(diff: DiffCommand<DiffOperations>[]): {
-    operations: Function[];
-    unimplemented: string[];
-  };
-  addImage(id: string, image: StyleImage): this;
-  updateImage(id: string, image: StyleImage): void;
-  getImage(id: string): StyleImage;
-  removeImage(id: string): this;
-  _afterImageUpdated(id: string): void;
-  listImages(): string[];
-  addSource(id: string, source: SourceSpecification | CanvasSourceSpecification, options?: StyleSetterOptions): void;
-  /**
-   * Remove a source from this stylesheet, given its id.
-   * @param id - id of the source to remove
-   * @throws if no source is found with the given ID
-   */
-  removeSource(id: string): this;
-  /**
-   * Set the data of a GeoJSON source, given its id.
-   * @param id - id of the source
-   * @param data - GeoJSON source
-   */
-  setGeoJSONSourceData(id: string, data: GeoJSON.GeoJSON | string): void;
-  /**
-   * Get a source by ID.
-   * @param id - ID of the desired source
-   * @returns source
-   */
-  getSource(id: string): Source | undefined;
-  /**
-   * Add a layer to the map style. The layer will be inserted before the layer with
-   * ID `before`, or appended if `before` is omitted.
-   * @param layerObject - The style layer to add.
-   * @param before - ID of an existing layer to insert before
-   * @param options - Style setter options.
-   */
-  addLayer(layerObject: AddLayerObject, before?: string, options?: StyleSetterOptions): this;
-  /**
-   * Moves a layer to a different z-position. The layer will be inserted before the layer with
-   * ID `before`, or appended if `before` is omitted.
-   * @param id - ID of the layer to move
-   * @param before - ID of an existing layer to insert before
-   */
-  moveLayer(id: string, before?: string): void;
-  /**
-   * Remove the layer with the given id from the style.
-   * A {@link ErrorEvent} event will be fired if no such layer exists.
-   *
-   * @param id - id of the layer to remove
-   */
-  removeLayer(id: string): void;
-  /**
-   * Return the style layer object with the given `id`.
-   *
-   * @param id - id of the desired layer
-   * @returns a layer, if one with the given `id` exists
-   */
-  getLayer(id: string): StyleLayer | undefined;
-  /**
-   * Return the ids of all layers currently in the style, including custom layers, in order.
-   *
-   * @returns ids of layers, in order
-   */
-  getLayersOrder(): string[];
-  /**
-   * Checks if a specific layer is present within the style.
-   *
-   * @param id - the id of the desired layer
-   * @returns a boolean specifying if the given layer is present
-   */
-  hasLayer(id: string): boolean;
-  setLayerZoomRange(layerId: string, minzoom?: number | null, maxzoom?: number | null): void;
-  setFilter(layerId: string, filter?: FilterSpecification | null, options?: StyleSetterOptions): void;
-  /**
-   * Get a layer's filter object
-   * @param layer - the layer to inspect
-   * @returns the layer's filter, if any
-   */
-  getFilter(layer: string): FilterSpecification | void;
-  setLayoutProperty(layerId: string, name: string, value: any, options?: StyleSetterOptions): void;
-  /**
-   * Get a layout property's value from a given layer
-   * @param layerId - the layer to inspect
-   * @param name - the name of the layout property
-   * @returns the property value
-   */
-  getLayoutProperty(layerId: string, name: string): any;
-  setPaintProperty(layerId: string, name: string, value: any, options?: StyleSetterOptions): void;
-  _updatePaintProperty(layer: StyleLayer, name: string, value: any, options?: StyleSetterOptions): void;
-  getPaintProperty(layer: string, name: string): unknown;
-  setFeatureState(target: FeatureIdentifier, state: any): void;
-  removeFeatureState(target: FeatureIdentifier, key?: string): void;
-  getFeatureState(target: FeatureIdentifier): FeatureState;
-  getTransition(): {
-    duration: number;
-    delay: number;
-  } & TransitionSpecification;
-  serialize(): StyleSpecification | undefined;
-  _updateLayer(layer: StyleLayer): void;
-  _flattenAndSortRenderedFeatures(sourceResults: QueryRenderedFeaturesResults[]): MapGeoJSONFeature[];
-  queryRenderedFeatures(queryGeometry: Point[], params: QueryRenderedFeaturesOptions, transform: IReadonlyTransform): MapGeoJSONFeature[];
-  querySourceFeatures(sourceID: string, params?: QuerySourceFeatureOptions): GeoJSONFeature[];
+type LightPropsPossiblyEvaluated = {
+  "anchor": "map" | "viewport";
+  "position": [number, number, number];
+  "color": Color;
+  "intensity": number;
+}; //#endregion
+//#region src/style/light.d.ts
+declare class Light extends Evented {
+  _transitionable: Transitionable<LightProps>;
+  _transitioning: Transitioning<LightProps>;
+  properties: PossiblyEvaluated<LightProps, LightPropsPossiblyEvaluated>;
+  constructor(lightOptions?: LightSpecification);
   getLight(): LightSpecification;
-  setLight(lightOptions: LightSpecification, options?: StyleSetterOptions): void;
-  getProjection(): ProjectionSpecification;
-  setProjection(projection?: ProjectionSpecification): void;
-  getSky(): SkySpecification;
-  setSky(skyOptions?: SkySpecification, options?: StyleSetterOptions): void;
-  _setProjectionInternal(name: ProjectionSpecification["type"]): void;
-  _validate(validate: Validator, key: string, value: any, props: any, options?: {
-    validate?: boolean;
-  }): boolean;
-  _remove(mapRemoved?: boolean): void;
-  _clearSource(id: string): void;
-  _reloadSource(id: string): void;
-  _updateSources(transform: ITransform): void;
-  _generateCollisionBoxes(): void;
-  _updatePlacement(transform: ITransform, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, forceFullPlacement?: boolean): boolean;
-  _releaseSymbolFadeTiles(): void;
-  getImages(mapId: string | number, params: GetImagesParameters): Promise<GetImagesResponse>;
-  getGlyphs(mapId: string | number, params: GetGlyphsParameters): Promise<GetGlyphsResponse>;
-  getGlyphsUrl(): string | null;
-  setGlyphs(glyphsUrl: string | null | undefined, options?: StyleSetterOptions): void;
-  getDashes(mapId: string | number, params: GetDashesParameters): Promise<GetDashesResponse>;
   /**
-   * Add a sprite.
-   *
-   * @param id - The id of the desired sprite
-   * @param url - The url to load the desired sprite from
-   * @param options - The style setter options
-   * @param completion - The completion handler
+   * Gets the light position in cartesian coordinates.
    */
-  addSprite(id: string, url: string, options?: StyleSetterOptions, completion?: (err: Error) => void): void;
-  /**
-   * Remove a sprite by its id. When the last sprite is removed, the whole `this.stylesheet.sprite` object becomes
-   * `undefined`. This falsy `undefined` value later prevents attempts to load the sprite when it's absent.
-   *
-   * @param id - the id of the sprite to remove
-   */
-  removeSprite(id: string): void;
-  /**
-   * Get the current sprite value.
-   *
-   * @returns empty array when no sprite is set; id-url pairs otherwise
-   */
-  getSprite(): {
-    id: string;
-    url: string;
-  }[];
-  /**
-   * Set a new value for the style's sprite.
-   *
-   * @param sprite - new sprite value
-   * @param options - style setter options
-   * @param completion - the completion handler
-   */
-  setSprite(sprite: SpriteSpecification, options?: StyleSetterOptions, completion?: (err: Error) => void): void;
-  /**
-   * Destroys all internal resources of the style (sources, images, layers, etc.)
-   */
-  destroy(): void;
-}
-type BucketParameters<Layer extends TypedStyleLayer> = {
-  index: number;
-  layers: Array<Layer>;
-  zoom: number;
-  pixelRatio: number;
-  overscaling: number;
-  collisionBoxArray: CollisionBoxArray;
-  sourceLayerIndex: number;
-  sourceID: string;
-};
-type PopulateParameters = {
-  featureIndex: FeatureIndex;
-  iconDependencies: {};
-  patternDependencies: {};
-  glyphDependencies: {};
-  dashDependencies: Record<string, {
-    round: boolean;
-    dasharray: Array<number>;
-  }>;
-  availableImages: Array<string>;
-  subdivisionGranularity: SubdivisionGranularitySetting;
-};
-type IndexedFeature = {
-  feature: VectorTileFeatureLike;
-  id: number | string;
-  index: number;
-  sourceLayerIndex: number;
-};
-type BucketFeature = {
-  index: number;
-  sourceLayerIndex: number;
-  geometry: Array<Array<Point>>;
-  properties: any;
-  type: 0 | 1 | 2 | 3;
-  id?: any;
-  readonly patterns: {
-    [_: string]: {
-      "min": string;
-      "mid": string;
-      "max": string;
-    };
-  };
-  readonly dashes?: NonNullable<Feature["dashes"]>;
-  sortKey?: number;
-};
-/**
- * @hidden
- * The `Bucket` interface is the single point of knowledge about turning vector
- * tiles into WebGL buffers.
- *
- * `Bucket` is an abstract interface. An implementation exists for each style layer type.
- * Create a bucket via the `StyleLayer.createBucket` method.
- *
- * The concrete bucket types, using layout options from the style layer,
- * transform feature geometries into vertex and index data for use by the
- * vertex shader.  They also (via `ProgramConfiguration`) use feature
- * properties and the zoom level to populate the attributes needed for
- * data-driven styling.
- *
- * Buckets are designed to be built on a worker thread and then serialized and
- * transferred back to the main thread for rendering.  On the worker side, a
- * bucket's vertex, index, and attribute data is stored in `bucket.arrays: ArrayGroup`.
- * When a bucket's data is serialized and sent back to the main thread,
- * is gets deserialized (using `new Bucket(serializedBucketData)`, with
- * the array data now stored in `bucket.buffers: BufferGroup`. BufferGroups
- * hold the same data as ArrayGroups, but are tuned for consumption by WebGL.
- */
-interface Bucket {
-  layerIds: Array<string>;
-  hasDependencies: boolean;
-  readonly layers: Array<any>;
-  readonly stateDependentLayers: Array<any>;
-  readonly stateDependentLayerIds: Array<string>;
-  populate(features: Array<IndexedFeature>, options: PopulateParameters, canonical: CanonicalTileID): void;
-  update(states: FeatureStates, vtLayer: VectorTileLayerLike, imagePositions: {
-    [_: string]: ImagePosition;
-  }, dashPositions: Record<string, DashEntry>): void;
-  isEmpty(): boolean;
-  upload(context: Context): void;
-  uploadPending(): boolean;
-  /**
-   * Release the WebGL resources associated with the buffers. Note that because
-   * buckets are shared between layers having the same layout properties, they
-   * must be destroyed in groups (all buckets for a tile, or all symbol buckets).
-   */
-  destroy(): void;
-}
-type QueryIntersectsFeatureParams = {
-  /**
-   * The geometry to check intersection with.
-   * This geometry is in tile coordinates.
-   */
-  queryGeometry: Array<Point>;
-  /**
-   * The feature to allow expression evaluation.
-   */
-  feature: VectorTileFeatureLike;
-  /**
-   * The feature state to allow expression evaluation.
-   */
-  featureState: FeatureState;
-  /**
-   * The geometry of the feature.
-   * This geometry is in tile coordinates.
-   */
-  geometry: Array<Array<Point>>;
-  /**
-   * The current zoom level.
-   */
-  zoom: number;
-  /**
-   * The transform to convert from tile coordinates to pixels.
-   */
-  transform: IReadonlyTransform;
-  /**
-   * The number of pixels per tile unit.
-   */
-  pixelsToTileUnits: number;
-  /**
-   * The matrix to convert from tile coordinates to pixel coordinates.
-   * The pixel coordinates are relative to the center of the screen.
-   */
-  pixelPosMatrix: mat4;
-  /**
-   * The unwrapped tile ID for the tile being queried.
-   */
-  unwrappedTileID: UnwrappedTileID;
-  /**
-   * A function to get the elevation of a point in tile coordinates.
-   */
-  getElevation: undefined | ((x: number, y: number) => number);
-};
-/**
- * A base class for style layers
- */
-declare abstract class StyleLayer extends Evented {
-  id: string;
-  metadata: unknown;
-  type: LayerSpecification["type"] | CustomLayerInterface["type"];
-  source: string;
-  sourceLayer: string;
-  minzoom: number;
-  maxzoom: number;
-  filter: FilterSpecification | void;
-  visibility: VisibilitySpecification;
-  private _evaluatedVisibility;
-  _crossfadeParameters: CrossfadeParameters;
-  _unevaluatedLayout: Layout<any>;
-  readonly layout: unknown;
-  _transitionablePaint: Transitionable<any>;
-  _transitioningPaint: Transitioning<any>;
-  readonly paint: unknown;
-  _featureFilter: FeatureFilter;
-  _visibilityExpression: VisibilityExpression;
-  readonly onAdd: ((map: Map$1) => void);
-  readonly onRemove: ((map: Map$1) => void);
-  queryRadius?(bucket: Bucket): number;
-  queryIntersectsFeature?(params: QueryIntersectsFeatureParams): boolean | number;
-  createBucket?(parameters: BucketParameters<any>): Bucket;
-  private _globalState;
-  constructor(layer: LayerSpecification | CustomLayerInterface, properties: Readonly<{
-    layout?: Properties<any>;
-    paint?: Properties<any>;
-  }>, globalState: Record<string, any>);
-  setFilter(filter: FilterSpecification | void): void;
-  getCrossfadeParameters(): CrossfadeParameters;
-  getLayoutProperty(name: string): any;
-  /**
-   * Get list of global state references that are used within layout or filter properties.
-   * This is used to determine if layer source need to be reloaded when global state property changes.
-   *
-   */
-  getLayoutAffectingGlobalStateRefs(): Set<string>;
-  /**
-   * Get list of global state references that are used within paint properties.
-   * This is used to determine if layer needs to be repainted when global state property changes.
-   *
-   */
-  getPaintAffectingGlobalStateRefs(): globalThis.Map<string, Array<{
-    name: string;
-    value: any;
-  }>>;
-  /**
-   * Get list of global state references that are used within visibility expression.
-   * This is used to determine if layer visibility needs to be updated when global state property changes.
-   */
-  getVisibilityAffectingGlobalStateRefs(): Set<string>;
-  setLayoutProperty(name: string, value: any, options?: StyleSetterOptions): void;
-  getPaintProperty(name: string): unknown;
-  setPaintProperty(name: string, value: unknown, options?: StyleSetterOptions): boolean;
-  _handleSpecialPaintPropertyUpdate(_: string): void;
-  _handleOverridablePaintPropertyUpdate<T, R>(name: string, oldValue: PropertyValue<T, R>, newValue: PropertyValue<T, R>): boolean;
-  isHidden(zoom?: number, roundMinZoom?: boolean): boolean;
+  getCartesianPosition(): vec3;
+  setLight(light?: LightSpecification, options?: StyleSetterOptions): void;
   updateTransitions(parameters: TransitionParameters): void;
   hasTransition(): boolean;
-  recalculateVisibility(): void;
-  recalculate(parameters: EvaluationParameters, availableImages: Array<string>): void;
-  serialize(): LayerSpecification;
-  _validate(validate: Function, key: string, name: string, value: unknown, options?: StyleSetterOptions): boolean;
-  is3D(): boolean;
-  isTileClipped(): boolean;
-  hasOffscreenPass(): boolean;
-  resize(): void;
-  isStateDependent(): boolean;
+  recalculate(parameters: EvaluationParameters): void;
+  _validate(validate: Validator, value: unknown, options?: StyleSetterOptions): boolean;
+} //#endregion
+//#region src/webgl/draw/draw_sky.d.ts
+declare function drawSky(painter: Painter, sky: Sky): void;
+declare function drawAtmosphere(painter: Painter, sky: Sky, light: Light): void; //#endregion
+//#region src/webgl/draw/index.d.ts
+type DrawFunctions = {
+  symbol: typeof drawSymbols;
+  circle: typeof drawCircles;
+  heatmap: typeof drawHeatmap;
+  line: typeof drawLine;
+  fill: typeof drawFill;
+  fillExtrusion: typeof drawFillExtrusion;
+  hillshade: typeof drawHillshade;
+  colorRelief: typeof drawColorRelief;
+  raster: typeof drawRaster;
+  background: typeof drawBackground;
+  sky: typeof drawSky;
+  atmosphere: typeof drawAtmosphere;
+  custom: typeof drawCustom;
+  debug: typeof drawDebug;
+  debugPadding: typeof drawDebugPadding;
+  terrainDepth: typeof drawDepth;
+  terrainCoords: typeof drawCoords;
+}; //#endregion
+//#region src/util/request_manager.d.ts
+/**
+ * A type of MapLibre resource.
+ */
+declare const enum ResourceType {
+  Glyphs = "Glyphs",
+  Image = "Image",
+  Source = "Source",
+  SpriteImage = "SpriteImage",
+  SpriteJSON = "SpriteJSON",
+  Style = "Style",
+  Tile = "Tile",
+  Unknown = "Unknown"
 }
-type GeoJSONWorkerOptions = {
-  source?: string;
-  geojsonVtOptions?: GeoJSONVTOptions;
-  clusterProperties?: Record<string, [unknown, unknown]>;
-  filter?: FilterSpecification;
-  collectResourceTiming?: boolean;
-};
-type LoadGeoJSONParameters = GeoJSONWorkerOptions & {
-  type: "geojson";
-  /**
-   * Request parameters including a URL to fetch GeoJSON data.
-   */
-  request?: RequestParameters;
-  /**
-   * GeoJSON data to set as the source's data.
-   */
-  data?: GeoJSON.GeoJSON;
-  /**
-   * GeoJSONSourceDiff to apply to the existing GeoJSON source data.
-   */
-  dataDiff?: GeoJSONSourceDiff;
-  /**
-   * Update the supercluster using the latest worker cluster options.
-   */
-  updateCluster?: boolean;
-};
-type RTLPluginStatus = "unavailable" | "deferred" | "requested" | "loading" | "loaded" | "error";
-type PluginState = {
-  pluginStatus: RTLPluginStatus;
-  pluginURL: string;
-};
-type ClusterIDAndSource = {
-  type: "geojson";
-  clusterId: number;
-  source: string;
-};
-type GetClusterLeavesParams = ClusterIDAndSource & {
-  limit: number;
-  offset: number;
-};
-type GeoJSONWorkerSourceLoadDataResult = {
-  resourceTiming?: {
-    [_: string]: Array<PerformanceResourceTiming>;
+/**
+ * This function is used to transform a request.
+ * It is used just before executing the relevant request.
+ */
+type RequestTransformFunction = (url: string, resourceType?: ResourceType) => RequestParameters | Promise<RequestParameters> | undefined;
+declare class RequestManager {
+  _transformRequestFn: RequestTransformFunction | null;
+  constructor(transformRequestFn?: RequestTransformFunction | null);
+  transformRequest(url: string, type: ResourceType): RequestParameters | Promise<RequestParameters>;
+  setTransformRequest(transformRequest: RequestTransformFunction | null): void;
+} //#endregion
+//#region src/style/load_glyph_range.d.ts
+declare function loadGlyphRange(fontstack: string, range: number, urlTemplate: string, requestManager: RequestManager): Promise<{
+  [_: number]: StyleGlyph | null;
+}>; //#endregion
+//#region src/render/glyph_manager.d.ts
+type Entry = {
+  glyphs: {
+    [id: number]: StyleGlyph | null;
   };
-  abandoned?: boolean;
-  data?: GeoJSON.GeoJSON;
-};
-type RemoveSourceParams = {
-  source: string;
-  type: string;
-};
-type UpdateLayersParameters = {
-  layers: Array<LayerSpecification>;
-  removedIds: Array<string>;
-};
-type GetImagesParameters = {
-  icons: Array<string>;
-  source: string;
-  tileID: OverscaledTileID;
-  type: string;
-};
-type GetGlyphsParameters = {
-  type: string;
-  stacks: {
-    [_: string]: Array<number>;
+  requests: {
+    [range: number]: Promise<{
+      [_: number]: StyleGlyph | null;
+    }>;
   };
-  source: string;
-  tileID: OverscaledTileID;
-};
-type GetGlyphsResponse = {
-  [stack: string]: {
-    [id: number]: StyleGlyph;
+  ranges: {
+    [range: number]: boolean | null;
   };
+  tinySDF?: Promise<TinySDF>;
+  ideographTinySDF?: Promise<TinySDF>;
 };
-type GetImagesResponse = {
-  [_: string]: StyleImage;
-};
-type GetDashesParameters = {
-  dashes: {
-    [key: string]: {
-      dasharray: Array<number>;
-      round: boolean;
-    };
+declare class GlyphManager {
+  requestManager: RequestManager;
+  localIdeographFontFamily: string | false;
+  entries: {
+    [stack: string]: Entry;
   };
-};
-type GetDashesResponse = {
-  [dashId: string]: DashEntry;
-};
-/**
- * All the possible message types that can be sent to and from the worker
- */
-declare const enum MessageType {
-  loadDEMTile = "LDT",
-  getClusterExpansionZoom = "GCEZ",
-  getClusterChildren = "GCC",
-  getClusterLeaves = "GCL",
-  loadData = "LD",
-  loadTile = "LT",
-  reloadTile = "RT",
-  getGlyphs = "GG",
-  getDashes = "GDA",
-  getImages = "GI",
-  setImages = "SI",
-  updateGlobalState = "UGS",
-  setLayers = "SL",
-  updateLayers = "UL",
-  syncRTLPluginState = "SRPS",
-  setReferrer = "SR",
-  removeSource = "RS",
-  removeMap = "RM",
-  importScript = "IS",
-  removeTile = "RMT",
-  abortTile = "AT",
-  removeDEMTile = "RDT",
-  getResource = "GR"
-}
-/**
- * This is basically a mapping between all the calls that are made to and from the workers.
- * The key is the event name, the first parameter is the event input type, and the last parameter is the output type.
- */
-type RequestResponseMessageMap = {
-  [MessageType.loadDEMTile]: [WorkerDEMTileParameters, DEMData];
-  [MessageType.getClusterExpansionZoom]: [ClusterIDAndSource, number];
-  [MessageType.getClusterChildren]: [ClusterIDAndSource, Array<GeoJSON.Feature>];
-  [MessageType.getClusterLeaves]: [GetClusterLeavesParams, Array<GeoJSON.Feature>];
-  [MessageType.loadData]: [LoadGeoJSONParameters, GeoJSONWorkerSourceLoadDataResult];
-  [MessageType.loadTile]: [WorkerTileParameters, WorkerTileResult];
-  [MessageType.reloadTile]: [WorkerTileParameters, WorkerTileResult];
-  [MessageType.getGlyphs]: [GetGlyphsParameters, GetGlyphsResponse];
-  [MessageType.getImages]: [GetImagesParameters, GetImagesResponse];
-  [MessageType.setImages]: [string[], void];
-  [MessageType.updateGlobalState]: [Record<string, any>, void];
-  [MessageType.setLayers]: [Array<LayerSpecification>, void];
-  [MessageType.updateLayers]: [UpdateLayersParameters, void];
-  [MessageType.syncRTLPluginState]: [PluginState, PluginState];
-  [MessageType.setReferrer]: [string, void];
-  [MessageType.removeSource]: [RemoveSourceParams, void];
-  [MessageType.removeMap]: [undefined, void];
-  [MessageType.importScript]: [string, void];
-  [MessageType.removeTile]: [TileParameters, void];
-  [MessageType.abortTile]: [TileParameters, void];
-  [MessageType.removeDEMTile]: [TileParameters, void];
-  [MessageType.getResource]: [RequestParameters, GetResourceResponse<any>];
-  [MessageType.getDashes]: [GetDashesParameters, GetDashesResponse];
-};
-/**
- * The message to be sent by the actor
- */
-type ActorMessage<T extends MessageType> = {
-  type: T;
-  data: RequestResponseMessageMap[T][0];
-  targetMapId?: string | number | null;
-  mustQueue?: boolean;
-  sourceMapId?: string | number | null;
-};
-interface ActorTarget {
-  addEventListener: typeof window.addEventListener;
-  removeEventListener: typeof window.removeEventListener;
-  postMessage: typeof window.postMessage;
-  terminate?: () => void;
-}
-type MessageData = {
-  id: string;
-  type: MessageType | "<cancel>" | "<response>";
-  origin: string;
-  data?: Serialized;
-  targetMapId?: string | number | null;
-  mustQueue?: boolean;
-  error?: Serialized | null;
-  sourceMapId: string | number | null;
-};
-type ResolveReject = {
-  resolve: (value?: RequestResponseMessageMap[MessageType][1]) => void;
-  reject: (reason?: Error) => void;
-};
-/**
- * This interface allowing to substitute only the sendAsync method of the Actor class.
- */
-interface IActor {
-  sendAsync<T extends MessageType>(message: ActorMessage<T>, abortController?: AbortController): Promise<RequestResponseMessageMap[T][1]>;
-}
-type MessageHandler<T extends MessageType> = (mapId: string | number, params: RequestResponseMessageMap[T][0], abortController?: AbortController) => Promise<RequestResponseMessageMap[T][1]>;
-/**
- * An implementation of the [Actor design pattern](https://en.wikipedia.org/wiki/Actor_model)
- * that maintains the relationship between asynchronous tasks and the objects
- * that spin them off - in this case, tasks like parsing parts of styles,
- * owned by the styles
- */
-declare class Actor implements IActor {
-  target: ActorTarget;
-  mapId: string | number | null;
-  resolveRejects: {
-    [x: string]: ResolveReject;
-  };
-  name: string;
-  tasks: {
-    [x: string]: MessageData;
-  };
-  taskQueue: Array<string>;
-  abortControllers: {
-    [x: number | string]: AbortController;
-  };
-  invoker: ThrottledInvoker;
-  globalScope: ActorTarget;
-  messageHandlers: { [x in MessageType]?: MessageHandler<MessageType> };
-  subscription: Subscription;
-  /**
-   * @param target - The target
-   * @param mapId - A unique identifier for the Map instance using this Actor.
-   */
-  constructor(target: ActorTarget, mapId?: string | number);
-  registerMessageHandler<T extends MessageType>(type: T, handler: MessageHandler<T>): void;
-  unregisterMessageHandler<T extends MessageType>(type: T): void;
-  /**
-   * Sends a message from a main-thread map to a Worker or from a Worker back to
-   * a main-thread map instance.
-   * @param message - the message to send
-   * @param abortController - an optional AbortController to abort the request
-   * @returns a promise that will be resolved with the response data
-   */
-  sendAsync<T extends MessageType>(message: ActorMessage<T>, abortController?: AbortController): Promise<RequestResponseMessageMap[T][1]>;
-  receive(message: {
-    data: MessageData;
-  }): void;
-  process(): void;
-  processTask(id: string, task: MessageData): Promise<void>;
-  completeTask(id: string, err: Error, data?: RequestResponseMessageMap[MessageType][1]): void;
-  remove(): void;
-}
-/**
- * Allows to unsubscribe from events without the need to store the method reference.
- */
-interface Subscription {
-  /**
-   * Unsubscribes from the event.
-   */
-  unsubscribe(): void;
-}
-/**
- * Makes optional keys required and add the the undefined type.
- *
- * ```
- * interface Test {
- *  foo: number;
- *  bar?: number;
- *  baz: number | undefined;
- * }
- *
- * Complete<Test> {
- *  foo: number;
- *  bar: number | undefined;
- *  baz: number | undefined;
- * }
- *
- * ```
- *
- * See https://medium.com/terria/typescript-transforming-optional-properties-to-required-properties-that-may-be-undefined-7482cb4e1585
- */
-type Complete<T> = { [P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : (T[P] | undefined) };
-/**
- * A helper to allow require of at least one property
- */
-type RequireAtLeastOne<T> = { [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>> }[keyof T];
-/**
- * Adds the map's position to its page's location hash.
- * Passed as an option to the map object.
- *
- * @group Markers and Controls
- */
-declare class Hash {
-  _map: Map$1;
-  _hashName: string;
-  constructor(hashName?: string | null);
-  /**
-   * Map element to listen for coordinate changes
-   *
-   * @param map - The map object
-   */
-  addTo(map: Map$1): this;
-  /**
-   * Removes hash
-   */
-  remove(): this;
-  getHashString(mapFeedback?: boolean): string;
-  _getCurrentHash: () => any;
-  _onHashChange: () => boolean;
-  _updateHashUnthrottled: () => void;
-  _removeHash: () => void;
-  /**
-   * Mobile Safari doesn't allow updating the hash more than 100 times per 30 seconds.
-   */
-  _updateHash: () => ReturnType<typeof setTimeout>;
-  _isValidHash(hash: number[]): boolean;
-}
-interface DragMovementResult {
-  bearingDelta?: number;
-  pitchDelta?: number;
-  rollDelta?: number;
-  around?: Point;
-  panDelta?: Point;
-}
-interface DragPanResult extends DragMovementResult {
-  around: Point;
-  panDelta: Point;
-}
-interface DragRotateResult extends DragMovementResult {
-  bearingDelta: number;
-}
-interface DragPitchResult extends DragMovementResult {
-  pitchDelta: number;
-}
-interface DragRollResult extends DragMovementResult {
-  rollDelta: number;
-}
-interface DragMoveHandler<T extends DragMovementResult, E extends Event> extends Handler {
-  dragStart: (e: E, point: Point) => void;
-  dragMove: (e: E, point: Point) => T | void;
-  dragEnd: (e: E) => void;
-}
-interface MousePanHandler extends DragMoveHandler<DragPanResult, MouseEvent> {}
-interface MouseRotateHandler extends DragMoveHandler<DragRotateResult, MouseEvent> {}
-interface MousePitchHandler extends DragMoveHandler<DragPitchResult, MouseEvent> {}
-interface MouseRollHandler extends DragMoveHandler<DragRollResult, MouseEvent> {}
-declare class TouchPanHandler implements Handler {
-  _enabled: boolean;
-  _active: boolean;
-  _touches: { [k in string | number]: Point };
-  _clickTolerance: number;
-  _sum: Point;
-  _map: Map$1;
-  constructor(options: {
-    clickTolerance: number;
-  }, map: Map$1);
-  reset(): void;
-  _shouldBePrevented(touchesCount: number): boolean;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): {
-    around: Point;
-    panDelta: Point;
-  };
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): {
-    around: Point;
-    panDelta: Point;
-  };
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchcancel(): void;
-  _calculateTransform(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): {
-    around: Point;
-    panDelta: Point;
-  };
-  enable(): void;
-  disable(): void;
-  isEnabled(): boolean;
-  isActive(): boolean;
-}
-/**
- * A {@link DragPanHandler} options object
- */
-type DragPanOptions = {
-  /**
-   * factor used to scale the drag velocity
-   * @defaultValue 0
-   */
-  linearity?: number;
-  /**
-   * easing function applied to `map.panTo` when applying the drag.
-   * @param t - the easing function
-   * @defaultValue bezier(0, 0, 0.3, 1)
-   */
-  easing?: (t: number) => number;
-  /**
-   * the maximum value of the drag velocity.
-   * @defaultValue 1400
-   */
-  deceleration?: number;
-  /**
-   * the rate at which the speed reduces after the pan ends.
-   * @defaultValue 2500
-   */
-  maxSpeed?: number;
-};
-/**
- * The `DragPanHandler` allows the user to pan the map by clicking and dragging
- * the cursor.
- *
- * @group Handlers
- */
-declare class DragPanHandler {
-  _el: HTMLElement;
-  _mousePan: MousePanHandler;
-  _touchPan: TouchPanHandler;
-  _inertiaOptions: DragPanOptions | boolean;
-  /** @internal */
-  constructor(el: HTMLElement, mousePan: MousePanHandler, touchPan: TouchPanHandler);
-  /**
-   * Enables the "drag to pan" interaction.
-   *
-   * @param options - Options object
-   * @example
-   * ```ts
-   *   map.dragPan.enable();
-   *   map.dragPan.enable({
-   *      linearity: 0.3,
-   *      easing: bezier(0, 0, 0.3, 1),
-   *      maxSpeed: 1400,
-   *      deceleration: 2500,
-   *   });
-   * ```
-   */
-  enable(options?: DragPanOptions | boolean): void;
-  /**
-   * Disables the "drag to pan" interaction.
-   *
-   * @example
-   * ```ts
-   * map.dragPan.disable();
-   * ```
-   */
-  disable(): void;
-  /**
-   * Returns a Boolean indicating whether the "drag to pan" interaction is enabled.
-   *
-   * @returns `true` if the "drag to pan" interaction is enabled.
-   */
-  isEnabled(): boolean;
-  /**
-   * Returns a Boolean indicating whether the "drag to pan" interaction is active, i.e. currently being used.
-   *
-   * @returns `true` if the "drag to pan" interaction is active.
-   */
-  isActive(): boolean;
-}
-type TaskID = number;
-type Task = {
-  callback: (timeStamp: number) => void;
-  id: TaskID;
-  cancelled: boolean;
-};
-declare class TaskQueue {
-  _queue: Array<Task>;
-  _id: TaskID;
-  _cleared: boolean;
-  _currentlyRunning: Array<Task> | false;
-  constructor();
-  add(callback: (timeStamp: number) => void): TaskID;
-  remove(id: TaskID): void;
-  run(timeStamp?: number): void;
-  clear(): void;
-}
-type MapControlsDeltas = {
-  panDelta: Point;
-  zoomDelta: number;
-  bearingDelta: number;
-  pitchDelta: number;
-  rollDelta: number;
-  around: Point;
-};
-type CameraForBoxAndBearingHandlerResult = {
-  center: LngLat;
-  zoom: number;
-  bearing: number;
-};
-type EaseToHandlerOptions = {
-  bearing: number;
-  pitch: number;
-  roll: number;
-  padding: PaddingOptions;
-  offsetAsPoint: Point;
-  around?: LngLat;
-  aroundPoint?: Point;
-  center?: LngLatLike;
-  zoom?: number;
-  offset?: PointLike;
-};
-type EaseToHandlerResult = {
-  easeFunc: (k: number) => void;
-  elevationCenter: LngLat;
-  isZooming: boolean;
-};
-type FlyToHandlerOptions = {
-  bearing: number;
-  pitch: number;
-  roll: number;
-  padding: PaddingOptions;
-  offsetAsPoint: Point;
-  center?: LngLatLike;
-  locationAtOffset: LngLat;
-  zoom?: number;
-  minZoom?: number;
-};
-type FlyToHandlerResult = {
-  easeFunc: (k: number, scale: number, centerFactor: number, pointAtOffset: Point) => void;
-  scaleOfZoom: number;
-  scaleOfMinZoom?: number;
-  targetCenter: LngLat;
-  pixelPathLength: number;
-};
-interface ICameraHelper {
-  get useGlobeControls(): boolean;
-  handlePanInertia(pan: Point, transform: IReadonlyTransform): {
-    easingCenter: LngLat;
-    easingOffset: Point;
-  };
-  handleMapControlsRollPitchBearingZoom(deltas: MapControlsDeltas, tr: ITransform): void;
-  handleMapControlsPan(deltas: MapControlsDeltas, tr: ITransform, preZoomAroundLoc: LngLat): void;
-  cameraForBoxAndBearing(options: CameraForBoundsOptions, padding: PaddingOptions, bounds: LngLatBounds, bearing: number, tr: IReadonlyTransform): CameraForBoxAndBearingHandlerResult;
-  handleJumpToCenterZoom(tr: ITransform, options: {
-    zoom?: number;
-    center?: LngLatLike;
-  }): void;
-  handleEaseTo(tr: ITransform, options: EaseToHandlerOptions): EaseToHandlerResult;
-  handleFlyTo(tr: ITransform, options: FlyToHandlerOptions): FlyToHandlerResult;
-}
-/**
- * A [Point](https://github.com/mapbox/point-geometry) or an array of two numbers representing `x` and `y` screen coordinates in pixels.
- *
- * @group Geography and Geometry
- *
- * @example
- * ```ts
- * let p1 = new Point(-77, 38); // a PointLike which is a Point
- * let p2 = [-77, 38]; // a PointLike which is an array of two numbers
- * ```
- */
-type PointLike = Point | [number, number];
-/**
- * Options common to {@link Map.jumpTo}, {@link Map.easeTo}, and {@link Map.flyTo}, controlling the desired location,
- * zoom, bearing, pitch, and roll of the camera. All properties are optional, and when a property is omitted, the current
- * camera value for that property will remain unchanged.
- *
- * @example
- * Set the map's initial perspective with CameraOptions
- * ```ts
- * let map = new Map({
- *   container: 'map',
- *   style: 'https://demotiles.maplibre.org/style.json',
- *   center: [-73.5804, 45.53483],
- *   pitch: 60,
- *   bearing: -60,
- *   zoom: 10
- * });
- * ```
- * @see [Set pitch and bearing](https://maplibre.org/maplibre-gl-js/docs/examples/set-pitch-and-bearing/)
- * @see [Jump to a series of locations](https://maplibre.org/maplibre-gl-js/docs/examples/jump-to-a-series-of-locations/)
- * @see [Fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location/)
- * @see [Display buildings in 3D](https://maplibre.org/maplibre-gl-js/docs/examples/display-buildings-in-3d/)
- */
-type CameraOptions = CenterZoomBearing & {
-  /**
-   * The desired pitch in degrees. The pitch is the angle towards the horizon
-   * measured in degrees with a range between 0 and 60 degrees. For example, pitch: 0 provides the appearance
-   * of looking straight down at the map, while pitch: 60 tilts the user's perspective towards the horizon.
-   * Increasing the pitch value is often used to display 3D objects.
-   */
-  pitch?: number;
-  /**
-   * The desired roll in degrees. The roll is the angle about the camera boresight.
-   */
-  roll?: number;
-  /**
-   * The elevation of the center point in meters above sea level.
-   */
-  elevation?: number;
-};
-/**
- * Holds center, zoom and bearing properties
- */
-type CenterZoomBearing = {
-  /**
-   * The desired center.
-   */
-  center?: LngLatLike;
-  /**
-   * The desired mercator zoom level.
-   */
-  zoom?: number;
-  /**
-   * The desired bearing in degrees. The bearing is the compass direction that
-   * is "up". For example, `bearing: 90` orients the map so that east is up.
-   */
-  bearing?: number;
-};
-/**
- * The options object related to the {@link Map.jumpTo} method
- */
-type JumpToOptions = CameraOptions & {
-  /**
-   * Dimensions in pixels applied on each side of the viewport for shifting the vanishing point.
-   */
-  padding?: PaddingOptions;
-};
-/**
- * A options object for the {@link Map.cameraForBounds} method
- */
-type CameraForBoundsOptions = CameraOptions & {
-  /**
-   * The amount of padding in pixels to add to the given bounds.
-   */
-  padding?: number | PaddingOptions;
-  /**
-   * The center of the given bounds relative to the map's center, measured in pixels.
-   * @defaultValue [0, 0]
-   */
-  offset?: PointLike;
-  /**
-   * The maximum zoom level to allow when the camera would transition to the specified bounds.
-   */
-  maxZoom?: number;
-};
-/**
- * The {@link Map.flyTo} options object
- */
-type FlyToOptions = AnimationOptions & CameraOptions & {
-  /**
-   * The zooming "curve" that will occur along the
-   * flight path. A high value maximizes zooming for an exaggerated animation, while a low
-   * value minimizes zooming for an effect closer to {@link Map.easeTo}. 1.42 is the average
-   * value selected by participants in the user study discussed in
-   * [van Wijk (2003)](https://www.win.tue.nl/~vanwijk/zoompan.pdf). A value of
-   * `Math.pow(6, 0.25)` would be equivalent to the root mean squared average velocity. A
-   * value of 1 would produce a circular motion.
-   * @defaultValue 1.42
-   */
-  curve?: number;
-  /**
-   * The zero-based zoom level at the peak of the flight path. If
-   * `options.curve` is specified, this option is ignored.
-   */
-  minZoom?: number;
-  /**
-   * The average speed of the animation defined in relation to
-   * `options.curve`. A speed of 1.2 means that the map appears to move along the flight path
-   * by 1.2 times `options.curve` screenfulls every second. A _screenfull_ is the map's visible span.
-   * It does not correspond to a fixed physical distance, but varies by zoom level.
-   * @defaultValue 1.2
-   */
-  speed?: number;
-  /**
-   * The average speed of the animation measured in screenfulls
-   * per second, assuming a linear timing curve. If `options.speed` is specified, this option is ignored.
-   */
-  screenSpeed?: number;
-  /**
-   * The animation's maximum duration, measured in milliseconds.
-   * If duration exceeds maximum duration, it resets to 0.
-   */
-  maxDuration?: number;
-  /**
-   * The amount of padding in pixels to add to the given bounds.
-   */
-  padding?: number | PaddingOptions;
-};
-/**
- * The {@link Map.easeTo} options object
- */
-type EaseToOptions = AnimationOptions & CameraOptions & {
-  delayEndEvents?: number;
-  padding?: number | PaddingOptions;
-  /**
-   * If `zoom` is specified, `around` determines the point around which the zoom is centered.
-   */
-  around?: LngLatLike;
-  easeId?: string;
-  noMoveStart?: boolean;
-};
-/**
- * Options for {@link Map.fitBounds} method
- */
-type FitBoundsOptions = FlyToOptions & {
-  /**
-   * If `true`, the map transitions using {@link Map.easeTo}. If `false`, the map transitions using {@link Map.flyTo}.
-   * See those functions and {@link AnimationOptions} for information about options available.
-   * @defaultValue false
-   */
-  linear?: boolean;
-  /**
-   * The center of the given bounds relative to the map's center, measured in pixels.
-   * @defaultValue [0, 0]
-   */
-  offset?: PointLike;
-  /**
-   * The maximum zoom level to allow when the map view transitions to the specified bounds.
-   */
-  maxZoom?: number;
-};
-/**
- * Options common to map movement methods that involve animation, such as {@link Map.panBy} and
- * {@link Map.easeTo}, controlling the duration and easing function of the animation. All properties
- * are optional.
- *
- */
-type AnimationOptions = {
-  /**
-   * The animation's duration, measured in milliseconds.
-   */
-  duration?: number;
-  /**
-   * A function taking a time in the range 0..1 and returning a number where 0 is
-   * the initial state and 1 is the final state.
-   */
-  easing?: (_: number) => number;
-  /**
-   * of the target center relative to real map container center at the end of animation.
-   */
-  offset?: PointLike;
-  /**
-   * If `false`, no animation will occur.
-   */
-  animate?: boolean;
-  /**
-   * If `true`, then the animation is considered essential and will not be affected by
-   * [`prefers-reduced-motion`](https://developer.mozilla.org/en-US/docs/Web/CSS/\@media/prefers-reduced-motion).
-   */
-  essential?: boolean;
-  /**
-   * Default false. Needed in 3D maps to let the camera stay in a constant
-   * height based on sea-level. After the animation finished the zoom-level will be recalculated in respect of
-   * the distance from the camera to the center-coordinate-altitude.
-   */
-  freezeElevation?: boolean;
-};
-/**
- * A callback hook that allows manipulating the camera and being notified about camera updates before they happen
- */
-type CameraUpdateTransformFunction = (next: {
-  center: LngLat;
-  zoom: number;
-  roll: number;
-  pitch: number;
-  bearing: number;
-  elevation: number;
-}) => {
-  center?: LngLat;
-  zoom?: number;
-  roll?: number;
-  pitch?: number;
-  bearing?: number;
-  elevation?: number;
-};
-declare abstract class Camera extends Evented {
-  transform: ITransform;
-  cameraHelper: ICameraHelper;
-  terrain: Terrain;
-  handlers: HandlerManager;
-  _moving: boolean;
-  _zooming: boolean;
-  _rotating: boolean;
-  _pitching: boolean;
-  _rolling: boolean;
-  _padding: boolean;
-  _bearingSnap: number;
-  _zoomSnap: number;
-  _easeStart: number;
-  _easeOptions: {
-    duration?: number;
-    easing?: (_: number) => number;
-  };
-  _easeId: string | void;
-  _onEaseFrame: (_: number) => void;
-  _onEaseEnd: (easeId?: string) => void;
-  _easeFrameId: TaskID;
-  /**
-   * @internal
-   * holds the geographical coordinate of the target
-   */
-  _elevationCenter: LngLat;
-  /**
-   * @internal
-   * holds the targ altitude value, = center elevation of the target.
-   * This value may changes during flight, because new terrain-tiles loads during flight.
-   */
-  _elevationTarget: number;
-  /**
-   * @internal
-   * holds the start altitude value, = center elevation before animation begins
-   * this value will recalculated during flight in respect of changing _elevationTarget values,
-   * so the linear interpolation between start and target keeps smooth and without jumps.
-   */
-  _elevationStart: number;
-  /**
-   * @internal
-   * Saves the current state of the elevation freeze - this is used during map movement to prevent "rocky" camera movement.
-   */
-  _elevationFreeze: boolean;
-  /**
-   * @internal
-   * Used to track accumulated changes during continuous interaction
-   */
-  _requestedCameraState?: ITransform;
-  /**
-   * A callback used to defer camera updates or apply arbitrary constraints.
-   * If specified, this Camera instance can be used as a stateless component in React etc.
-   */
-  transformCameraUpdate: CameraUpdateTransformFunction | null;
-  /**
-   * @internal
-   * If true, the elevation of the center point will automatically be set to the terrain elevation
-   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
-   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
-   * keep the camera above ground when pitch \> 90 degrees.
-   */
-  _centerClampedToGround: boolean;
-  abstract _requestRenderFrame(a: () => void): TaskID;
-  abstract _cancelRenderFrame(_: TaskID): void;
-  constructor(transform: ITransform, cameraHelper: ICameraHelper, options: {
-    bearingSnap: number;
-    zoomSnap: number;
-  });
-  /**
-   * @internal
-   * Creates a new specialized transform instance from a projection instance and migrates
-   * to this new transform, carrying over all the properties of the old transform (center, pitch, etc.).
-   * When the style's projection is changed (or first set), this function should be called.
-   */
-  migrateProjection(newTransform: ITransform, newCameraHelper: ICameraHelper): void;
-  /**
-   * Returns the map's geographical centerpoint.
-   *
-   * @returns The map's geographical centerpoint.
-   * @example
-   * Return a LngLat object such as `{lng: 0, lat: 0}`
-   * ```ts
-   * let center = map.getCenter();
-   * // access longitude and latitude values directly
-   * let {lng, lat} = map.getCenter();
-   * ```
-   */
-  getCenter(): LngLat;
-  /**
-   * Sets the map's geographical centerpoint. Equivalent to `jumpTo({center: center})`.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param center - The centerpoint to set.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * map.setCenter([-74, 38]);
-   * ```
-   */
-  setCenter(center: LngLatLike, eventData?: any): this;
-  /**
-   * Returns the elevation of the map's center point.
-   *
-   * @returns The elevation of the map's center point, in meters above sea level.
-   */
-  getCenterElevation(): number;
-  /**
-   * Sets the elevation of the map's center point, in meters above sea level. Equivalent to `jumpTo({elevation: elevation})`.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param elevation - The elevation to set, in meters above sea level.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  setCenterElevation(elevation: number, eventData?: any): this;
-  /**
-   * Returns the value of `centerClampedToGround`.
-   *
-   * If true, the elevation of the center point will automatically be set to the terrain elevation
-   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
-   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
-   * keep the camera above ground when pitch \> 90 degrees.
-   */
-  getCenterClampedToGround(): boolean;
-  /**
-   * Sets the value of `centerClampedToGround`.
-   *
-   * If true, the elevation of the center point will automatically be set to the terrain elevation
-   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
-   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
-   * keep the camera above ground when pitch \> 90 degrees.
-   */
-  setCenterClampedToGround(centerClampedToGround: boolean): void;
-  /**
-   * Pans the map by the specified offset.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param offset - `x` and `y` coordinates by which to pan the map.
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
-   */
-  panBy(offset: PointLike, options?: EaseToOptions, eventData?: any): this;
-  /**
-   * Pans the map to the specified location with an animated transition.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param lnglat - The location to pan the map to.
-   * @param options - Options describing the destination and animation of the transition.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * map.panTo([-74, 38]);
-   * // Specify that the panTo animation should last 5000 milliseconds.
-   * map.panTo([-74, 38], {duration: 5000});
-   * ```
-   * @see [Update a feature in realtime](https://maplibre.org/maplibre-gl-js/docs/examples/update-a-feature-in-realtime/)
-   */
-  panTo(lnglat: LngLatLike, options?: EaseToOptions, eventData?: any): this;
-  /**
-   * Returns the map's current zoom level.
-   *
-   * @returns The map's current zoom level.
-   * @example
-   * ```ts
-   * map.getZoom();
-   * ```
-   */
-  getZoom(): number;
-  /**
-   * Sets the map's zoom level. Equivalent to `jumpTo({zoom: zoom})`.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
-   *
-   * @param zoom - The zoom level to set (0-20).
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * Zoom to the zoom level 5 without an animated transition
-   * ```ts
-   * map.setZoom(5);
-   * ```
-   */
-  setZoom(zoom: number, eventData?: any): this;
-  /**
-   * Zooms the map to the specified zoom level, with an animated transition.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
-   *
-   * @param zoom - The zoom level to transition to.
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * // Zoom to the zoom level 5 without an animated transition
-   * map.zoomTo(5);
-   * // Zoom to the zoom level 8 with an animated transition
-   * map.zoomTo(8, {
-   *   duration: 2000,
-   *   offset: [100, 50]
-   * });
-   * ```
-   */
-  zoomTo(zoom: number, options?: EaseToOptions | null, eventData?: any): this;
-  /**
-   * Incrementally increases the map's zoom level by 1, first snapping to the nearest `zoomSnap` increment.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * Zoom the map in one level with a custom animation duration
-   * ```ts
-   * map.zoomIn({duration: 1000});
-   * ```
-   */
-  zoomIn(options?: AnimationOptions, eventData?: any): this;
-  /**
-   * Decreases the map's zoom level by 1, first snapping to the nearest `zoomSnap` increment.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * Zoom the map out one level with a custom animation offset
-   * ```ts
-   * map.zoomOut({offset: [80, 60]});
-   * ```
-   */
-  zoomOut(options?: AnimationOptions, eventData?: any): this;
-  /**
-   * Returns the map's current vertical field of view, in degrees.
-   *
-   * @returns The map's current vertical field of view.
-   * @defaultValue 36.87
-   * @example
-   * ```ts
-   * const verticalFieldOfView = map.getVerticalFieldOfView();
-   * ```
-   */
-  getVerticalFieldOfView(): number;
-  /**
-   * Sets the map's vertical field of view, in degrees.
-   *
-   * Triggers the following events: `movestart`, `move`, and `moveend`.
-   *
-   * @param fov - The vertical field of view to set, in degrees (0-180).
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @defaultValue 36.87
-   * @example
-   * Change vertical field of view to 30 degrees
-   * ```ts
-   * map.setVerticalFieldOfView(30);
-   * ```
-   */
-  setVerticalFieldOfView(fov: number, eventData?: any): this;
-  /**
-   * Returns the map's current bearing. The bearing is the compass direction that is "up"; for example, a bearing
-   * of 90° orients the map so that east is up.
-   *
-   * @returns The map's current bearing.
-   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
-   */
-  getBearing(): number;
-  /**
-   * Sets the map's zoom snap level.
-   *
-   * @param snap - The zoom snap level to set.
-   */
-  setZoomSnap(snap: number): this;
-  /**
-   * Returns the map's current zoom snap level.
-   *
-   * @returns The map's current zoom snap level.
-   */
-  getZoomSnap(): number;
-  /**
-   * Sets the map's bearing (rotation). The bearing is the compass direction that is "up"; for example, a bearing
-   * of 90° orients the map so that east is up.
-   *
-   * Equivalent to `jumpTo({bearing: bearing})`.
-   *
-   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
-   *
-   * @param bearing - The desired bearing.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * Rotate the map to 90 degrees
-   * ```ts
-   * map.setBearing(90);
-   * ```
-   */
-  setBearing(bearing: number, eventData?: any): this;
-  /**
-   * Returns the current padding applied around the map viewport.
-   *
-   * @returns The current padding around the map viewport.
-   */
-  getPadding(): PaddingOptions;
-  /**
-   * Sets the padding in pixels around the viewport.
-   *
-   * Equivalent to `jumpTo({padding: padding})`.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param padding - The desired padding.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * Sets a left padding of 300px, and a top padding of 50px
-   * ```ts
-   * map.setPadding({ left: 300, top: 50 });
-   * ```
-   */
-  setPadding(padding: PaddingOptions, eventData?: any): this;
-  /**
-   * Rotates the map to the specified bearing, with an animated transition. The bearing is the compass direction
-   * that is "up"; for example, a bearing of 90° orients the map so that east is up.
-   *
-   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
-   *
-   * @param bearing - The desired bearing.
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  rotateTo(bearing: number, options?: EaseToOptions, eventData?: any): this;
-  /**
-   * Rotates the map so that north is up (0° bearing), with an animated transition.
-   *
-   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  resetNorth(options?: AnimationOptions, eventData?: any): this;
-  /**
-   * Rotates and pitches the map so that north is up (0° bearing) and pitch and roll are 0°, with an animated transition.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `pitchstart`, `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  resetNorthPitch(options?: AnimationOptions, eventData?: any): this;
-  /**
-   * Snaps the map so that north is up (0° bearing), if the current bearing is close enough to it (i.e. within the
-   * `bearingSnap` threshold).
-   *
-   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  snapToNorth(options?: AnimationOptions, eventData?: any): this;
-  /**
-   * Returns the map's current pitch (tilt).
-   *
-   * @returns The map's current pitch, measured in degrees away from the plane of the screen.
-   */
-  getPitch(): number;
-  /**
-   * Sets the map's pitch (tilt). Equivalent to `jumpTo({pitch: pitch})`.
-   *
-   * Triggers the following events: `movestart`, `moveend`, `pitchstart`, and `pitchend`.
-   *
-   * @param pitch - The pitch to set, measured in degrees away from the plane of the screen (0-60).
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  setPitch(pitch: number, eventData?: any): this;
-  /**
-   * Returns the map's current roll angle.
-   *
-   * @returns The map's current roll, measured in degrees about the camera boresight.
-   */
-  getRoll(): number;
-  /**
-   * Sets the map's roll angle. Equivalent to `jumpTo({roll: roll})`.
-   *
-   * Triggers the following events: `movestart`, `moveend`, `rollstart`, and `rollend`.
-   *
-   * @param roll - The roll to set, measured in degrees about the camera boresight
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   */
-  setRoll(roll: number, eventData?: any): this;
-  /**
-   * @param bounds - Calculate the center for these bounds in the viewport and use
-   * the highest zoom level up to and including {@link Map.getMaxZoom} that fits
-   * in the viewport. LngLatBounds represent a box that is always axis-aligned with bearing 0.
-   * Bounds will be taken in [sw, ne] order. Southwest point will always be to the left of the northeast point.
-   * @param options - Options object
-   * @returns If map is able to fit to provided bounds, returns `center`, `zoom`, and `bearing`.
-   * If map is unable to fit, method will warn and return undefined.
-   * @example
-   * ```ts
-   * let bbox = [[-79, 43], [-73, 45]];
-   * let newCameraTransform = map.cameraForBounds(bbox, {
-   *   padding: {top: 10, bottom:25, left: 15, right: 5}
-   * });
-   * ```
-   */
-  cameraForBounds(bounds: LngLatBoundsLike, options?: CameraForBoundsOptions): CenterZoomBearing | undefined;
-  /**
-   * @internal
-   * Calculate the center of these two points in the viewport and use
-   * the highest zoom level up to and including {@link Map.getMaxZoom} that fits
-   * the AABB defined by these points in the viewport at the specified bearing.
-   * @param p0 - First point
-   * @param p1 - Second point
-   * @param bearing - Desired map bearing at end of animation, in degrees
-   * @param options - the camera options
-   * @returns If map is able to fit to provided bounds, returns `center`, `zoom`, and `bearing`.
-   *      If map is unable to fit, method will warn and return undefined.
-   * @example
-   * ```ts
-   * let p0 = [-79, 43];
-   * let p1 = [-73, 45];
-   * let bearing = 90;
-   * let newCameraTransform = map._cameraForBoxAndBearing(p0, p1, bearing, {
-   *   padding: {top: 10, bottom:25, left: 15, right: 5}
-   * });
-   * ```
-   */
-  _cameraForBoxAndBearing(p0: LngLatLike, p1: LngLatLike, bearing: number, options?: CameraForBoundsOptions): CenterZoomBearing | undefined;
-  /**
-   * Pans and zooms the map to contain its visible area within the specified geographical bounds.
-   * This function will also reset the map's bearing to 0 if bearing is nonzero.
-   *
-   * Triggers the following events: `movestart` and `moveend`.
-   *
-   * @param bounds - Center these bounds in the viewport and use the highest
-   * zoom level up to and including {@link Map.getMaxZoom} that fits them in the viewport.
-   * Bounds will be taken in [sw, ne] order. Southwest point will always be to the left of the northeast point.
-   * @param options - Options supports all properties from {@link AnimationOptions} and {@link CameraOptions} in addition to the fields below.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * let bbox = [[-79, 43], [-73, 45]];
-   * map.fitBounds(bbox, {
-   *   padding: {top: 10, bottom:25, left: 15, right: 5}
-   * });
-   * ```
-   * @see [Fit a map to a bounding box](https://maplibre.org/maplibre-gl-js/docs/examples/fit-a-map-to-a-bounding-box/)
-   */
-  fitBounds(bounds: LngLatBoundsLike, options?: FitBoundsOptions, eventData?: any): this;
-  /**
-   * Pans, rotates and zooms the map to to fit the box made by points p0 and p1
-   * once the map is rotated to the specified bearing. To zoom without rotating,
-   * pass in the current map bearing.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend` and `rotate`.
-   *
-   * @param p0 - First point on screen, in pixel coordinates
-   * @param p1 - Second point on screen, in pixel coordinates
-   * @param bearing - Desired map bearing at end of animation, in degrees
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * let p0 = [220, 400];
-   * let p1 = [500, 900];
-   * map.fitScreenCoordinates(p0, p1, map.getBearing(), {
-   *   padding: {top: 10, bottom:25, left: 15, right: 5}
-   * });
-   * ```
-   * @see Used by {@link BoxZoomHandler}
-   */
-  fitScreenCoordinates(p0: PointLike, p1: PointLike, bearing: number, options?: FitBoundsOptions, eventData?: any): this;
-  _fitInternal(calculatedOptions?: CenterZoomBearing, options?: FitBoundsOptions, eventData?: any): this;
-  /**
-   * Changes any combination of center, zoom, bearing, pitch, and roll, without
-   * an animated transition. The map will retain its current values for any
-   * details not specified in `options`.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
-   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend` and `rotate`.
-   *
-   * @param options - Options object
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * // jump to coordinates at current zoom
-   * map.jumpTo({center: [0, 0]});
-   * // jump with zoom, pitch, and bearing options
-   * map.jumpTo({
-   *   center: [0, 0],
-   *   zoom: 8,
-   *   pitch: 45,
-   *   bearing: 90
-   * });
-   * ```
-   * @see [Jump to a series of locations](https://maplibre.org/maplibre-gl-js/docs/examples/jump-to-a-series-of-locations/)
-   * @see [Update a feature in realtime](https://maplibre.org/maplibre-gl-js/docs/examples/update-a-feature-in-realtime/)
-   */
-  jumpTo(options: JumpToOptions, eventData?: any): this;
-  /**
-   * Given a camera 'from' position and a position to look at (`to`), calculates zoom and camera rotation and returns them as {@link CameraOptions}.
-   * @param from - The camera to look from
-   * @param altitudeFrom - The altitude of the camera to look from
-   * @param to - The center to look at
-   * @param altitudeTo - Optional altitude of the center to look at. If none given the ground height will be used.
-   * @returns the calculated camera options
-   * @example
-   * ```ts
-   * // Calculate options to look from (1°, 0°, 1000m) to (1°, 1°, 0m)
-   * const cameraLngLat = new LngLat(1, 0);
-   * const cameraAltitude = 1000;
-   * const targetLngLat = new LngLat(1, 1);
-   * const targetAltitude = 0;
-   * const cameraOptions = map.calculateCameraOptionsFromTo(cameraLngLat, cameraAltitude, targetLngLat, targetAltitude);
-   * // Apply calculated options
-   * map.jumpTo(cameraOptions);
-   * ```
-   */
-  calculateCameraOptionsFromTo(from: LngLatLike, altitudeFrom: number, to: LngLatLike, altitudeTo?: number): CameraOptions;
-  /**
-   * Given a camera position and rotation, calculates zoom and center point and returns them as {@link CameraOptions}.
-   * @param cameraLngLat - The lng, lat of the camera to look from
-   * @param cameraAlt - The altitude of the camera to look from, in meters above sea level
-   * @param bearing - Bearing of the camera, in degrees
-   * @param pitch - Pitch of the camera, in degrees
-   * @param roll - Roll of the camera, in degrees
-   * @returns the calculated camera options
-   * @example
-   * ```ts
-   * // Calculate options to look from camera position(1°, 0°, 1000m) with bearing = 90°, pitch = 30°, and roll = 45°
-   * const cameraLngLat = new LngLat(1, 0);
-   * const cameraAltitude = 1000;
-   * const bearing = 90;
-   * const pitch = 30;
-   * const roll = 45;
-   * const cameraOptions = map.calculateCameraOptionsFromCameraLngLatAltRotation(cameraLngLat, cameraAltitude, bearing, pitch, roll);
-   * // Apply calculated options
-   * map.jumpTo(cameraOptions);
-   * ```
-   */
-  calculateCameraOptionsFromCameraLngLatAltRotation(cameraLngLat: LngLatLike, cameraAlt: number, bearing: number, pitch: number, roll?: number): CameraOptions;
-  /**
-   * Changes any combination of `center`, `zoom`, `bearing`, `pitch`, `roll`, and `padding` with an animated transition
-   * between old and new values. The map will retain its current values for any
-   * details not specified in `options`.
-   *
-   * !!! note "Reduced Motion"
-   *     The transition will happen instantly if the user has enabled
-   *     the `reduced motion` accessibility feature enabled in their operating system,
-   *     unless `options` includes `essential: true`.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
-   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
-   *
-   * @param options - Options describing the destination and animation of the transition.
-   * Accepts {@link CameraOptions} and {@link AnimationOptions}.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
-   */
-  easeTo(options: EaseToOptions, eventData?: any): this;
-  _prepareEase(eventData: any, noMoveStart: boolean, currently?: {
-    moving?: boolean;
-    zooming?: boolean;
-    rotating?: boolean;
-    pitching?: boolean;
-    rolling?: boolean;
-  }): void;
-  _prepareElevation(center: LngLat): void;
-  _updateElevation(k: number): void;
-  _finalizeElevation(): void;
-  /**
-   * @internal
-   * Called when the camera is about to be manipulated.
-   * If `transformCameraUpdate` is specified or terrain is enabled, a copy of
-   * the current transform is created to track the accumulated changes.
-   * This underlying transform represents the "desired state" proposed by input handlers / animations / UI controls.
-   * It may differ from the state used for rendering (`this.transform`).
-   * @returns Transform to apply changes to
-   */
-  _getTransformForUpdate(): ITransform;
-  /**
-   * @internal
-   * Checks the given transform for the camera being below terrain surface and
-   * returns new pitch and zoom to fix that.
-   *
-   * With the new pitch and zoom, the camera will be at the same ground
-   * position but at higher altitude. It will still point to the same spot on
-   * the map.
-   *
-   * @param tr - The transform to check.
-   */
-  _elevateCameraIfInsideTerrain(tr: ITransform): {
-    pitch?: number;
-    zoom?: number;
-  };
-  /**
-   * @internal
-   * Called after the camera is done being manipulated.
-   * @param tr - the requested camera end state
-   * If the camera is inside terrain, it gets elevated.
-   * Call `transformCameraUpdate` if present, and then apply the "approved" changes.
-   */
-  _applyUpdatedTransform(tr: ITransform): void;
-  _fireMoveEvents(eventData?: any): void;
-  _afterEase(eventData?: any, easeId?: string): void;
-  /**
-   * Changes any combination of center, zoom, bearing, pitch, and roll, animating the transition along a curve that
-   * evokes flight. The animation seamlessly incorporates zooming and panning to help
-   * the user maintain her bearings even after traversing a great distance.
-   *
-   * !!! note "Reduced Motion"
-   *     The animation will be skipped, and this will behave equivalently to `jumpTo`
-   *     if the user has the `reduced motion` accessibility feature enabled in their operating system,
-   *     unless 'options' includes `essential: true`.
-   *
-   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
-   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
-   *
-   * @param options - Options describing the destination and animation of the transition.
-   * Accepts {@link CameraOptions}, {@link AnimationOptions},
-   * and the following additional options.
-   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
-   * @example
-   * ```ts
-   * // fly with default options to null island
-   * map.flyTo({center: [0, 0], zoom: 9});
-   * // using flyTo options
-   * map.flyTo({
-   *   center: [0, 0],
-   *   zoom: 9,
-   *   speed: 0.2,
-   *   curve: 1,
-   *   easing(t) {
-   *     return t;
-   *   }
-   * });
-   * ```
-   * @see [Fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location/)
-   * @see [Slowly fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/slowly-fly-to-a-location/)
-   * @see [Fly to a location based on scroll position](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location-based-on-scroll-position/)
-   */
-  flyTo(options: FlyToOptions, eventData?: any): this;
-  isEasing(): boolean;
-  /**
-   * Stops any animated transition underway.
-   */
-  stop(): this;
-  _stop(allowGestures?: boolean, easeId?: string): this;
-  _ease(frame: (_: number) => void, finish: () => void, options: {
-    animate?: boolean;
-    duration?: number;
-    easing?: (_: number) => number;
-  }): void;
-  _renderFrameCallback: () => void;
-  _normalizeBearing(bearing: number, currentBearing: number): number;
-  /**
-   * Gets the elevation at a given location, in meters above sea level.
-   * Returns null if terrain is not enabled.
-   * If terrain is enabled with some exaggeration value, the value returned here will be reflective of (multiplied by) that exaggeration value.
-   * This method should be used for proper positioning of custom 3d objects, as explained [here](https://maplibre.org/maplibre-gl-js/docs/examples/adding-3d-models-using-threejs-on-terrain/)
-   * @param lngLatLike - [x,y] or LngLat coordinates of the location
-   * @returns elevation in meters
-   */
-  queryTerrainElevation(lngLatLike: LngLatLike): number | null;
-}
-declare class HandlerInertia {
-  _map: Map$1;
-  _inertiaBuffer: Array<{
-    time: number;
-    settings: any;
+  url: string;
+  lang?: string;
+  static loadGlyphRange: typeof loadGlyphRange;
+  static TinySDF: typeof TinySDF;
+  constructor(requestManager: RequestManager, localIdeographFontFamily?: string | false, lang?: string);
+  setURL(url?: string | null): void;
+  getGlyphs(glyphs: {
+    [stack: string]: number[];
+  }): Promise<GetGlyphsResponse>;
+  _getAndCacheGlyphsPromise(stack: string, id: number): Promise<{
+    stack: string;
+    id: number;
+    glyph: StyleGlyph;
   }>;
-  constructor(map: Map$1);
-  clear(): void;
-  record(settings: any): void;
-  _drainInertiaBuffer(): void;
-  _onMoveEnd(panInertiaOptions?: DragPanOptions | boolean): EaseToOptions;
-}
-/**
- * Handlers interpret dom events and return camera changes that should be
- * applied to the map (`HandlerResult`s). The camera changes are all deltas.
- * The handler itself should have no knowledge of the map's current state.
- * This makes it easier to merge multiple results and keeps handlers simpler.
- * For example, if there is a mousedown and mousemove, the mousePan handler
- * would return a `panDelta` on the mousemove.
- */
-interface Handler {
-  enable(): void;
-  disable(): void;
-  isEnabled(): boolean;
-  /**
-   * This is used to indicate if the handler is currently active or not.
-   * In case a handler is active, it will block other handlers from getting the relevant events.
-   * There is an allow list of handlers that can be active at the same time, which is configured when adding a handler.
-   */
-  isActive(): boolean;
-  /**
-   * `reset` can be called by the manager at any time and must reset everything to it's original state
-   */
-  reset(): void;
-  readonly touchstart?: (e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>) => HandlerResult | void;
-  readonly touchmove?: (e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>) => HandlerResult | void;
-  readonly touchmoveWindow?: (e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>) => HandlerResult | void;
-  readonly touchend?: (e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>) => HandlerResult | void;
-  readonly touchcancel?: (e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>) => HandlerResult | void;
-  readonly mousedown?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly mousemove?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly mousemoveWindow?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly mouseup?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly mouseupWindow?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly dblclick?: (e: MouseEvent, point: Point) => HandlerResult | void;
-  readonly contextmenu?: (e: MouseEvent) => HandlerResult | void;
-  readonly wheel?: (e: WheelEvent, point: Point) => HandlerResult | void;
-  readonly keydown?: (e: KeyboardEvent) => HandlerResult | void;
-  readonly keyup?: (e: KeyboardEvent) => HandlerResult | void;
-  /**
-   * `renderFrame` is the only non-dom event. It is called during render
-   * frames and can be used to smooth camera changes (see scroll handler).
-   */
-  readonly renderFrame?: () => HandlerResult | void;
-}
-/**
- * All handler methods that are called with events can optionally return a `HandlerResult`.
- */
-type HandlerResult = {
-  panDelta?: Point;
-  zoomDelta?: number;
-  bearingDelta?: number;
-  pitchDelta?: number;
-  rollDelta?: number;
-  /**
-   * the point to not move when changing the camera
-   */
-  around?: Point | null;
-  /**
-   * same as above, except for pinch actions, which are given higher priority
-   */
-  pinchAround?: Point | null;
-  /**
-   * A method that can fire a one-off easing by directly changing the map's camera.
-   */
-  cameraAnimation?: (map: Map$1) => void;
-  /**
-   * The last three properties are needed by only one handler: scrollzoom.
-   * The DOM event to be used as the `originalEvent` on any camera change events.
-   */
-  originalEvent?: Event$1;
-  /**
-   * Makes the manager trigger a frame, allowing the handler to return multiple results over time (see scrollzoom).
-   */
-  needsRenderFrame?: boolean;
-  /**
-   * The camera changes won't get recorded for inertial zooming.
-   */
-  noInertia?: boolean;
-};
-type EventInProgress = {
-  handlerName: string;
-  originalEvent: Event$1;
-};
-type EventsInProgress = {
-  zoom?: EventInProgress;
-  roll?: EventInProgress;
-  pitch?: EventInProgress;
-  rotate?: EventInProgress;
-  drag?: EventInProgress;
-};
-type MapControlsScenarioOptions = {
-  terrain?: Terrain | null;
-  tr: ITransform;
-  deltasForHelper: MapControlsDeltas;
-  preZoomAroundLoc: LngLat;
-  combinedEventsInProgress: EventsInProgress;
-  panDelta?: Point;
-};
-declare class HandlerManager {
-  _map: Map$1;
-  _el: HTMLElement;
-  _handlers: Array<{
-    handlerName: string;
-    handler: Handler;
-    allowed: Array<string>;
+  _downloadAndCacheRangePromise(stack: string, id: number): Promise<{
+    stack: string;
+    id: number;
+    glyph: StyleGlyph;
   }>;
-  _eventsInProgress: EventsInProgress;
-  _frameId: number;
-  _inertia: HandlerInertia;
-  _bearingSnap: number;
-  _handlersById: {
-    [x: string]: Handler;
-  };
-  _updatingCamera: boolean;
-  _changes: Array<[HandlerResult, EventsInProgress, {
-    [handlerName: string]: Event$1;
-  }]>;
-  _terrainMovement: boolean;
-  _zoom: {
-    handlerName: string;
-  };
-  _previousActiveHandlers: {
-    [x: string]: Handler;
-  };
-  _listeners: Array<[Window | Document | HTMLElement, string, {
-    passive?: boolean;
-    capture?: boolean;
-  } | undefined]>;
+  _warnOnMissingGlyphRange(glyph: StyleGlyph, range: number, id: number, err: Error): void;
   /**
-   * @internal
-   * The document that contains the map container element, for cross-window support.
+   * Returns whether the given codepoint should be rendered locally.
    */
-  get _ownerDocument(): Document;
+  _charUsesLocalIdeographFontFamily(id: number): boolean;
   /**
-   * @internal
-   * The window that contains the map container element, for cross-window support.
+   * Draws a glyph offscreen using TinySDF, creating a TinySDF instance lazily.
    */
-  get _ownerWindow(): Window;
-  constructor(map: Map$1, options: CompleteMapOptions);
+  _drawGlyph(entry: Entry, stack: string, id: number): Promise<StyleGlyph>;
+  _createTinySDF(stack: String | false): Promise<TinySDF>;
+  /**
+   * Sniffs the font style out of a font family name.
+   */
+  _fontStyle(fontFamily: string): string;
+  /**
+   * Sniffs the font weight out of a font family name.
+   */
+  _fontWeight(fontFamily: string): string;
   destroy(): void;
-  _addDefaultHandlers(options: CompleteMapOptions): void;
-  _add(handlerName: string, handler: Handler, allowed?: Array<string>): void;
-  stop(allowEndAnimation: boolean): void;
-  isActive(): boolean;
-  isZooming(): boolean;
-  isRotating(): boolean;
-  isMoving(): boolean;
-  _blockedByActive(activeHandlers: {
-    [x: string]: Handler;
-  }, allowed: Array<string>, myName: string): boolean;
-  handleWindowEvent: (e: {
-    type: "mousemove" | "mouseup" | "touchmove";
-  }) => void;
-  _getMapTouches(touches: TouchList): TouchList;
-  handleEvent: (e: Event$1, eventName?: keyof Handler) => void;
-  mergeHandlerResult(mergedHandlerResult: HandlerResult, eventsInProgress: EventsInProgress, handlerResult: HandlerResult, name: string, e?: UIEvent): void;
-  _applyChanges(): void;
-  _updateMapTransform(combinedResult: HandlerResult, combinedEventsInProgress: EventsInProgress, deactivatedHandlers: {
-    [handlerName: string]: Event$1;
-  }): void;
-  _handleMapControls({
-    terrain,
-    tr,
-    deltasForHelper,
-    preZoomAroundLoc,
-    combinedEventsInProgress,
-    panDelta
-  }: MapControlsScenarioOptions): void;
-  _fireEvents(newEventsInProgress: EventsInProgress, deactivatedHandlers: {
-    [handlerName: string]: Event$1;
-  }, allowEndAnimation: boolean): void;
-  _fireEvent(type: string, e?: Event$1): void;
-  _requestFrame(): number;
-  _triggerRenderFrame(): void;
+} //#endregion
+//#region src/render/render_to_texture_interface.d.ts
+/**
+ * Interface for render-to-texture implementations.
+ * The painter uses this interface — concrete implementations live in backend folders (webgl/, webgpu/).
+ */
+interface IRenderToTexture {
+  prepareForRender(style: Style, zoom: number): void;
+  renderLayer(layer: StyleLayer, renderOptions: RenderOptions): boolean;
+  getTexture(tile: Tile): any;
+} //#endregion
+//#region src/render/painter.d.ts
+type RenderPass = "offscreen" | "opaque" | "translucent";
+type PainterOptions = {
+  showOverdrawInspector: boolean;
+  showTileBoundaries: boolean;
+  showPadding: boolean;
+  rotating: boolean;
+  zooming: boolean;
+  moving: boolean;
+  fadeDuration: number;
+  anisotropicFilterPitch: number;
+};
+type RenderOptions = {
+  isRenderingToTexture: boolean;
+  isRenderingGlobe: boolean;
+};
+/**
+ * Holds the texture used to render a 2D tile so it can be draped over 3D
+ * terrain. All RTTObjects share a single FBO owned by the Painter; the
+ * texture is swapped in via `Painter.bindRTT` before each render pass.
+ * Owned by a `Tile` while in use, recycled via `Painter.releaseRTT` when
+ * the tile no longer needs it.
+ */
+type RTTObject = {
+  texture: Texture;
+  size: number;
+};
+/**
+ * @internal
+ * Initialize a new painter object.
+ */
+declare class Painter {
+  drawFunctions: DrawFunctions;
+  context: Context;
+  transform: IReadonlyTransform;
+  renderToTexture: IRenderToTexture;
+  _tileTextures: {
+    [_: number]: Texture[];
+  };
+  /**
+   * A pool of recyclable {@link RTTObject}s (textures only; the FBO is shared).
+   */
+  _rttObjectRecyclePool: RTTObject[];
+  /**
+   * Shared FBO used by all RTT render passes. The color attachment is
+   * swapped to the target RTTObject's texture via {@link bindRTT}.
+   * Created lazily on first use.
+   */
+  _rttSharedFbo: {
+    fbo: Framebuffer;
+    depthRenderbuffer: WebGLRenderbuffer;
+    size: number;
+  } | null;
+  /**
+   * Shared scratch FBO (color + depth-stencil) used by `{line,fill}-layer-opacity`.
+   * The layer is rendered into this FBO, then composited into whatever framebuffer was previously bound
+   * The canvas in the flat case, the per-terrain-tile RTT texture in the terrain case.
+   * Resized in place to match the target dimensions.
+   */
+  layerOpacityFbo: Framebuffer | null;
+  numSublayers: number;
+  depthEpsilon: number;
+  emptyProgramConfiguration: ProgramConfiguration;
+  width: number;
+  height: number;
+  pixelRatio: number;
+  tileExtentBuffer: VertexBuffer;
+  tileExtentSegments: SegmentVector;
+  tileExtentMesh: Mesh;
+  debugBuffer: VertexBuffer;
+  debugSegments: SegmentVector;
+  rasterBoundsBuffer: VertexBuffer;
+  rasterBoundsSegments: SegmentVector;
+  rasterBoundsBufferPosOnly: VertexBuffer;
+  rasterBoundsSegmentsPosOnly: SegmentVector;
+  viewportBuffer: VertexBuffer;
+  viewportSegments: SegmentVector;
+  quadTriangleIndexBuffer: IndexBuffer;
+  tileBorderIndexBuffer: IndexBuffer;
+  _tileClippingMaskIDs: {
+    [_: string]: number;
+  };
+  stencilClearMode: StencilMode;
+  style: Style;
+  options: PainterOptions;
+  lineAtlas: LineAtlas;
+  imageManager: ImageManager;
+  glyphManager: GlyphManager;
+  depthRangeFor3D: DepthRangeType;
+  opaquePassCutoff: number;
+  renderPass: RenderPass;
+  currentLayer: number;
+  currentStencilSource: string;
+  nextStencilID: number;
+  id: string;
+  _showOverdrawInspector: boolean;
+  cache: {
+    [_: string]: Program<any>;
+  };
+  crossTileSymbolIndex: CrossTileSymbolIndex;
+  symbolFadeChange: number;
+  debugOverlayTexture: Texture;
+  debugOverlayCanvas: HTMLCanvasElement;
+  terrainFacilitator: {
+    depthDirty: boolean;
+    coordsDirty: boolean;
+    matrix: mat4;
+    renderTime: number;
+  };
+  constructor(gl: WebGL2RenderingContext, transform: IReadonlyTransform);
+  resize(width: number, height: number, pixelRatio: number): void;
+  setup(): void;
+  clearStencil(): void;
+  renderTileClippingMasks(layer: StyleLayer, tileIDs: OverscaledTileID[], renderToTexture: boolean): void;
+  _renderTileMasks(tileStencilRefs: {
+    [_: string]: number;
+  }, tileIDs: OverscaledTileID[], renderToTexture: boolean, useBorders: boolean): void;
+  getTerrainDataForTile(tileID: OverscaledTileID, isRenderingToTexture: boolean): TerrainData | null;
+  /**
+   * Fills the depth buffer with the geometry of all supplied tiles.
+   * Does not change the color buffer or the stencil buffer.
+   */
+  _renderTilesDepthBuffer(): void;
+  stencilModeFor3D(): StencilMode;
+  stencilModeForClipping(tileID: OverscaledTileID): StencilMode;
+  getStencilConfigForOverlapAndUpdateStencilID(tileIDs: OverscaledTileID[]): [{
+    [_: number]: Readonly<StencilMode>;
+  }, OverscaledTileID[]];
+  stencilConfigForOverlapTwoPass(tileIDs: OverscaledTileID[]): [{
+    [_: number]: Readonly<StencilMode>;
+  }, {
+    [_: number]: Readonly<StencilMode>;
+  }, OverscaledTileID[]];
+  colorModeForRenderPass(): Readonly<ColorMode>;
+  getDepthModeForSublayer(n: number, mask: DepthMaskType, func?: DepthFuncType | null): Readonly<DepthMode>;
+  getDepthModeFor3D(): Readonly<DepthMode>;
+  opaquePassEnabledForLayer(): boolean;
+  render(style: Style, options: PainterOptions): void;
+  /**
+   * Update the depth framebuffer if the camera has moved or tiles have reloaded.
+   * Marks coords as depthDirty so they are re-rendered on next demand.
+   */
+  maybeDrawDepth(requireExact: boolean): void;
+  /**
+   * Render the coords framebuffer if it is coordsDirty
+   */
+  maybeDrawCoords(): void;
+  renderLayer(painter: Painter, tileManager: TileManager, layer: StyleLayer, coords: OverscaledTileID[], renderOptions: RenderOptions): void;
+  static readonly MAX_TEXTURE_POOL_SIZE_PER_BUCKET = 50;
+  saveTileTexture(texture: Texture): void;
+  getTileTexture(size: number): Texture;
+  acquireRTT(size: number): RTTObject;
+  /**
+   * Binds the shared RTT FBO with the given RTTObject's texture attached
+   * as color target. Creates / resizes the shared FBO and depth-stencil
+   * renderbuffer lazily.
+   */
+  bindRTT(obj: RTTObject): void;
+  releaseRTT(obj: RTTObject): void;
+  /**
+   * Checks whether a pattern image is needed, and if it is, whether it is not loaded.
+   *
+   * @returns true if a needed image is missing and rendering needs to be skipped.
+   */
+  isPatternMissing(image?: CrossFaded<ResolvedImage> | null): boolean;
+  /**
+   * Finds the required shader and its variant (base/terrain/globe, etc.) and binds it, compiling a new shader if required.
+   * @param name - Name of the desired shader.
+   * @param programConfiguration - Configuration of shader's inputs.
+   * @param forceSimpleProjection - Whether to force the use of a shader variant with simple mercator projection vertex shader.
+   * @param defines - Additional macros to be injected at the beginning of the shader. Expected format is `['#define XYZ']`, etc.
+   * False by default. Use true when drawing with a simple projection matrix is desired, eg. when drawing a fullscreen quad.
+   * @returns
+   */
+  useProgram(name: string, programConfiguration?: ProgramConfiguration | null, forceSimpleProjection?: boolean, defines?: string[]): Program<any>;
+  setCustomLayerDefaults(): void;
+  setBaseState(): void;
+  initDebugOverlayCanvas(): void;
+  destroy(): void;
+  overLimit(): boolean;
+} //#endregion
+//#region src/tile/tile_manager_in_view_tiles.d.ts
+declare class InViewTiles {
+  private _tiles;
+  handleWrapJump(wrapDelta: number): void;
+  setFeatureState(featuresChanged: LayerFeatureStates, painter: Painter, revision: number): void;
+  getAllTiles(): Tile[];
+  getAllIds(sorted?: boolean): string[];
+  getTileById(key: string): Tile | undefined;
+  setTile(key: string, tile: Tile): void;
+  deleteTileById(key: string): void;
+  /**
+   * Get a currently loaded tile.
+   * - a cached tile is not a loaded tile
+   * @returns the tile if it's in view and had data, null otherwise.
+   */
+  getLoadedTile(tileID: OverscaledTileID): Tile | null;
+  isIdRenderable(id: string, symbolLayer?: boolean): boolean;
+  getRenderableIds(bearingInRadians?: number, symbolLayer?: boolean): string[];
+} //#endregion
+//#region src/source/source_state.d.ts
+type FeatureStateEntry = {
+  id: string;
+  state: FeatureState;
+};
+type FeatureStates = FeatureStateEntry[];
+type LayerFeatureStates = Record<string, FeatureStates>;
+type FeatureStatesMap = Record<string, FeatureState>;
+type LayerFeatureStatesMap = Record<string, FeatureStatesMap>;
+/**
+ * @internal
+ * SourceFeatureState manages the state and pending changes
+ * to features in a source, separated by source layer.
+ * stateChanges and deletedStates batch all changes to the tile (updates and removes, respectively)
+ * between coalesce() events. addFeatureState() and removeFeatureState() also update their counterpart's
+ * list of changes, such that coalesce() can apply the proper state changes while agnostic to the order of operations.
+ * In deletedStates, all null's denote complete removal of state at that scope
+ */
+declare class SourceFeatureState {
+  state: LayerFeatureStatesMap;
+  stateChanges: LayerFeatureStatesMap;
+  deletedStates: {};
+  revision: number;
+  constructor();
+  updateState(sourceLayer: string, featureId: number | string, newState: any): void;
+  removeFeatureState(sourceLayer: string, featureId?: number | string, key?: string): void;
+  getState(sourceLayer: string, featureId: number | string): FeatureState;
+  initializeTileState(tile: Tile, painter: Painter): void;
+  coalesceChanges(inViewTiles: InViewTiles, painter: Painter): void;
+} //#endregion
+//#region src/data/feature_index.d.ts
+type QueryParameters = {
+  scale: number;
+  pixelPosMatrix: mat4;
+  transform: IReadonlyTransform;
+  tileSize: number;
+  queryGeometry: Point[];
+  cameraQueryGeometry: Point[];
+  queryPadding: number;
+  getElevation: undefined | ((x: number, y: number) => number);
+  params: {
+    filter?: FilterSpecification;
+    layers?: Set<string> | null;
+    availableImages?: string[];
+    globalState?: Record<string, any>;
+  };
+};
+type QueryResults = {
+  [_: string]: QueryResultsItem[];
+};
+type QueryResultsItem = {
+  featureIndex: number;
+  feature: GeoJSONFeature;
+  intersectionZ?: boolean | number;
+};
+/**
+ * An in memory index class to allow fast interaction with features
+ */
+declare class FeatureIndex {
+  tileID: OverscaledTileID;
+  x: number;
+  y: number;
+  z: number;
+  grid: TransferableGridIndex;
+  grid3D: TransferableGridIndex;
+  featureIndexArray: FeatureIndexArray;
+  promoteId?: PromoteIdSpecification;
+  encoding: TileEncoding;
+  rawTileData: ArrayBuffer;
+  bucketLayerIDs: string[][];
+  vtLayers: {
+    [_: string]: VectorTileLayerLike;
+  };
+  sourceLayerCoder: DictionaryCoder;
+  constructor(tileID: OverscaledTileID, promoteId?: PromoteIdSpecification | null);
+  insert(feature: VectorTileFeatureLike, geometry: Point[][], featureIndex: number, sourceLayerIndex: number, bucketIndex: number, is3D?: boolean): void;
+  loadVTLayers(): {
+    [_: string]: VectorTileLayerLike;
+  };
+  query(args: QueryParameters, styleLayers: {
+    [_: string]: StyleLayer;
+  }, serializedLayers: {
+    [_: string]: any;
+  }, sourceFeatureState: SourceFeatureState): QueryResults;
+  loadMatchingFeature(result: QueryResults, bucketIndex: number, sourceLayerIndex: number, featureIndex: number, filter: FeatureFilter, filterLayerIDs: Set<string> | undefined, availableImages: string[], styleLayers: {
+    [_: string]: StyleLayer;
+  }, serializedLayers: {
+    [_: string]: any;
+  }, sourceFeatureState?: SourceFeatureState, intersectionTest?: (feature: VectorTileFeatureLike, styleLayer: StyleLayer, featureState: any, id: string | number | void) => boolean | number): void;
+  lookupSymbolFeatures(symbolFeatureIndexes: number[], serializedLayers: {
+    [_: string]: StyleLayer;
+  }, bucketIndex: number, sourceLayerIndex: number, filterParams: {
+    filterSpec: FilterSpecification;
+    globalState: Record<string, any>;
+  }, filterLayerIDs: Set<string> | null, availableImages: string[], styleLayers: {
+    [_: string]: StyleLayer;
+  }): QueryResults;
+  hasLayer(id: string): boolean;
+  getId(feature: VectorTileFeatureLike, sourceLayerId: string): string | number;
+} //#endregion
+//#region src/source/query_features.d.ts
+/**
+ * Options to pass to query the map for the rendered features
+ */
+type QueryRenderedFeaturesOptions = {
+  /**
+   * An array or set of [style layer IDs](https://maplibre.org/maplibre-style-spec/#layer-id) for the query to inspect.
+   * Only features within these layers will be returned. If this parameter is undefined, all layers will be checked.
+   */
+  layers?: string[] | Set<string>;
+  /**
+   * A [filter](https://maplibre.org/maplibre-style-spec/layers/#filter) to limit query results.
+   */
+  filter?: FilterSpecification;
+  /**
+   * An array of string representing the available images
+   */
+  availableImages?: string[];
+  /**
+   * Whether to check if the `options.filter` conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+   */
+  validate?: boolean;
+};
+/**
+ * @internal
+ * A version of QueryRenderedFeaturesOptions used internally
+ */
+type QueryRenderedFeaturesOptionsStrict = Omit<QueryRenderedFeaturesOptions, "layers"> & {
+  layers: Set<string> | null;
+  globalState?: Record<string, any>;
+};
+/**
+ * The options object related to the {@link Map.querySourceFeatures} method
+ */
+type QuerySourceFeatureOptions = {
+  /**
+   * The name of the source layer to query. *For vector tile sources, this parameter is required.* For GeoJSON sources, it is ignored.
+   */
+  sourceLayer?: string;
+  /**
+   * A [filter](https://maplibre.org/maplibre-style-spec/layers/#filter)
+   * to limit query results.
+   */
+  filter?: FilterSpecification;
+  /**
+   * Whether to check if the `parameters.filter` conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+   * @defaultValue true
+   */
+  validate?: boolean;
+};
+/**
+ * @internal
+ * A version of QuerySourceFeatureOptions used internally
+ */
+type QuerySourceFeatureOptionsStrict = QuerySourceFeatureOptions & {
+  globalState?: Record<string, any>;
+};
+type QueryRenderedFeaturesResults = {
+  [key: string]: QueryRenderedFeaturesResultsItem[];
+};
+type QueryRenderedFeaturesResultsItem = QueryResultsItem & {
+  feature: MapGeoJSONFeature;
+}; //#endregion
+//#region src/tile/tile.d.ts
+/**
+ * The tile's state, can be:
+ *
+ * - `loading` Tile data is in the process of loading.
+ * - `loaded` Tile data has been loaded. Tile can be rendered.
+ * - `reloading` Tile data has been loaded and is being updated. Tile can be rendered.
+ * - `unloaded` Tile data has been deleted.
+ * - `errored` Tile data was not loaded because of an error.
+ * - `expired` Tile data was previously loaded, but has expired per its HTTP headers and is in the process of refreshing.
+ */
+type TileState = "loading" | "loaded" | "reloading" | "unloaded" | "errored" | "expired";
+/** @internal */
+type CrossFadeArgs = {
+  fadingRole: FadingRoles;
+  fadingDirection: FadingDirections;
+  fadingParentID?: OverscaledTileID;
+  fadeEndTime: number;
+};
+declare enum FadingRoles {
+  Base = 0,
+  Parent = 1
+}
+declare enum FadingDirections {
+  Departing = 0,
+  Incoming = 1
 }
 /**
- * A position definition for the control to be placed, can be in one of the corners of the map.
- * When two or more controls are places in the same location they are stacked toward the center of the map.
+ * A tile object is the combination of a Coordinate, which defines
+ * its place, as well as a unique ID and data tracking for its content
  */
-type ControlPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+declare class Tile {
+  tileID: OverscaledTileID;
+  uid: number;
+  uses: number;
+  tileSize: number;
+  buckets: {
+    [_: string]: Bucket;
+  };
+  latestFeatureIndex: FeatureIndex | null;
+  latestRawTileData: ArrayBuffer;
+  latestEncoding: TileEncoding;
+  imageAtlas: ImageAtlas;
+  imageAtlasTexture: Texture;
+  dashPositions: {
+    [_: string]: DashEntry;
+  };
+  glyphAtlasImage: AlphaImage;
+  glyphAtlasTexture: Texture;
+  etag?: string;
+  expirationTime: any;
+  expiredRequestCount: number;
+  state: TileState;
+  fadingRole: FadingRoles;
+  fadingDirection: FadingDirections;
+  fadingParentID: OverscaledTileID;
+  selfFading: boolean;
+  timeAdded: number;
+  fadeEndTime: number;
+  fadeOpacity: number;
+  collisionBoxArray: CollisionBoxArray;
+  redoWhenDone: boolean;
+  showCollisionBoxes: boolean;
+  placementSource: any;
+  actor: Actor;
+  vtLayers: {
+    [_: string]: VectorTileLayerLike;
+  };
+  neighboringTiles: Record<string, {
+    backfilled: boolean;
+  }>;
+  dem: DEMData;
+  demMatrix: mat4;
+  aborted: boolean;
+  needsHillshadePrepare: boolean;
+  needsTerrainPrepare: boolean;
+  abortController: AbortController;
+  texture: any;
+  fbo: Framebuffer;
+  demTexture: Texture;
+  refreshedUponExpiration: boolean;
+  reloadPromise: {
+    resolve: () => void;
+    reject: () => void;
+  };
+  resourceTiming: PerformanceResourceTiming[];
+  queryPadding: number;
+  symbolFadeHoldUntil: number;
+  hasSymbolBuckets: boolean;
+  hasRTLText: boolean;
+  dependencies: any;
+  /**
+   * @internal
+   * Caches the result of rendering this 2D tile into a texture so it can be
+   * draped over 3D terrain. Indexed by stack index, where a stack is a
+   * contiguous run of RTT-eligible layers (fill, line, raster, etc.) split
+   * by non-RTT layers like symbols. So `_rttObjects[0]` holds the texture
+   * for layers below the first symbol break, `_rttObjects[1]` for layers
+   * between the first and second symbol breaks, and so on. Each entry
+   * survives across frames until the tile is unloaded or its source data
+   * changes.
+   */
+  rttObjects: Array<RTTObject | undefined>;
+  rttFingerprint: {
+    [sourceId: string]: string;
+  };
+  featureStateRevision: number;
+  /**
+   * @param tileID - the tile ID
+   * @param size - The tile size
+   */
+  constructor(tileID: OverscaledTileID, size: number);
+  isRenderable(symbolLayer: boolean): boolean;
+  /**
+   * @internal
+   * Many-to-one crossfade between a base tile and parent/ancestor tile (when zooming)
+   */
+  setCrossFadeLogic({
+    fadingRole,
+    fadingDirection,
+    fadingParentID,
+    fadeEndTime
+  }: CrossFadeArgs): void;
+  /**
+   * Self fading for edge tiles (when panning map)
+   */
+  setSelfFadeLogic(fadeEndTime: number): void;
+  resetFadeLogic(): void;
+  wasRequested(): boolean;
+  clearTextures(painter: Painter): void;
+  /**
+   * @internal
+   * Returns the cached RTT object for this stack, or undefined on a cache miss.
+   */
+  getRTT(stack: number): RTTObject | undefined;
+  /**
+   * @internal
+   * Allocates a fresh RTT object from the painter's pool and stores it at the
+   * given stack slot. Callers should check {@link getRTT} first; calling this
+   * over an existing slot leaks the previous object.
+   */
+  acquireRTT(painter: Painter, stack: number, size: number): RTTObject;
+  /**
+   * @internal
+   * Returns all cached RTT slots to the painter's pool.
+   */
+  releaseRTT(painter: Painter): void;
+  /**
+   * Given a data object with a 'buffers' property, load it into
+   * this tile's elementGroups and buffers properties and set loaded
+   * to true. If the data is null, like in the case of an empty
+   * GeoJSON tile, no-op but still set loaded to true.
+   * @param data - The data from the worker
+   * @param painter - the painter
+   * @param justReloaded - `true` to just reload
+   */
+  loadVectorData(data: WorkerTileResult, painter: Painter, justReloaded?: boolean | null): void;
+  /**
+   * Release any data or WebGL resources referenced by this tile.
+   */
+  unloadVectorData(): void;
+  getBucket(layer: StyleLayer): Bucket;
+  upload(context: Context): void;
+  prepare(imageManager: ImageManager): void;
+  queryRenderedFeatures(layers: {
+    [_: string]: StyleLayer;
+  }, serializedLayers: {
+    [_: string]: any;
+  }, sourceFeatureState: SourceFeatureState, queryGeometry: Point[], cameraQueryGeometry: Point[], scale: number, params: Pick<QueryRenderedFeaturesOptionsStrict, "filter" | "layers" | "availableImages"> | undefined, transform: IReadonlyTransform, maxPitchScaleFactor: number, pixelPosMatrix: mat4, getElevation: undefined | ((x: number, y: number) => number)): QueryResults;
+  querySourceFeatures(result: GeoJSONFeature[], params?: QuerySourceFeatureOptionsStrict): void;
+  hasData(): boolean;
+  patternsLoaded(): boolean;
+  setExpiryData(data: ExpiryData): void;
+  getExpiryTimeout(): number;
+  setFeatureState(states: LayerFeatureStates, painter: Painter, revision: number): void;
+  holdingForSymbolFade(): boolean;
+  symbolFadeFinished(): boolean;
+  clearSymbolFadeHold(): void;
+  setSymbolHoldDuration(duration: number): void;
+  setDependencies(namespace: string, dependencies: string[]): void;
+  hasDependency(namespaces: string[], keys: string[]): boolean;
+} //#endregion
+//#region src/source/source.d.ts
 /**
- * Interface for interactive controls added to the map. This is a
- * specification for implementers to model: it is not
- * an exported method or class.
+ * The `Source` interface must be implemented by each source type, including "core" types (`vector`, `raster`,
+ * `video`, etc.) and all custom, third-party types.
  *
- * Controls must implement `onAdd` and `onRemove`, and must own an
- * element, which is often a `div` element. To use MapLibre GL JS's
- * default control styling, add the `maplibregl-ctrl` class to your control's
- * node.
+ * **Event** `data` - Fired with `{dataType: 'source', sourceDataType: 'metadata'}` to indicate that any necessary metadata
+ * has been loaded so that it's okay to call `loadTile`; and with `{dataType: 'source', sourceDataType: 'content'}`
+ * to indicate that the source data has changed, so that any current caches should be flushed.
  *
- * @example
- * ```ts
- * class HelloWorldControl: IControl {
- *     onAdd(map) {
- *         this._map = map;
- *         this._container = document.createElement('div');
- *         this._container.className = 'maplibregl-ctrl';
- *         this._container.textContent = 'Hello, world';
- *         return this._container;
- *     }
- *
- *     onRemove() {
- *         this._container.remove();
- *         this._map = undefined;
- *     }
- * }
- * ```
+ * @group Sources
  */
-interface IControl {
+interface Source {
+  readonly type: string;
   /**
-   * Register a control on the map and give it a chance to register event listeners
-   * and resources. This method is called by {@link Map.addControl}
-   * internally.
-   *
-   * @param map - the Map this control will be added to
-   * @returns The control's container element. This should
-   * be created by the control and returned by onAdd without being attached
-   * to the DOM: the map will insert the control's element into the DOM
-   * as necessary.
+   * The id for the source. Must not be used by any existing source.
    */
-  onAdd(map: Map$1): HTMLElement;
+  id: string;
   /**
-   * Unregister a control on the map and give it a chance to detach event listeners
-   * and resources. This method is called by {@link Map.removeControl}
-   * internally.
-   *
-   * @param map - the Map this control will be removed from
+   * The minimum zoom level for the source.
    */
-  onRemove(map: Map$1): void;
+  minzoom: number;
   /**
-   * Optionally provide a default position for this control. If this method
-   * is implemented and {@link Map.addControl} is called without the `position`
-   * parameter, the value returned by getDefaultPosition will be used as the
-   * control's position.
-   *
-   * @returns a control position, one of the values valid in addControl.
+   * The maximum zoom level for the source.
    */
-  readonly getDefaultPosition?: () => ControlPosition;
+  maxzoom: number;
+  /**
+   * The tile size for the source.
+   */
+  tileSize: number;
+  /**
+   * The attribution for the source.
+   */
+  attribution?: string;
+  /**
+   * `true` if zoom levels are rounded to the nearest integer in the source data, `false` if they are floor-ed to the nearest integer.
+   */
+  roundZoom?: boolean;
+  /**
+   * `false` if tiles can be drawn outside their boundaries, `true` if they cannot.
+   */
+  isTileClipped?: boolean;
+  tileID?: CanonicalTileID;
+  /**
+   * `true` if tiles should be sent back to the worker for each overzoomed zoom level, `false` if not.
+   */
+  reparseOverscaled?: boolean;
+  vectorLayerIds?: string[];
+  /**
+   * True if the source has transition, false otherwise.
+   */
+  hasTransition(): boolean;
+  /**
+   * True if the source is loaded, false otherwise.
+   */
+  loaded(): boolean;
+  /**
+   * An ability to fire an event to all the listeners, see {@link Evented}
+   * @param event - The event to fire
+   */
+  fire(event: Event$1): unknown;
+  /**
+   * This method is called when the source is added to the map.
+   * @param map - The map instance
+   */
+  onAdd?(map: Map$1): void;
+  /**
+   * This method is called when the source is removed from the map.
+   * @param map - The map instance
+   */
+  onRemove?(map: Map$1): void;
+  /**
+   * This method does the heavy lifting of loading a tile.
+   * In most cases it will defer the work to the relevant worker source.
+   * @param tile - The tile to load
+   */
+  loadTile(tile: Tile): Promise<LoadTileResult | void>;
+  /**
+   * True is the tile is part of the source, false otherwise.
+   * @param tileID - The tile ID
+   */
+  hasTile?(tileID: OverscaledTileID): boolean;
+  /**
+   * Allows to abort a tile loading.
+   * @param tile - The tile to abort
+   */
+  abortTile?(tile: Tile): Promise<void>;
+  /**
+   * Allows to unload a tile.
+   * @param tile - The tile to unload
+   */
+  unloadTile?(tile: Tile): Promise<void>;
+  /**
+   * @returns A plain (stringifiable) JS object representing the current state of the source.
+   * Creating a source using the returned object as the `options` should result in a Source that is
+   * equivalent to this one.
+   */
+  serialize(): any;
+  /**
+   * Allows to execute a prepare step before the source is used.
+   */
+  prepare?(): void;
+  /**
+   * Optional function to redefine how tiles are loaded at high pitch angles.
+   */
+  calculateTileZoom?: CalculateTileZoomFunction;
+  /**
+   * Optional function to determine whether a tile should be reloaded, given a
+   * set of options associated with a `MapSourceDataChangedEvent`.
+   * @internal
+   */
+  shouldReloadTile?(tile: Tile, options: GeoJSONSourceShouldReloadTileOptions): boolean;
 }
+/**
+ * A general definition of a {@link Source} class for factory usage
+ */
+//#endregion
+//#region src/source/geojson_source_diff.d.ts
+/**
+ * A way to identify a feature, either by string or by number
+ */
+type GeoJSONFeatureId = number | string;
+/**
+ * The geojson source diff object - processed in the following order: remove, add, update. Provides an efficient
+ * way to update GeoJSON data in a map source without having to replace the entire dataset.
+ */
+type GeoJSONSourceDiff = {
+  /**
+   * When set to `true` it will remove all features
+   */
+  removeAll?: boolean;
+  /**
+   * An array of features IDs to remove
+   */
+  remove?: GeoJSONFeatureId[];
+  /**
+   * An array of features to add
+   */
+  add?: GeoJSON.Feature[];
+  /**
+   * An array of update objects
+   */
+  update?: GeoJSONFeatureDiff[];
+};
+/**
+ * A geojson feature diff object - processed in the following order: new geometry, remove properties, add/update properties.
+ * Provides an efficient way to update GeoJSON features in a map source without replacing the entire feature.
+ */
+type GeoJSONFeatureDiff = {
+  /**
+   * The feature ID
+   */
+  id: GeoJSONFeatureId;
+  /**
+   * If it's a new geometry, place it here
+   */
+  newGeometry?: GeoJSON.Geometry;
+  /**
+   * Setting to `true` will remove all preperties
+   */
+  removeAllProperties?: boolean;
+  /**
+   * The properties keys to remove
+   */
+  removeProperties?: string[];
+  /**
+   * The properties to add or update along side their values
+   */
+  addOrUpdateProperties?: Array<{
+    key: string;
+    value: any;
+  }>;
+}; //#endregion
+//#region src/source/geojson_source.d.ts
+/**
+ * Options object for GeoJSONSource.
+ */
+/**
+ * @internal
+ */
+type GeoJSONSourceShouldReloadTileOptions = {
+  /**
+   * Refresh all tiles that WILL contain these bounds.
+   */
+  affectedBounds: LngLatBounds[];
+};
+/**
+ * The cluster options to set
+ */
+//#endregion
+//#region src/ui/events.d.ts
 /**
  * An event from the mouse relevant to a specific layer.
  *
@@ -11995,7 +12135,7 @@ type MapLayerEventType = {
  * });
  * ```
  */
-interface MapEventType {
+type MapEventType = {
   /**
    * Fired when an error occurs. This is GL JS's primary error reporting
    * mechanism. We use an event instead of `throw` to better accommodate
@@ -12051,13 +12191,12 @@ interface MapEventType {
    * changing asynchronously. All `dataloading` events are followed by a `data`,
    * `dataabort` or `error` event.
    */
-  dataloading: MapDataEvent;
+  dataloading: MapSourceDataEvent | MapStyleDataEvent;
   /**
-   * Fired when any map data loads or changes. See {@link MapDataEvent} for more information.
+   * Fired when any map data loads or changes. See {@link MapSourceDataEvent} and {@link MapStyleDataEvent} for more information.
    * @see [Display HTML clusters with custom properties](https://maplibre.org/maplibre-gl-js/docs/examples/display-html-clusters-with-custom-properties/)
    */
-  data: MapDataEvent;
-  tiledataloading: MapDataEvent;
+  data: MapSourceDataEvent | MapStyleDataEvent;
   /**
    * Fired when one of the map's sources begins loading or changing asynchronously.
    * All `sourcedataloading` events are followed by a `sourcedata`, `sourcedataabort` or `error` event.
@@ -12079,16 +12218,21 @@ interface MapEventType {
    */
   styledata: MapStyleDataEvent;
   /**
-   * Fired when an icon or pattern needed by the style is missing. The missing image can
-   * be added with {@link Map.addImage} within this event listener callback to prevent the image from
-   * being skipped. This event can be used to dynamically generate icons and patterns.
+   * Fired once the map's style has fully loaded or changed, after all
+   * necessary resources referenced by the style have been requested.
+   */
+  "style.load": MapStyleLoadEvent;
+  /**
+   * Fired when an icon or pattern needed by the style is missing and no missing style image resolver
+   * supplies it. To load or generate images on demand, use {@link Map.setMissingStyleImageResolver}.
+   * Event listeners cannot resolve the missing image for the current request.
    * @see [Generate and add a missing icon to the map](https://maplibre.org/maplibre-gl-js/docs/examples/generate-and-add-a-missing-icon-to-the-map/)
    */
   styleimagemissing: MapStyleImageMissingEvent;
   /**
    * Fired when a request for one of the map's sources' tiles or data is aborted.
    */
-  dataabort: MapDataEvent;
+  dataabort: MapSourceDataEvent;
   /**
    * Fired when a request for one of the map's sources' data is aborted.
    */
@@ -12097,15 +12241,15 @@ interface MapEventType {
    * Fired when the user cancels a "box zoom" interaction, or when the bounding box does not meet the minimum size threshold.
    * See {@link BoxZoomHandler}.
    */
-  boxzoomcancel: MapLibreZoomEvent;
+  boxzoomcancel: MapBoxZoomEvent;
   /**
    * Fired when a "box zoom" interaction starts. See {@link BoxZoomHandler}.
    */
-  boxzoomstart: MapLibreZoomEvent;
+  boxzoomstart: MapBoxZoomEvent;
   /**
    * Fired when a "box zoom" interaction ends.  See {@link BoxZoomHandler}.
    */
-  boxzoomend: MapLibreZoomEvent;
+  boxzoomend: MapBoxZoomEvent;
   /**
    * Fired when a [`touchcancel`](https://developer.mozilla.org/en-US/docs/Web/Events/touchcancel) event occurs within the map.
    */
@@ -12183,77 +12327,93 @@ interface MapEventType {
    * view to another, as the result of either user interaction or methods such as {@link Map.jumpTo}.
    *
    */
-  movestart: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  movestart: MapMovementEvent;
   /**
    * Fired repeatedly during an animated transition from one view to
    * another, as the result of either user interaction or methods such as {@link Map.flyTo}.
    *
    * @see [Display HTML clusters with custom properties](https://maplibre.org/maplibre-gl-js/docs/examples/display-html-clusters-with-custom-properties/)
    */
-  move: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  move: MapMovementEvent;
   /**
    * Fired just after the map completes a transition from one
    * view to another, as the result of either user interaction or methods such as {@link Map.jumpTo}.
    *
    * @see [Display HTML clusters with custom properties](https://maplibre.org/maplibre-gl-js/docs/examples/display-html-clusters-with-custom-properties/)
    */
-  moveend: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  moveend: MapMovementEvent;
   /**
    * Fired just before the map begins a transition from one zoom level to another,
    * as the result of either user interaction or methods such as {@link Map.flyTo}.
    */
-  zoomstart: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  zoomstart: MapMovementEvent;
   /**
    * Fired repeatedly during an animated transition from one zoom level to another,
    * as the result of either user interaction or methods such as {@link Map.flyTo}.
    */
-  zoom: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  zoom: MapMovementEvent;
   /**
    * Fired just after the map completes a transition from one zoom level to another,
    * as the result of either user interaction or methods such as {@link Map.flyTo}.
    */
-  zoomend: MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined>;
+  zoomend: MapMovementEvent;
   /**
    * Fired when a "drag to rotate" interaction starts. See {@link DragRotateHandler}.
    */
-  rotatestart: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  rotatestart: MapMovementEvent;
   /**
    * Fired repeatedly during a "drag to rotate" interaction. See {@link DragRotateHandler}.
    */
-  rotate: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  rotate: MapMovementEvent;
   /**
    * Fired when a "drag to rotate" interaction ends. See {@link DragRotateHandler}.
    */
-  rotateend: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  rotateend: MapMovementEvent;
   /**
    * Fired when a "drag to pan" interaction starts. See {@link DragPanHandler}.
    */
-  dragstart: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  dragstart: MapMovementEvent;
   /**
    * Fired repeatedly during a "drag to pan" interaction. See {@link DragPanHandler}.
    */
-  drag: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  drag: MapMovementEvent;
   /**
    * Fired when a "drag to pan" interaction ends. See {@link DragPanHandler}.
    * @see [Create a draggable marker](https://maplibre.org/maplibre-gl-js/docs/examples/create-a-draggable-marker/)
    */
-  dragend: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  dragend: MapMovementEvent;
   /**
    * Fired whenever the map's pitch (tilt) begins a change as
    * the result of either user interaction or methods such as {@link Map.flyTo} .
    */
-  pitchstart: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  pitchstart: MapMovementEvent;
   /**
    * Fired repeatedly during the map's pitch (tilt) animation between
    * one state and another as the result of either user interaction
    * or methods such as {@link Map.flyTo}.
    */
-  pitch: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  pitch: MapMovementEvent;
   /**
    * Fired immediately after the map's pitch (tilt) finishes changing as
    * the result of either user interaction or methods such as {@link Map.flyTo}.
    */
-  pitchend: MapLibreEvent<MouseEvent | TouchEvent | undefined>;
+  pitchend: MapMovementEvent;
+  /**
+   * Fired whenever the map's roll begins a change as
+   * the result of either user interaction or methods such as {@link Map.flyTo}.
+   */
+  rollstart: MapMovementEvent;
+  /**
+   * Fired repeatedly during the map's roll animation between
+   * one state and another as the result of either user interaction
+   * or methods such as {@link Map.flyTo}.
+   */
+  roll: MapMovementEvent;
+  /**
+   * Fired immediately after the map's roll finishes changing as
+   * the result of either user interaction or methods such as {@link Map.flyTo}.
+   */
+  rollend: MapMovementEvent;
   /**
    * Fired when a [`wheel`](https://developer.mozilla.org/en-US/docs/Web/Events/wheel) event occurs within the map.
    */
@@ -12273,31 +12433,81 @@ interface MapEventType {
    * Fired when map's projection is modified in other ways than by map being moved.
    */
   projectiontransition: MapProjectionEvent;
-}
+};
+/**
+ * `SourceEventType` - a mapping between the source data event names and their event value.
+ * These are the events fired by a {@link Source} as its data loads or changes; they also bubble
+ * up to the {@link Map}. See {@link MapSourceDataEvent} for the event shape.
+ *
+ * @group Event Related
+ */
 /**
  * The base event for MapLibre
  *
  * @group Event Related
  */
-type MapLibreEvent<TOrig = unknown> = {
+declare class MapLibreEvent<TOrig = unknown> extends Event$1 {
   type: keyof MapEventType | keyof MapLayerEventType;
   target: Map$1;
   originalEvent: TOrig;
-};
+}
+/**
+ * `MapMovementEvent` is the event type for the camera-transition map events:
+ * `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `rotatestart`, `rotate`, `rotateend`,
+ * `dragstart`, `drag`, `dragend`, `pitchstart`, `pitch`, `pitchend`, `rollstart`, `roll` and `rollend`.
+ * These are fired as the map's view changes, as a result of either user interaction or methods such
+ * as {@link Map.jumpTo} / {@link Map.flyTo}.
+ *
+ * @group Event Related
+ */
+declare class MapMovementEvent extends MapLibreEvent<MouseEvent | TouchEvent | WheelEvent | undefined> {
+  type: "movestart" | "move" | "moveend" | "zoomstart" | "zoom" | "zoomend" | "rotatestart" | "rotate" | "rotateend" | "dragstart" | "drag" | "dragend" | "pitchstart" | "pitch" | "pitchend" | "rollstart" | "roll" | "rollend";
+}
+/**
+ * The `style.load` event, fired once the map's style has fully loaded or changed.
+ *
+ * @group Event Related
+ */
+declare class MapStyleLoadEvent extends MapLibreEvent {
+  type: "style.load";
+  constructor(data?: any);
+}
 /**
  * The style data event
  *
  * @group Event Related
  */
-type MapStyleDataEvent = MapLibreEvent & {
+declare class MapStyleDataEvent extends MapLibreEvent {
+  type: "data" | "dataloading" | "styledata" | "styledataloading";
   dataType: "style";
-};
+  constructor(type: MapStyleDataEvent["type"], data?: Omit<Partial<MapStyleDataEvent>, "type" | "dataType" | "target">);
+}
 /**
- * The source data event interface
+ * A `MapSourceDataEvent` is emitted with the source-related `data`, `dataloading`, `dataabort`,
+ * `sourcedata`, `sourcedataloading` and `sourcedataabort` events. Its `dataType` is always `'source'`.
+ *
+ * Possible values for `sourceDataType`s are:
+ *
+ * - `'metadata'`: indicates that any necessary source metadata has been loaded (such as TileJSON) and it is ok to start loading tiles
+ * - `'content'`: indicates the source data has changed (such as when source.setData() has been called on GeoJSONSource)
+ * - `'visibility'`: send when the source becomes used when at least one of its layers becomes visible in style sense (inside the layer's zoom range and with layout.visibility set to 'visible')
+ * - `'idle'`: indicates that no new source data has been fetched (but the source has done loading)
  *
  * @group Event Related
+ *
+ * @example
+ * ```ts
+ * // The sourcedata event is an example of a MapSourceDataEvent.
+ * // Set up an event listener on the map.
+ * map.on('sourcedata', (e) => {
+ *    if (e.isSourceLoaded) {
+ *        // Do something when the source has finished loading
+ *    }
+ * });
+ * ```
  */
-type MapSourceDataEvent = MapLibreEvent & {
+declare class MapSourceDataEvent extends MapLibreEvent {
+  type: "data" | "dataloading" | "dataabort" | "sourcedata" | "sourcedataloading" | "sourcedataabort";
   dataType: "source";
   /**
    * True if the event has a `dataType` of `source` and the source has no outstanding network requests.
@@ -12316,11 +12526,20 @@ type MapSourceDataEvent = MapLibreEvent & {
    */
   tile: any;
   /**
+   * The tile ID of the tile being loaded or changed, if the event is related to loading of a tile.
+   */
+  coord: OverscaledTileID;
+  /**
+   * Resource timing data, if `collectResourceTiming` is enabled for the source.
+   */
+  resourceTiming?: PerformanceResourceTiming[];
+  /**
    * Options to determine whether a tile should be reloaded.
    * @internal
    */
   shouldReloadTileOptions: GeoJSONSourceShouldReloadTileOptions;
-};
+  constructor(type: MapSourceDataEvent["type"], data?: Omit<Partial<MapSourceDataEvent>, "type" | "dataType" | "target">);
+}
 /**
  * `MapMouseEvent` is the event type for mouse-related map events.
  *
@@ -12337,7 +12556,7 @@ type MapSourceDataEvent = MapLibreEvent & {
  * });
  * ```
  */
-declare class MapMouseEvent extends Event$1 implements MapLibreEvent<MouseEvent> {
+declare class MapMouseEvent extends MapLibreEvent<MouseEvent> {
   /**
    * The event type
    */
@@ -12382,7 +12601,7 @@ declare class MapMouseEvent extends Event$1 implements MapLibreEvent<MouseEvent>
  *
  * @group Event Related
  */
-declare class MapTouchEvent extends Event$1 implements MapLibreEvent<TouchEvent> {
+declare class MapTouchEvent extends MapLibreEvent<TouchEvent> {
   /**
    * The event type.
    */
@@ -12408,12 +12627,12 @@ declare class MapTouchEvent extends Event$1 implements MapLibreEvent<TouchEvent>
    * The array of pixel coordinates corresponding to a
    * [touch event's `touches`](https://developer.mozilla.org/en-US/docs/Web/API/TouchEvent/touches) property.
    */
-  points: Array<Point>;
+  points: Point[];
   /**
    * The geographical locations on the map corresponding to a
    * [touch event's `touches`](https://developer.mozilla.org/en-US/docs/Web/API/TouchEvent/touches) property.
    */
-  lngLats: Array<LngLat>;
+  lngLats: LngLat[];
   /**
    * Prevents subsequent default processing of the event by the map.
    *
@@ -12436,7 +12655,7 @@ declare class MapTouchEvent extends Event$1 implements MapLibreEvent<TouchEvent>
  *
  * @group Event Related
  */
-declare class MapWheelEvent extends Event$1 {
+declare class MapWheelEvent extends MapLibreEvent<WheelEvent> {
   /**
    * The event type.
    */
@@ -12461,14 +12680,14 @@ declare class MapWheelEvent extends Event$1 {
   get defaultPrevented(): boolean;
   _defaultPrevented: boolean;
   /** */
-  constructor(type: string, map: Map$1, originalEvent: WheelEvent);
+  constructor(map: Map$1, originalEvent: WheelEvent);
 }
 /**
- * A `MapLibreZoomEvent` is the event type for the boxzoom-related map events emitted by the {@link BoxZoomHandler}.
+ * A `MapBoxZoomEvent` is the event type for the boxzoom-related map events emitted by the {@link BoxZoomHandler}.
  *
  * @group Event Related
  */
-type MapLibreZoomEvent = {
+declare class MapBoxZoomEvent extends MapLibreEvent<MouseEvent> {
   /**
    * The type of boxzoom event. One of `boxzoomstart`, `boxzoomend` or `boxzoomcancel`
    */
@@ -12481,63 +12700,22 @@ type MapLibreZoomEvent = {
    * The DOM event that triggered the boxzoom event. Can be a `MouseEvent` or `KeyboardEvent`
    */
   originalEvent: MouseEvent;
-};
-/**
- * A `MapDataEvent` object is emitted with the `data`
- * and `dataloading` events. Possible values for
- * `dataType`s are:
- *
- * - `'source'`: The non-tile data associated with any source
- * - `'style'`: The [style](https://maplibre.org/maplibre-style-spec/) used by the map
- *
- * Possible values for `sourceDataType`s are:
- *
- * - `'metadata'`: indicates that any necessary source metadata has been loaded (such as TileJSON) and it is ok to start loading tiles
- * - `'content'`: indicates the source data has changed (such as when source.setData() has been called on GeoJSONSource)
- * - `'visibility'`: send when the source becomes used when at least one of its layers becomes visible in style sense (inside the layer's zoom range and with layout.visibility set to 'visible')
- * - `'idle'`: indicates that no new source data has been fetched (but the source has done loading)
- *
- * @group Event Related
- *
- * @example
- * ```ts
- * // The sourcedata event is an example of MapDataEvent.
- * // Set up an event listener on the map.
- * map.on('sourcedata', (e) => {
- *    if (e.isSourceLoaded) {
- *        // Do something when the source has finished loading
- *    }
- * });
- * ```
- */
-type MapDataEvent = {
-  /**
-   * The event type.
-   */
-  type: string;
-  /**
-   * The type of data that has changed. One of `'source'`, `'style'`.
-   */
-  dataType: string;
-  /**
-   *  Included if the event has a `dataType` of `source` and the event signals that internal data has been received or changed. Possible values are `metadata`, `content`, `visibility` and `idle`.
-   */
-  sourceDataType: MapSourceDataType;
-};
+}
 /**
  * The terrain event
  *
  * @group Event Related
  */
-type MapTerrainEvent = {
+declare class MapTerrainEvent extends MapLibreEvent {
   type: "terrain";
-};
+  constructor(data?: any);
+}
 /**
  * The map projection event
  *
  * @group Event Related
  */
-type MapProjectionEvent = {
+declare class MapProjectionEvent extends MapLibreEvent {
   type: "projectiontransition";
   /**
    * Specifies the name of the new projection.
@@ -12548,27 +12726,2050 @@ type MapProjectionEvent = {
    *  - `mercator` to describe mercator projection
    */
   newProjection: ProjectionSpecification["type"];
-};
+  constructor(data?: any);
+}
 /**
  * An event related to the web gl context
  *
  * @group Event Related
  */
-type MapContextEvent = {
+declare class MapContextEvent extends MapLibreEvent<WebGLContextEvent> {
   type: "webglcontextlost" | "webglcontextrestored";
   originalEvent: WebGLContextEvent;
-};
+}
 /**
- * The style image missing event
+ * The style image missing event, fired when an image is still missing after the missing style image
+ * resolver has been given a chance to supply it. To load or generate images on demand,
+ * use {@link Map.setMissingStyleImageResolver}.
+ * Event listeners cannot resolve the missing image for the current request.
  *
  * @group Event Related
  *
  * @see [Generate and add a missing icon to the map](https://maplibre.org/maplibre-gl-js/docs/examples/generate-and-add-a-missing-icon-to-the-map/)
  */
-type MapStyleImageMissingEvent = MapLibreEvent & {
+declare class MapStyleImageMissingEvent extends MapLibreEvent {
   type: "styleimagemissing";
   id: string;
+  constructor(data?: any);
+} //#endregion
+//#region src/style/pauseable_placement.d.ts
+declare class LayerPlacement {
+  _sortAcrossTiles: boolean;
+  _currentTileIndex: number;
+  _currentPartIndex: number;
+  _seenCrossTileIDs: { [k in string | number]: boolean };
+  _bucketParts: BucketPart[];
+  constructor(styleLayer: SymbolStyleLayer);
+  continuePlacement(tiles: Tile[], placement: Placement, showCollisionBoxes: boolean, styleLayer: StyleLayer, shouldPausePlacement: () => boolean): boolean;
+}
+declare class PauseablePlacement {
+  placement: Placement;
+  _done: boolean;
+  _currentPlacementIndex: number;
+  _forceFullPlacement: boolean;
+  _showCollisionBoxes: boolean;
+  _inProgressLayer: LayerPlacement;
+  constructor(transform: ITransform, terrain: Terrain, order: string[], forceFullPlacement: boolean, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, prevPlacement?: Placement);
+  isDone(): boolean;
+  continuePlacement(order: string[], layers: {
+    [_: string]: StyleLayer;
+  }, layerTiles: {
+    [_: string]: Tile[];
+  }): void;
+  commit(now: number): Placement;
+} //#endregion
+//#region src/geo/projection/projection.d.ts
+/**
+ * Custom projections are handled both by a class which implements this `Projection` interface,
+ * and a class that is derived from the `Transform` base class. What is the difference?
+ *
+ * The transform-derived class:
+ * - should do all the heavy lifting for the projection - implement all the `project*` and `unproject*` functions, etc.
+ * - must store the map's state - center, pitch, etc. - this is handled in the `Transform` base class
+ * - must be cloneable - it should not create any heavy resources
+ *
+ * The projection-implementing class:
+ * - must provide basic information and data about the projection, which is *independent of the map's state* - name, shader functions, subdivision settings, etc.
+ * - must be a "singleton" - no matter how many copies of the matching Transform class exist, the Projection should always exist as a single instance (per Map)
+ * - may create heavy resources that should not exist in multiple copies (projection is never cloned) - for example, see the GPU inaccuracy mitigation for globe projection
+ * - must be explicitly disposed of after usage using the `destroy` function - this allows the implementing class to free any allocated resources
+ */
+/**
+ * @internal
+ */
+type ProjectionGPUContext = {
+  context: Context;
+  useProgram: (name: string) => Program<any>;
 };
+/**
+ * @internal
+ * Specifies the usage for a square tile mesh:
+ * - 'stencil' for drawing stencil masks
+ * - 'raster' for drawing raster tiles, hillshade, etc.
+ */
+type TileMeshUsage = "stencil" | "raster";
+/**
+ * An interface the implementations of which are used internally by MapLibre to handle different projections.
+ */
+interface Projection {
+  /**
+   * @internal
+   * A short, descriptive name of this projection, such as 'mercator' or 'globe'.
+   */
+  get name(): ProjectionSpecification["type"];
+  /**
+   * @internal
+   * True if this projection needs to render subdivided geometry.
+   * Optimized rendering paths for non-subdivided geometry might be used throughout MapLibre.
+   * The value of this property may change during runtime, for example in globe projection depending on zoom.
+   */
+  get useSubdivision(): boolean;
+  /**
+   * Name of the shader projection variant that should be used for this projection.
+   * Note that this value may change dynamically, for example when globe projection internally transitions to mercator.
+   * Then globe projection might start reporting the mercator shader variant name to make MapLibre use faster mercator shaders.
+   */
+  get shaderVariantName(): string;
+  /**
+   * A `#define` macro that is injected into every MapLibre shader that uses this projection.
+   * @example
+   * `const define = projection.shaderDefine; // '#define GLOBE'`
+   */
+  get shaderDefine(): string;
+  /**
+   * @internal
+   * A preprocessed prelude code for both vertex and fragment shaders.
+   */
+  get shaderPreludeCode(): PreparedShader;
+  /**
+   * Vertex shader code that is injected into every MapLibre vertex shader that uses this projection.
+   */
+  get vertexShaderPreludeCode(): string;
+  /**
+   * @internal
+   * An object describing how much subdivision should be applied to rendered geometry.
+   * The subdivision settings should be a constant for a given projection.
+   * Projections that do not require subdivision should return {@link SubdivisionGranularitySetting.noSubdivision}.
+   */
+  get subdivisionGranularity(): SubdivisionGranularitySetting;
+  /**
+   * @internal
+   * A number representing the current transition state of the projection.
+   * The return value should be a number between 0 and 1,
+   * where 0 means the projection is fully in the initial state,
+   * and 1 means the projection is fully in the final state.
+   */
+  get transitionState(): number;
+  /**
+   * @internal
+   * Gets the error correction latitude in radians.
+   */
+  get latitudeErrorCorrectionRadians(): number;
+  /**
+   * @internal
+   * Cleans up any resources the projection created, especially GPU buffers.
+   */
+  destroy(): void;
+  /**
+   * @internal
+   * Runs any GPU-side tasks this projection required. Called at the beginning of every frame.
+   */
+  updateGPUdependent(renderContext: ProjectionGPUContext): void;
+  /**
+   * @internal
+   * Returns a subdivided mesh for a given tile ID, covering 0..EXTENT range.
+   * @param context - WebGL context.
+   * @param tileID - The tile coordinates for which to return a mesh. Meshes for tiles that border the top/bottom mercator edge might include extra geometry for the north/south pole.
+   * @param hasBorder - When true, the mesh will also include a small border beyond the 0..EXTENT range.
+   * @param allowPoles - When true, the mesh will also include geometry to cover the north (south) pole, if the given tileID borders the mercator range's top (bottom) edge.
+   * @param usage - Specify the usage of the tile mesh, as different usages might use different levels of subdivision.
+   */
+  getMeshFromTileID(context: Context, tileID: CanonicalTileID, hasBorder: boolean, allowPoles: boolean, usage: TileMeshUsage): Mesh;
+  /**
+   * @internal
+   * Recalculates the projection state based on the current evaluation parameters.
+   * @param params - Evaluation parameters.
+   */
+  recalculate(params: EvaluationParameters): void;
+  /**
+   * @internal
+   * Returns true if the projection is currently transitioning between two states.
+   */
+  hasTransition(): boolean;
+  /**
+   * @internal
+   * Sets the error query latidude in degrees
+   */
+  setErrorQueryLatitudeDegrees(value: number): void;
+} //#endregion
+//#region src/style/style.d.ts
+/**
+ * A feature identifier that is bound to a source
+ */
+type FeatureIdentifier = {
+  /**
+   * Unique id of the feature.
+   */
+  id?: string | number | undefined;
+  /**
+   * The id of the vector or GeoJSON source for the feature.
+   */
+  source: string;
+  /**
+   * *For vector tile sources, `sourceLayer` is required.*
+   */
+  sourceLayer?: string | undefined;
+};
+/**
+ * The options object related to the {@link Map}'s style related methods
+ */
+type StyleOptions = {
+  /**
+   * If false, style validation will be skipped. Useful in production environment.
+   */
+  validate?: boolean;
+  /**
+   * Defines a CSS
+   * font-family for locally overriding generation of Chinese, Japanese, and Korean characters.
+   * For these characters, font settings from the map's style will be ignored, except for font-weight keywords (light/regular/medium/bold).
+   * Set to `false`, to enable font settings from the map's style for these glyph ranges.
+   * Forces a full update.
+   */
+  localIdeographFontFamily?: string | false;
+};
+/**
+ * Supporting type to add validation to another style related type
+ */
+type StyleSetterOptions = {
+  /**
+   * Whether to check if the filter conforms to the MapLibre Style Specification. Disabling validation is a performance optimization that should only be used if you have previously validated the values you will be passing to this function.
+   */
+  validate?: boolean;
+};
+/**
+ * Part of {@link Map.setStyle} options, transformStyle is a convenience function that allows to modify a style after it is fetched but before it is committed to the map state.
+ *
+ * This function exposes previous and next styles, it can be commonly used to support a range of functionalities like:
+ *
+ * - when previous style carries certain 'state' that needs to be carried over to a new style gracefully;
+ * - when a desired style is a certain combination of previous and incoming style;
+ * - when an incoming style requires modification based on external state.
+ * - when an incoming style uses relative paths, which need to be converted to absolute.
+ *
+ * @param previous - The current style.
+ * @param next - The next style.
+ * @returns resulting style that will to be applied to the map
+ *
+ * @example
+ * ```ts
+ * map.setStyle('https://demotiles.maplibre.org/style.json', {
+ *   transformStyle: (previousStyle, nextStyle) => ({
+ *       ...nextStyle,
+ *       // make relative sprite path like "../sprite" absolute
+ *       sprite: new URL(nextStyle.sprite, "https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprites/").href,
+ *       // make relative glyphs path like "../fonts/{fontstack}/{range}.pbf" absolute
+ *       glyphs: new URL(nextStyle.glyphs, "https://demotiles.maplibre.org/font/").href,
+ *       sources: {
+ *           // make relative vector url like "../../" absolute
+ *           ...nextStyle.sources.map(source => {
+ *              if (source.url) {
+ *                  source.url = new URL(source.url, "https://tiles.openfreemap.org/planet");
+ *              }
+ *              return source;
+ *           }),
+ *           // copy a source from previous style
+ *           'osm': previousStyle.sources.osm
+ *       },
+ *       layers: [
+ *           // background layer
+ *           nextStyle.layers[0],
+ *           // copy a layer from previous style
+ *           previousStyle.layers[0],
+ *           // other layers from the next style
+ *           ...nextStyle.layers.slice(1).map(layer => {
+ *               // hide the layers we don't need from demotiles style
+ *               if (layer.id.startsWith('geolines')) {
+ *                   layer.layout = {...layer.layout || {}, visibility: 'none'};
+ *               // filter out US polygons
+ *               } else if (layer.id.startsWith('coastline') || layer.id.startsWith('countries')) {
+ *                   layer.filter = ['!=', ['get', 'ADM0_A3'], 'USA'];
+ *               }
+ *               return layer;
+ *           })
+ *       ]
+ *   })
+ * });
+ * ```
+ */
+type TransformStyleFunction = (previous: StyleSpecification | undefined, next: StyleSpecification) => StyleSpecification;
+/**
+ * The options object related to the {@link Map}'s style related methods
+ */
+type StyleSwapOptions = {
+  /**
+   * If false, force a 'full' update, removing the current style
+   * and building the given one instead of attempting a diff-based update.
+   */
+  diff?: boolean;
+  /**
+   * TransformStyleFunction is a convenience function
+   * that allows to modify a style after it is fetched but before it is committed to the map state. Refer to {@link TransformStyleFunction}.
+   */
+  transformStyle?: TransformStyleFunction;
+};
+/**
+ * Specifies a layer to be added to a {@link Style}. In addition to a standard {@link LayerSpecification}
+ * or a {@link CustomLayerInterface}, a {@link LayerSpecification} with an embedded {@link SourceSpecification} can also be provided.
+ */
+type AddLayerObject = LayerSpecification | (Omit<LayerSpecification, "source"> & {
+  source: SourceSpecification;
+}) | CustomLayerInterface;
+/**
+ * The Style base class
+ */
+declare class Style extends Evented<MapEventType> {
+  map: Map$1;
+  stylesheet: StyleSpecification;
+  dispatcher: Dispatcher;
+  imageManager: ImageManager;
+  glyphManager: GlyphManager;
+  lineAtlas: LineAtlas;
+  light: Light;
+  projection: Projection | undefined;
+  sky: Sky;
+  _frameRequest: AbortController;
+  _loadStyleRequest: AbortController;
+  _spriteRequest: AbortController;
+  _layers: {
+    [_: string]: StyleLayer;
+  };
+  _serializedLayers: {
+    [_: string]: LayerSpecification;
+  };
+  _order: string[];
+  tileManagers: {
+    [_: string]: TileManager;
+  };
+  zoomHistory: ZoomHistory;
+  _loaded: boolean;
+  _changed: boolean;
+  _updatedSources: {
+    [_: string]: "clear" | "reload";
+  };
+  _updatedLayers: {
+    [_: string]: true;
+  };
+  _removedLayers: {
+    [_: string]: StyleLayer;
+  };
+  _changedImages: {
+    [_: string]: true;
+  };
+  _imagesListDirty: boolean;
+  _glyphsDidChange: boolean;
+  _updatedPaintProps: {
+    [layer: string]: true;
+  };
+  _layerOrderChanged: boolean;
+  _spritesImagesIds: {
+    [spriteId: string]: string[];
+  };
+  _availableImages: string[];
+  _globalState: Record<string, any>;
+  crossTileSymbolIndex: CrossTileSymbolIndex;
+  pauseablePlacement: PauseablePlacement;
+  placement: Placement;
+  z: number;
+  constructor(map: Map$1, options?: StyleOptions);
+  private _setInitialValues;
+  _rtlPluginLoaded: () => void;
+  setGlobalStateProperty(name: string, value: any): this;
+  getGlobalState(): Record<string, any>;
+  setGlobalState(newStylesheetState: StateSpecification): void;
+  /**
+   * @internal
+   * Find all sources that are affected by the global state changes and reload them.
+   * Find all paint properties that are affected by the global state changes and update them.
+   * For example, if a layer filter uses global-state expression, this function will find the source id of that layer.
+   */
+  _applyGlobalStateChanges(globalStateRefs: string[]): void;
+  loadURL(url: string, options?: StyleSwapOptions & StyleSetterOptions, previousStyle?: StyleSpecification): Promise<void>;
+  loadJSON(json: StyleSpecification, options?: StyleSetterOptions & StyleSwapOptions, previousStyle?: StyleSpecification): void;
+  loadEmpty(): void;
+  _load(json: StyleSpecification, options: StyleSwapOptions & StyleSetterOptions, previousStyle?: StyleSpecification): void;
+  private _createLayers;
+  _loadSprite(sprite: SpriteSpecification, isUpdate?: boolean, completion?: (err: Error) => void): void;
+  _unloadSprite(): void;
+  _validateLayer(layer: StyleLayer): void;
+  loaded(): boolean;
+  /**
+   * @hidden
+   * take an array of string IDs, and based on this._layers, generate an array of LayerSpecification
+   * @param ids - an array of string IDs, for which serialized layers will be generated. If omitted, all serialized layers will be returned
+   * @param returnClone - if true, return a clone of the layer object
+   * @returns generated result
+   */
+  private _serializeByIds;
+  /**
+   * @hidden
+   * Lazy initialization of this._serializedLayers dictionary and return it
+   * @returns this._serializedLayers dictionary
+   */
+  private _serializedAllLayers;
+  hasTransitions(): boolean;
+  _checkLoaded(): void;
+  /**
+   * @internal
+   * Apply queued style updates in a batch and recalculate zoom-dependent paint properties.
+   */
+  update(parameters: EvaluationParameters): void;
+  _updateTilesForChangedImages(): void;
+  _updateTilesForChangedGlyphs(): void;
+  _updateWorkerLayers(updatedIds: string[], removedIds: string[]): void;
+  _resetUpdates(): void;
+  /**
+   * Update this style's state to match the given style JSON, performing only
+   * the necessary mutations.
+   *
+   * May throw an Error ('Unimplemented: METHOD') if the maplibre-gl-style-spec
+   * diff algorithm produces an operation that is not supported.
+   *
+   * @returns true if any changes were made; false otherwise
+   */
+  setState(nextState: StyleSpecification, options?: StyleSwapOptions & StyleSetterOptions): boolean;
+  _getOperationsToPerform(diff: Array<DiffCommand<DiffOperations>>): {
+    operations: Function[];
+    unimplemented: string[];
+  };
+  addImage(id: string, image: StyleImage): void;
+  updateImage(id: string, image: StyleImage): void;
+  getImage(id: string): StyleImage;
+  setMissingImageResolver(resolver: MissingImageRequestHandler | null): void;
+  removeImage(id: string): void;
+  _afterImageUpdated(id: string): void;
+  listImages(): string[];
+  addSource(id: string, source: SourceSpecification | CanvasSourceSpecification, options?: StyleSetterOptions): void;
+  /**
+   * Remove a source from this stylesheet, given its id.
+   * @param id - id of the source to remove
+   * @throws if no source is found with the given ID
+   */
+  removeSource(id: string): this;
+  /**
+   * Set the data of a GeoJSON source, given its id.
+   * @param id - id of the source
+   * @param data - GeoJSON source
+   */
+  setGeoJSONSourceData(id: string, data: GeoJSON.GeoJSON | string): void;
+  /**
+   * Get a source by ID.
+   * @param id - ID of the desired source
+   * @returns source
+   */
+  getSource(id: string): Source | undefined;
+  /**
+   * Add a layer to the map style. The layer will be inserted before the layer with
+   * ID `before`, or appended if `before` is omitted.
+   * @param layerObject - The style layer to add.
+   * @param before - ID of an existing layer to insert before
+   * @param options - Style setter options.
+   */
+  addLayer(layerObject: AddLayerObject, before?: string, options?: StyleSetterOptions): this;
+  /**
+   * Moves a layer to a different z-position. The layer will be inserted before the layer with
+   * ID `before`, or appended if `before` is omitted.
+   * @param id - ID of the layer to move
+   * @param before - ID of an existing layer to insert before
+   */
+  moveLayer(id: string, before?: string): void;
+  /**
+   * Remove the layer with the given id from the style.
+   * A {@link ErrorEvent} event will be fired if no such layer exists.
+   *
+   * @param id - id of the layer to remove
+   */
+  removeLayer(id: string): void;
+  /**
+   * Return the style layer object with the given `id`.
+   *
+   * @param id - id of the desired layer
+   * @returns a layer, if one with the given `id` exists
+   */
+  getLayer(id: string): StyleLayer | undefined;
+  /**
+   * Return the ids of all layers currently in the style, including custom layers, in order.
+   *
+   * @returns ids of layers, in order
+   */
+  getLayersOrder(): string[];
+  /**
+   * Checks if a specific layer is present within the style.
+   *
+   * @param id - the id of the desired layer
+   * @returns a boolean specifying if the given layer is present
+   */
+  hasLayer(id: string): boolean;
+  setLayerZoomRange(layerId: string, minzoom?: number | null, maxzoom?: number | null): void;
+  setFilter(layerId: string, filter?: FilterSpecification | null, options?: StyleSetterOptions): void;
+  /**
+   * Get a layer's filter object
+   * @param layer - the layer to inspect
+   * @returns the layer's filter, if any
+   */
+  getFilter(layer: string): FilterSpecification | void;
+  setLayoutProperty<K extends keyof AllLayoutProperties>(layerId: string, name: K, value: AllLayoutProperties[K], options?: StyleSetterOptions): void;
+  /**
+   * Get a layout property's value from a given layer
+   * @param layerId - the layer to inspect
+   * @param name - the name of the layout property
+   * @returns the property value
+   */
+  getLayoutProperty<K extends keyof AllLayoutProperties>(layerId: string, name: K): AllLayoutProperties[K] | undefined;
+  setPaintProperty<K extends keyof AllPaintProperties>(layerId: string, name: K, value: AllPaintProperties[K], options?: StyleSetterOptions): void;
+  _updatePaintProperty<K extends keyof AllPaintProperties>(layer: StyleLayer, name: K, value: AllPaintProperties[K], options?: StyleSetterOptions): void;
+  getPaintProperty<K extends keyof AllPaintProperties>(layer: string, name: K): AllPaintProperties[K];
+  setFeatureState(target: FeatureIdentifier, state: any): void;
+  removeFeatureState(target: FeatureIdentifier, key?: string): void;
+  getFeatureState(target: FeatureIdentifier): FeatureState;
+  getTransition(): {
+    duration: number;
+    delay: number;
+  } & TransitionSpecification;
+  serialize(): StyleSpecification | undefined;
+  _updateLayer(layer: StyleLayer): void;
+  _flattenAndSortRenderedFeatures(sourceResults: QueryRenderedFeaturesResults[]): MapGeoJSONFeature[];
+  queryRenderedFeatures(queryGeometry: Point[], params: QueryRenderedFeaturesOptions, transform: IReadonlyTransform): MapGeoJSONFeature[];
+  querySourceFeatures(sourceID: string, params?: QuerySourceFeatureOptions): GeoJSONFeature[];
+  getLight(): LightSpecification;
+  setLight(lightOptions: LightSpecification, options?: StyleSetterOptions): void;
+  getProjection(): ProjectionSpecification;
+  setProjection(projection?: ProjectionSpecification): void;
+  getSky(): SkySpecification;
+  setSky(skyOptions?: SkySpecification, options?: StyleSetterOptions): void;
+  _setProjectionInternal(name: ProjectionSpecification["type"]): void;
+  _validate(validate: Validator, key: string, value: any, props: any, options?: StyleSetterOptions): boolean;
+  _remove(mapRemoved?: boolean): void;
+  _clearSource(id: string): void;
+  _reloadSource(id: string): void;
+  _updateSources(transform: ITransform): void;
+  _generateCollisionBoxes(): void;
+  _updatePlacement(transform: ITransform, showCollisionBoxes: boolean, fadeDuration: number, crossSourceCollisions: boolean, forceFullPlacement?: boolean): boolean;
+  _releaseSymbolFadeTiles(): void;
+  getImages(mapId: string | number, params: GetImagesParameters): Promise<GetImagesResponse>;
+  getGlyphs(mapId: string | number, params: GetGlyphsParameters): Promise<GetGlyphsResponse>;
+  getGlyphsUrl(): string | null;
+  setGlyphs(glyphsUrl: string | null | undefined, options?: StyleSetterOptions): void;
+  getDashes(mapId: string | number, params: GetDashesParameters): Promise<GetDashesResponse>;
+  /**
+   * Add a sprite.
+   *
+   * @param id - The id of the desired sprite
+   * @param url - The url to load the desired sprite from
+   * @param options - The style setter options
+   * @param completion - The completion handler
+   */
+  addSprite(id: string, url: string, options?: StyleSetterOptions, completion?: (err: Error) => void): void;
+  /**
+   * Remove a sprite by its id. When the last sprite is removed, the whole `this.stylesheet.sprite` object becomes
+   * `undefined`. This falsy `undefined` value later prevents attempts to load the sprite when it's absent.
+   *
+   * @param id - the id of the sprite to remove
+   */
+  removeSprite(id: string): void;
+  /**
+   * Get the current sprite value.
+   *
+   * @returns empty array when no sprite is set; id-url pairs otherwise
+   */
+  getSprite(): Array<{
+    id: string;
+    url: string;
+  }>;
+  /**
+   * Set a new value for the style's sprite.
+   *
+   * @param sprite - new sprite value
+   * @param options - style setter options
+   * @param completion - the completion handler
+   */
+  setSprite(sprite: SpriteSpecification, options?: StyleSetterOptions, completion?: (err: Error) => void): void;
+  /**
+   * Destroys all internal resources of the style (sources, images, layers, etc.)
+   */
+  destroy(): void;
+} //#endregion
+//#region src/style/validate_style.d.ts
+/**
+ * Validates a single part of a style, e.g. a source, a filter or a paint property.
+ * The options it takes are the ones assembled by {@link validateAndEmit}.
+ */
+type Validator = (options: any) => readonly ValidationError[]; //#endregion
+//#region src/style/style_layer.d.ts
+type PaintPropertyEntry = { [K in keyof AllPaintProperties]: {
+  name: K;
+  value: AllPaintProperties[K];
+} }[keyof AllPaintProperties];
+type QueryIntersectsFeatureParams = {
+  /**
+   * The geometry to check intersection with.
+   * This geometry is in tile coordinates.
+   */
+  queryGeometry: Point[];
+  /**
+   * The feature to allow expression evaluation.
+   */
+  feature: VectorTileFeatureLike;
+  /**
+   * The feature state to allow expression evaluation.
+   */
+  featureState: FeatureState;
+  /**
+   * The geometry of the feature.
+   * This geometry is in tile coordinates.
+   */
+  geometry: Point[][];
+  /**
+   * The current zoom level.
+   */
+  zoom: number;
+  /**
+   * The transform to convert from tile coordinates to pixels.
+   */
+  transform: IReadonlyTransform;
+  /**
+   * The number of pixels per tile unit.
+   */
+  pixelsToTileUnits: number;
+  /**
+   * The matrix to convert from tile coordinates to pixel coordinates.
+   * The pixel coordinates are relative to the center of the screen.
+   */
+  pixelPosMatrix: mat4;
+  /**
+   * The unwrapped tile ID for the tile being queried.
+   */
+  unwrappedTileID: UnwrappedTileID;
+  /**
+   * A function to get the elevation of a point in tile coordinates.
+   */
+  getElevation: undefined | ((x: number, y: number) => number);
+};
+/**
+ * A base class for style layers
+ */
+declare abstract class StyleLayer extends Evented {
+  id: string;
+  metadata: unknown;
+  type: LayerSpecification["type"] | CustomLayerInterface["type"];
+  source: string;
+  sourceLayer: string;
+  minzoom: number;
+  maxzoom: number;
+  filter: FilterSpecification | void;
+  visibility: VisibilitySpecification;
+  private _evaluatedVisibility;
+  _crossfadeParameters: CrossfadeParameters;
+  _unevaluatedLayout: Layout<any>;
+  readonly layout: unknown;
+  _transitionablePaint: Transitionable<any>;
+  _transitioningPaint: Transitioning<any>;
+  readonly paint: unknown;
+  _featureFilter: FeatureFilter;
+  _visibilityExpression: VisibilityExpression;
+  readonly onAdd: ((map: Map$1) => void);
+  readonly onRemove: ((map: Map$1) => void);
+  queryRadius?(bucket: Bucket): number;
+  queryIntersectsFeature?(params: QueryIntersectsFeatureParams): boolean | number;
+  createBucket?(parameters: BucketParameters<any>): Bucket;
+  private _globalState;
+  constructor(layer: LayerSpecification | CustomLayerInterface, properties: Readonly<{
+    layout?: Properties<any>;
+    paint?: Properties<any>;
+  }>, globalState: Record<string, any>);
+  setFilter(filter: FilterSpecification | void): void;
+  getCrossfadeParameters(): CrossfadeParameters;
+  getLayoutProperty<K extends keyof AllLayoutProperties>(name: K): AllLayoutProperties[K];
+  /**
+   * Get list of global state references that are used within layout or filter properties.
+   * This is used to determine if layer source need to be reloaded when global state property changes.
+   *
+   */
+  getLayoutAffectingGlobalStateRefs(): Set<string>;
+  /**
+   * Get list of global state references that are used within paint properties.
+   * This is used to determine if layer needs to be repainted when global state property changes.
+   *
+   */
+  getPaintAffectingGlobalStateRefs(): globalThis.Map<string, PaintPropertyEntry[]>;
+  /**
+   * Get list of global state references that are used within visibility expression.
+   * This is used to determine if layer visibility needs to be updated when global state property changes.
+   */
+  getVisibilityAffectingGlobalStateRefs(): Set<string>;
+  setLayoutProperty<K extends keyof AllLayoutProperties>(name: K, value: AllLayoutProperties[K], options?: StyleSetterOptions): void;
+  getPaintProperty<K extends keyof AllPaintProperties>(name: K): AllPaintProperties[K];
+  setPaintProperty<K extends keyof AllPaintProperties>(name: K, value: AllPaintProperties[K], options?: StyleSetterOptions): boolean;
+  _handleSpecialPaintPropertyUpdate(_: string): void;
+  _handleOverridablePaintPropertyUpdate<T, R>(name: string, oldValue: PropertyValue<T, R>, newValue: PropertyValue<T, R>): boolean;
+  isHidden(zoom?: number, roundMinZoom?: boolean): boolean;
+  updateTransitions(parameters: TransitionParameters): void;
+  hasTransition(): boolean;
+  recalculateVisibility(): void;
+  recalculate(parameters: EvaluationParameters, availableImages: string[]): void;
+  serialize(): LayerSpecification;
+  _validate(validate: Validator, key: string, name: string, value: unknown, options?: StyleSetterOptions): boolean;
+  is3D(): boolean;
+  isTileClipped(): boolean;
+  hasOffscreenPass(): boolean;
+  resize(): void;
+  isStateDependent(): boolean;
+} //#endregion
+//#region src/style/style_layer_index.d.ts
+//#endregion
+//#region src/source/geojson_worker_source.d.ts
+/**
+ * The geojson worker options that can be passed to the worker
+ */
+type GeoJSONWorkerOptions = {
+  source?: string;
+  geojsonVtOptions?: GeoJSONVTOptions;
+  clusterProperties?: Record<string, [unknown, unknown]>;
+  filter?: FilterSpecification;
+  collectResourceTiming?: boolean;
+};
+/**
+ * Parameters needed to load GeoJSON to the worker - must specify either a `request`, `data` or `dataDiff`.
+ */
+type LoadGeoJSONParameters = GeoJSONWorkerOptions & {
+  type: "geojson"; /** The geojson source ID. */
+  source: string;
+  /**
+   * Request parameters including a URL to fetch GeoJSON data.
+   */
+  request?: RequestParameters;
+  /**
+   * GeoJSON data to set as the source's data.
+   */
+  data?: GeoJSON.GeoJSON;
+  /**
+   * GeoJSONSourceDiff to apply to the existing GeoJSON source data.
+   */
+  dataDiff?: GeoJSONSourceDiff;
+  /**
+   * Update the supercluster using the latest worker cluster options.
+   */
+  updateCluster?: boolean;
+}; //#endregion
+//#region src/source/rtl_text_plugin_status.d.ts
+/**
+ * The possible option of the plugin's status
+ *
+ * `unavailable`: Not loaded.
+ *
+ * `deferred`: The plugin URL has been specified, but loading has been deferred.
+ *
+ * `requested`: at least one tile needs RTL to render, but the plugin has not been set
+ *
+ * `loading`: RTL is in the process of being loaded by worker.
+ *
+ * `loaded`: The plugin is now loaded
+ *
+ *  `error`: The plugin failed to load
+ */
+type RTLPluginStatus = "unavailable" | "deferred" | "requested" | "loading" | "loaded" | "error";
+/**
+ * The RTL plugin state
+ */
+type PluginState = {
+  pluginStatus: RTLPluginStatus;
+  pluginURL: string;
+}; //#endregion
+//#region src/util/actor_messages.d.ts
+/**
+ * The parameters needed in order to get information about the cluster
+ */
+type ClusterIDAndSource = {
+  type: "geojson";
+  clusterId: number;
+  source: string;
+};
+/**
+ * Parameters needed to get the leaves of a cluster
+ */
+type GetClusterLeavesParams = ClusterIDAndSource & {
+  limit: number;
+  offset: number;
+};
+/**
+ * The result of the call to load a geojson source
+ */
+type GeoJSONWorkerSourceLoadDataResult = {
+  resourceTiming?: {
+    [_: string]: PerformanceResourceTiming[];
+  };
+  abandoned?: boolean;
+  data?: GeoJSON.GeoJSON;
+};
+/**
+ * Parameters needed to remove a source
+ */
+type RemoveSourceParams = {
+  source: string;
+  type: string;
+};
+/**
+ * Parameters needed to update the layers
+ */
+type UpdateLayersParameters = {
+  layers: LayerSpecification[];
+  removedIds: string[];
+};
+/**
+ * Parameters needed to get the images
+ */
+type GetImagesParameters = {
+  icons: string[];
+  source: string;
+  tileID: OverscaledTileID;
+  type: string;
+};
+/**
+ * Parameters needed to get the glyphs
+ */
+type GetGlyphsParameters = {
+  type: string;
+  stacks: {
+    [_: string]: number[];
+  };
+  source: string;
+  tileID: OverscaledTileID;
+};
+/**
+ * A response object returned when requesting glyphs
+ */
+type GetGlyphsResponse = {
+  [stack: string]: {
+    [id: number]: StyleGlyph;
+  };
+};
+/**
+ * A response object returned when requesting images
+ */
+type GetImagesResponse = {
+  [_: string]: StyleImage;
+};
+/**
+ * Parameters needed to get the line dashes
+ */
+type GetDashesParameters = {
+  dashes: {
+    [key: string]: {
+      dasharray: number[];
+      round: boolean;
+    };
+  };
+};
+/**
+ * A response object returned when requesting line dashes
+ */
+type GetDashesResponse = {
+  [dashId: string]: DashEntry;
+};
+/**
+ * All the possible message types that can be sent to and from the worker
+ */
+declare const enum MessageType {
+  loadDEMTile = "LDT",
+  getClusterExpansionZoom = "GCEZ",
+  getClusterChildren = "GCC",
+  getClusterLeaves = "GCL",
+  loadData = "LD",
+  loadTile = "LT",
+  reloadTile = "RT",
+  getGlyphs = "GG",
+  getDashes = "GDA",
+  getImages = "GI",
+  setImages = "SI",
+  updateGlobalState = "UGS",
+  setLayers = "SL",
+  updateLayers = "UL",
+  syncRTLPluginState = "SRPS",
+  setReferrer = "SR",
+  removeSource = "RS",
+  removeMap = "RM",
+  importScript = "IS",
+  removeTile = "RMT",
+  abortTile = "AT",
+  removeDEMTile = "RDT",
+  getResource = "GR"
+}
+/**
+ * This is basically a mapping between all the calls that are made to and from the workers.
+ * The key is the event name, the first parameter is the event input type, and the last parameter is the output type.
+ */
+type RequestResponseMessageMap = {
+  [MessageType.loadDEMTile]: [WorkerDEMTileParameters, DEMData];
+  [MessageType.getClusterExpansionZoom]: [ClusterIDAndSource, number];
+  [MessageType.getClusterChildren]: [ClusterIDAndSource, GeoJSON.Feature[]];
+  [MessageType.getClusterLeaves]: [GetClusterLeavesParams, GeoJSON.Feature[]];
+  [MessageType.loadData]: [LoadGeoJSONParameters, GeoJSONWorkerSourceLoadDataResult];
+  [MessageType.loadTile]: [WorkerTileParameters, WorkerTileResult];
+  [MessageType.reloadTile]: [WorkerTileParameters, WorkerTileResult];
+  [MessageType.getGlyphs]: [GetGlyphsParameters, GetGlyphsResponse];
+  [MessageType.getImages]: [GetImagesParameters, GetImagesResponse];
+  [MessageType.setImages]: [string[], void];
+  [MessageType.updateGlobalState]: [Record<string, any>, void];
+  [MessageType.setLayers]: [LayerSpecification[], void];
+  [MessageType.updateLayers]: [UpdateLayersParameters, void];
+  [MessageType.syncRTLPluginState]: [PluginState, PluginState];
+  [MessageType.setReferrer]: [string, void];
+  [MessageType.removeSource]: [RemoveSourceParams, void];
+  [MessageType.removeMap]: [undefined, void];
+  [MessageType.importScript]: [string, void];
+  [MessageType.removeTile]: [TileParameters, void];
+  [MessageType.abortTile]: [TileParameters, void];
+  [MessageType.removeDEMTile]: [TileParameters, void];
+  [MessageType.getResource]: [RequestParameters, GetResourceResponse<any>];
+  [MessageType.getDashes]: [GetDashesParameters, GetDashesResponse];
+};
+/**
+ * The message to be sent by the actor
+ */
+type ActorMessage<T extends MessageType> = {
+  type: T;
+  data: RequestResponseMessageMap[T][0];
+  targetMapId?: string | number | null;
+  mustQueue?: boolean;
+  sourceMapId?: string | number | null;
+}; //#endregion
+//#region src/util/actor.d.ts
+/**
+ * An interface to be sent to the actor in order for it to allow communication between the worker and the main thread
+ */
+interface ActorTarget {
+  addEventListener: typeof window.addEventListener;
+  removeEventListener: typeof window.removeEventListener;
+  postMessage: typeof window.postMessage;
+  terminate?: () => void;
+}
+/**
+ * This is used to define the parameters of the message that is sent to the worker and back
+ */
+type MessageData = {
+  id: string;
+  type: MessageType | "<cancel>" | "<response>";
+  origin: string;
+  data?: Serialized;
+  targetMapId?: string | number | null;
+  mustQueue?: boolean;
+  error?: Serialized | null;
+  sourceMapId: string | number | null;
+};
+type ResolveReject = {
+  resolve: (value?: RequestResponseMessageMap[MessageType][1]) => void;
+  reject: (reason?: Error) => void;
+};
+/**
+ * This interface allowing to substitute only the sendAsync method of the Actor class.
+ */
+interface IActor {
+  sendAsync<T extends MessageType>(message: ActorMessage<T>, abortController?: AbortController): Promise<RequestResponseMessageMap[T][1]>;
+}
+type MessageHandler<T extends MessageType> = (mapId: string | number, params: RequestResponseMessageMap[T][0], abortController?: AbortController) => Promise<RequestResponseMessageMap[T][1]>;
+/**
+ * An implementation of the [Actor design pattern](https://en.wikipedia.org/wiki/Actor_model)
+ * that maintains the relationship between asynchronous tasks and the objects
+ * that spin them off - in this case, tasks like parsing parts of styles,
+ * owned by the styles
+ */
+declare class Actor implements IActor {
+  target: ActorTarget;
+  mapId: string | number | null;
+  resolveRejects: {
+    [x: string]: ResolveReject;
+  };
+  name: string;
+  tasks: {
+    [x: string]: MessageData;
+  };
+  taskQueue: string[];
+  abortControllers: {
+    [x: number | string]: AbortController;
+  };
+  invoker: ThrottledInvoker;
+  globalScope: ActorTarget;
+  messageHandlers: { [K in MessageType]?: MessageHandler<K> };
+  subscription: Subscription;
+  /**
+   * @param target - The target
+   * @param mapId - A unique identifier for the Map instance using this Actor.
+   */
+  constructor(target: ActorTarget, mapId?: string | number);
+  registerMessageHandler<T extends MessageType>(type: T, handler: MessageHandler<T>): void;
+  unregisterMessageHandler<T extends MessageType>(type: T): void;
+  /**
+   * Sends a message from a main-thread map to a Worker or from a Worker back to
+   * a main-thread map instance.
+   * @param message - the message to send
+   * @param abortController - an optional AbortController to abort the request
+   * @returns a promise that will be resolved with the response data
+   */
+  sendAsync<T extends MessageType>(message: ActorMessage<T>, abortController?: AbortController): Promise<RequestResponseMessageMap[T][1]>;
+  receive(message: {
+    data: MessageData;
+  }): void;
+  process(): void;
+  processTask(id: string, task: MessageData): Promise<void>;
+  completeTask(id: string, err: Error, data?: RequestResponseMessageMap[MessageType][1]): void;
+  remove(): void;
+} //#endregion
+//#region src/source/raster_dem_tile_worker_source.d.ts
+//#endregion
+//#region src/util/util.d.ts
+/**
+ * A 4x4 gl-matrix matrix backed by 32-bit floats.
+ */
+type Mat4f32 = mat4 & Float32Array;
+/**
+ * A 4x4 gl-matrix matrix backed by 64-bit floats.
+ */
+type Mat4f64 = mat4 & Float64Array;
+/**
+ * Allows to unsubscribe from events without the need to store the method reference.
+ */
+interface Subscription {
+  /**
+   * Unsubscribes from the event.
+   */
+  unsubscribe(): void;
+}
+/**
+ * Makes optional keys required and add the the undefined type.
+ *
+ * ```
+ * interface Test {
+ *  foo: number;
+ *  bar?: number;
+ *  baz: number | undefined;
+ * }
+ *
+ * Complete<Test> {
+ *  foo: number;
+ *  bar: number | undefined;
+ *  baz: number | undefined;
+ * }
+ *
+ * ```
+ *
+ * See https://medium.com/terria/typescript-transforming-optional-properties-to-required-properties-that-may-be-undefined-7482cb4e1585
+ */
+type Complete<T> = { [P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : (T[P] | undefined) };
+/**
+ * A helper to allow require of at least one property
+ */
+type RequireAtLeastOne<T> = { [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>> }[keyof T];
+/**
+ * A helper to allow require exactly one one property
+ */
+//#endregion
+//#region src/ui/hash.d.ts
+/**
+ * Adds the map's position to its page's location hash.
+ * Passed as an option to the map object.
+ *
+ * @group Markers and Controls
+ */
+declare class Hash {
+  _map: Map$1;
+  _hashName: string;
+  constructor(hashName?: string | null);
+  /**
+   * Map element to listen for coordinate changes
+   *
+   * @param map - The map object
+   */
+  addTo(map: Map$1): this;
+  /**
+   * Removes hash
+   */
+  remove(): this;
+  getHashString(mapFeedback?: boolean): string;
+  _getHashParams: () => URLSearchParams;
+  _getCurrentHash: () => string[];
+  _onHashChange: () => boolean;
+  _updateHashUnthrottled: () => void;
+  _removeHash: () => void;
+  /**
+   * Mobile Safari doesn't allow updating the hash more than 100 times per 30 seconds.
+   */
+  _updateHash: () => ReturnType<typeof setTimeout>;
+  _isValidHash(hash: string[]): boolean;
+} //#endregion
+//#region src/ui/handler/drag_handler.d.ts
+type DragMovementResult = {
+  bearingDelta?: number;
+  pitchDelta?: number;
+  rollDelta?: number;
+  around?: Point;
+  panDelta?: Point;
+};
+interface DragPanResult extends DragMovementResult {
+  around: Point;
+  panDelta: Point;
+}
+interface DragRotateResult extends DragMovementResult {
+  bearingDelta: number;
+}
+interface DragPitchResult extends DragMovementResult {
+  pitchDelta: number;
+}
+interface DragRollResult extends DragMovementResult {
+  rollDelta: number;
+}
+interface DragMoveHandler<T extends DragMovementResult, E extends Event> extends Handler {
+  dragStart: (e: E, point: Point) => void;
+  dragMove: (e: E, point: Point) => T | void;
+  dragEnd: (e: E) => void;
+} //#endregion
+//#region src/ui/handler/mouse.d.ts
+/**
+ * `MousePanHandler` allows the user to pan the map by clicking and dragging
+ */
+interface MousePanHandler extends DragMoveHandler<DragPanResult, MouseEvent> {}
+/**
+ * `MouseRotateHandler` allows the user to rotate the map by clicking and dragging
+ */
+interface MouseRotateHandler extends DragMoveHandler<DragRotateResult, MouseEvent> {}
+/**
+ * `MousePitchHandler` allows the user to zoom the map by pitching
+ */
+interface MousePitchHandler extends DragMoveHandler<DragPitchResult, MouseEvent> {}
+/**
+ * `MouseRollHandler` allows the user to roll the camera by holding `Ctrl`, right-clicking and dragging
+ */
+interface MouseRollHandler extends DragMoveHandler<DragRollResult, MouseEvent> {} //#endregion
+//#region src/ui/handler/touch_pan.d.ts
+/**
+ * A `TouchPanHandler` allows the user to pan the map using touch gestures.
+ */
+declare class TouchPanHandler implements Handler {
+  _enabled: boolean;
+  _active: boolean;
+  _touches: { [k in string | number]: Point };
+  _clickTolerance: number;
+  _sum: Point;
+  _map: Map$1;
+  constructor(options: {
+    clickTolerance: number;
+  }, map: Map$1);
+  reset(): void;
+  _shouldBePrevented(touchesCount: number): boolean;
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): {
+    around: Point;
+    panDelta: Point;
+  } | void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): {
+    around: Point;
+    panDelta: Point;
+  } | void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchcancel(): void;
+  _calculateTransform(e: TouchEvent, points: Point[], mapTouches: Touch[]): {
+    around: Point;
+    panDelta: Point;
+  } | void;
+  enable(): void;
+  disable(): void;
+  isEnabled(): boolean;
+  isActive(): boolean;
+} //#endregion
+//#region src/ui/handler/shim/drag_pan.d.ts
+/**
+ * A {@link DragPanHandler} options object
+ */
+type DragPanOptions = {
+  /**
+   * factor used to scale the drag velocity
+   * @defaultValue 0
+   */
+  linearity?: number;
+  /**
+   * easing function applied to `map.panTo` when applying the drag.
+   * @param t - the easing function
+   * @defaultValue bezier(0, 0, 0.3, 1)
+   */
+  easing?: (t: number) => number;
+  /**
+   * the maximum value of the drag velocity.
+   * @defaultValue 1400
+   */
+  deceleration?: number;
+  /**
+   * the rate at which the speed reduces after the pan ends.
+   * @defaultValue 2500
+   */
+  maxSpeed?: number;
+};
+/**
+ * The `DragPanHandler` allows the user to pan the map by clicking and dragging
+ * the cursor.
+ *
+ * @group Handlers
+ */
+declare class DragPanHandler {
+  _el: HTMLElement;
+  _mousePan: MousePanHandler;
+  _touchPan: TouchPanHandler;
+  _inertiaOptions: DragPanOptions | boolean;
+  /** @internal */
+  constructor(el: HTMLElement, mousePan: MousePanHandler, touchPan: TouchPanHandler);
+  /**
+   * Enables the "drag to pan" interaction.
+   *
+   * @param options - Options object
+   * @example
+   * ```ts
+   *   map.dragPan.enable();
+   *   map.dragPan.enable({
+   *      linearity: 0.3,
+   *      easing: bezier(0, 0, 0.3, 1),
+   *      maxSpeed: 1400,
+   *      deceleration: 2500,
+   *   });
+   * ```
+   */
+  enable(options?: DragPanOptions | boolean): void;
+  /**
+   * Disables the "drag to pan" interaction.
+   *
+   * @example
+   * ```ts
+   * map.dragPan.disable();
+   * ```
+   */
+  disable(): void;
+  /**
+   * Returns a Boolean indicating whether the "drag to pan" interaction is enabled.
+   *
+   * @returns `true` if the "drag to pan" interaction is enabled.
+   */
+  isEnabled(): boolean;
+  /**
+   * Returns a Boolean indicating whether the "drag to pan" interaction is active, i.e. currently being used.
+   *
+   * @returns `true` if the "drag to pan" interaction is active.
+   */
+  isActive(): boolean;
+} //#endregion
+//#region src/util/task_queue.d.ts
+type TaskID = number;
+type Task = {
+  callback: (timeStamp: number) => void;
+  id: TaskID;
+  cancelled: boolean;
+};
+declare class TaskQueue {
+  _queue: Task[];
+  _id: TaskID;
+  _cleared: boolean;
+  _currentlyRunning: Task[] | false;
+  constructor();
+  add(callback: (timeStamp: number) => void): TaskID;
+  remove(id: TaskID): void;
+  run(timeStamp?: number): void;
+  clear(): void;
+} //#endregion
+//#region src/geo/projection/camera_helper.d.ts
+type MapControlsDeltas = {
+  panDelta: Point;
+  zoomDelta: number;
+  bearingDelta: number;
+  pitchDelta: number;
+  rollDelta: number;
+  around: Point;
+};
+type CameraForBoxAndBearingHandlerResult = {
+  center: LngLat;
+  zoom: number;
+  bearing: number;
+};
+type EaseToHandlerOptions = {
+  bearing: number;
+  pitch: number;
+  roll: number;
+  padding: PaddingOptions;
+  offsetAsPoint: Point;
+  around?: LngLat;
+  aroundPoint?: Point;
+  center?: LngLatLike;
+  zoom?: number;
+  offset?: PointLike;
+};
+type EaseToHandlerResult = {
+  easeFunc: (k: number) => void;
+  elevationCenter: LngLat;
+  isZooming: boolean;
+};
+type FlyToHandlerOptions = {
+  bearing: number;
+  pitch: number;
+  roll: number;
+  padding: PaddingOptions;
+  offsetAsPoint: Point;
+  center?: LngLatLike;
+  locationAtOffset: LngLat;
+  zoom?: number;
+  minZoom?: number;
+};
+type FlyToHandlerResult = {
+  easeFunc: (k: number, scale: number, centerFactor: number, pointAtOffset: Point) => void;
+  scaleOfZoom: number;
+  scaleOfMinZoom: number;
+  targetCenter: LngLat;
+  pixelPathLength: number;
+};
+/**
+ * @internal
+ * Contains projection-specific functions related to camera controls, easeTo, flyTo, inertia, etc.
+ */
+interface ICameraHelper {
+  get useGlobeControls(): boolean;
+  handlePanInertia(pan: Point, transform: IReadonlyTransform): {
+    easingCenter: LngLat;
+    easingOffset: Point;
+  };
+  handleMapControlsRollPitchBearingZoom(deltas: MapControlsDeltas, tr: ITransform): void;
+  handleMapControlsPan(deltas: MapControlsDeltas, tr: ITransform, preZoomAroundLoc: LngLat): void;
+  cameraForBoxAndBearing(options: CameraForBoundsOptions, padding: PaddingOptions, bounds: LngLatBounds, bearing: number, tr: IReadonlyTransform): CameraForBoxAndBearingHandlerResult;
+  handleJumpToCenterZoom(tr: ITransform, options: {
+    zoom?: number;
+    center?: LngLatLike;
+  }): void;
+  handleEaseTo(tr: ITransform, options: EaseToHandlerOptions): EaseToHandlerResult;
+  handleFlyTo(tr: ITransform, options: FlyToHandlerOptions): FlyToHandlerResult;
+} //#endregion
+//#region src/ui/camera.d.ts
+/**
+ * A [Point](https://github.com/mapbox/point-geometry) or an array of two numbers representing `x` and `y` screen coordinates in pixels.
+ *
+ * @group Geography and Geometry
+ *
+ * @example
+ * ```ts
+ * let p1 = new Point(-77, 38); // a PointLike which is a Point
+ * let p2 = [-77, 38]; // a PointLike which is an array of two numbers
+ * ```
+ */
+type PointLike = Point | [number, number];
+/**
+ * Options common to {@link Map.jumpTo}, {@link Map.easeTo}, and {@link Map.flyTo}, controlling the desired location,
+ * zoom, bearing, pitch, and roll of the camera. All properties are optional, and when a property is omitted, the current
+ * camera value for that property will remain unchanged.
+ *
+ * @example
+ * Set the map's initial perspective with CameraOptions
+ * ```ts
+ * let map = new Map({
+ *   container: 'map',
+ *   style: 'https://demotiles.maplibre.org/style.json',
+ *   center: [-73.5804, 45.53483],
+ *   pitch: 60,
+ *   bearing: -60,
+ *   zoom: 10
+ * });
+ * ```
+ * @see [Set pitch and bearing](https://maplibre.org/maplibre-gl-js/docs/examples/set-pitch-and-bearing/)
+ * @see [Jump to a series of locations](https://maplibre.org/maplibre-gl-js/docs/examples/jump-to-a-series-of-locations/)
+ * @see [Fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location/)
+ * @see [Display buildings in 3D](https://maplibre.org/maplibre-gl-js/docs/examples/display-buildings-in-3d/)
+ */
+type CameraOptions = CenterZoomBearing & {
+  /**
+   * The desired pitch in degrees. The pitch is the angle towards the horizon
+   * measured in degrees with a range between 0 and 60 degrees. For example, pitch: 0 provides the appearance
+   * of looking straight down at the map, while pitch: 60 tilts the user's perspective towards the horizon.
+   * Increasing the pitch value is often used to display 3D objects.
+   */
+  pitch?: number;
+  /**
+   * The desired roll in degrees. The roll is the angle about the camera boresight.
+   */
+  roll?: number;
+  /**
+   * The elevation of the center point in meters above sea level.
+   */
+  elevation?: number;
+};
+/**
+ * Holds center, zoom and bearing properties
+ */
+type CenterZoomBearing = {
+  /**
+   * The desired center.
+   */
+  center?: LngLatLike;
+  /**
+   * The desired mercator zoom level.
+   */
+  zoom?: number;
+  /**
+   * The desired bearing in degrees. The bearing is the compass direction that
+   * is "up". For example, `bearing: 90` orients the map so that east is up.
+   */
+  bearing?: number;
+};
+/**
+ * The options object related to the {@link Map.jumpTo} method
+ */
+type JumpToOptions = CameraOptions & {
+  /**
+   * Dimensions in pixels applied on each side of the viewport for shifting the vanishing point.
+   */
+  padding?: PaddingOptions;
+};
+/**
+ * A options object for the {@link Map.cameraForBounds} method
+ */
+type CameraForBoundsOptions = CameraOptions & {
+  /**
+   * The amount of padding in pixels to add to the given bounds.
+   */
+  padding?: number | PaddingOptions;
+  /**
+   * The center of the given bounds relative to the map's center, measured in pixels.
+   * @defaultValue [0, 0]
+   */
+  offset?: PointLike;
+  /**
+   * The maximum zoom level to allow when the camera would transition to the specified bounds.
+   */
+  maxZoom?: number;
+};
+/**
+ * The {@link Map.flyTo} options object
+ */
+type FlyToOptions = AnimationOptions & CameraOptions & {
+  /**
+   * The zooming "curve" that will occur along the
+   * flight path. A high value maximizes zooming for an exaggerated animation, while a low
+   * value minimizes zooming for an effect closer to {@link Map.easeTo}. 1.42 is the average
+   * value selected by participants in the user study discussed in
+   * [van Wijk (2003)](https://www.win.tue.nl/~vanwijk/zoompan.pdf). A value of
+   * `Math.pow(6, 0.25)` would be equivalent to the root mean squared average velocity. A
+   * value of 1 would produce a circular motion.
+   * @defaultValue 1.42
+   */
+  curve?: number;
+  /**
+   * The minimum zoom level that the flight arc may reach. The animation will
+   * not zoom out beyond this level. If the natural flight arc stays within
+   * this boundary, the arc is unchanged. This acts as a ceiling on zoom-out
+   * even when `options.curve` is also specified.
+   */
+  minZoom?: number;
+  /**
+   * The average speed of the animation defined in relation to
+   * `options.curve`. A speed of 1.2 means that the map appears to move along the flight path
+   * by 1.2 times `options.curve` screenfulls every second. A _screenfull_ is the map's visible span.
+   * It does not correspond to a fixed physical distance, but varies by zoom level.
+   * @defaultValue 1.2
+   */
+  speed?: number;
+  /**
+   * The average speed of the animation measured in screenfulls
+   * per second, assuming a linear timing curve. If `options.speed` is specified, this option is ignored.
+   */
+  screenSpeed?: number;
+  /**
+   * The animation's maximum duration, measured in milliseconds.
+   * If duration exceeds maximum duration, it resets to 0.
+   */
+  maxDuration?: number;
+  /**
+   * The amount of padding in pixels to add to the given bounds.
+   */
+  padding?: number | PaddingOptions;
+};
+/**
+ * The {@link Map.easeTo} options object
+ */
+type EaseToOptions = AnimationOptions & CameraOptions & {
+  delayEndEvents?: number;
+  padding?: number | PaddingOptions;
+  /**
+   * If `zoom` is specified, `around` determines the point around which the zoom is centered.
+   */
+  around?: LngLatLike;
+  easeId?: string;
+  noMoveStart?: boolean;
+};
+/**
+ * Options for {@link Map.fitBounds} method
+ */
+type FitBoundsOptions = FlyToOptions & {
+  /**
+   * If `true`, the map transitions using {@link Map.easeTo}. If `false`, the map transitions using {@link Map.flyTo}.
+   * See those functions and {@link AnimationOptions} for information about options available.
+   * @defaultValue false
+   */
+  linear?: boolean;
+  /**
+   * The center of the given bounds relative to the map's center, measured in pixels.
+   * @defaultValue [0, 0]
+   */
+  offset?: PointLike;
+  /**
+   * The maximum zoom level to allow when the map view transitions to the specified bounds.
+   */
+  maxZoom?: number;
+};
+/**
+ * Options common to map movement methods that involve animation, such as {@link Map.panBy} and
+ * {@link Map.easeTo}, controlling the duration and easing function of the animation. All properties
+ * are optional.
+ *
+ */
+type AnimationOptions = {
+  /**
+   * The animation's duration, measured in milliseconds.
+   */
+  duration?: number;
+  /**
+   * A function taking a time in the range 0..1 and returning a number where 0 is
+   * the initial state and 1 is the final state.
+   */
+  easing?: (_: number) => number;
+  /**
+   * of the target center relative to real map container center at the end of animation.
+   */
+  offset?: PointLike;
+  /**
+   * If `false`, no animation will occur.
+   */
+  animate?: boolean;
+  /**
+   * If `true`, then the animation is considered essential and will not be affected by
+   * [`prefers-reduced-motion`](https://developer.mozilla.org/en-US/docs/Web/CSS/\@media/prefers-reduced-motion).
+   */
+  essential?: boolean;
+  /**
+   * Default false. Needed in 3D maps to let the camera stay in a constant
+   * height based on sea-level. After the animation finished the zoom-level will be recalculated in respect of
+   * the distance from the camera to the center-coordinate-altitude.
+   */
+  freezeElevation?: boolean;
+};
+/**
+ * A callback hook that allows manipulating the camera and being notified about camera updates before they happen
+ */
+type CameraUpdateTransformFunction = (next: {
+  center: LngLat;
+  zoom: number;
+  roll: number;
+  pitch: number;
+  bearing: number;
+  elevation: number;
+}) => {
+  center?: LngLat;
+  zoom?: number;
+  roll?: number;
+  pitch?: number;
+  bearing?: number;
+  elevation?: number;
+};
+type CameraInitOptions = {
+  minZoom: number;
+  maxZoom: number;
+  minPitch: number;
+  maxPitch: number;
+  bearingSnap: number;
+  zoomSnap: number;
+  renderWorldCopies: boolean;
+  centerClampedToGround: boolean;
+  terrain: Terrain;
+  transformConstrain: TransformConstrainFunction;
+  requestRenderFrame: (a: () => void) => TaskID;
+  cancelRenderFrame: (_: TaskID) => void;
+  transformCameraUpdate: CameraUpdateTransformFunction | null;
+  /**
+   * @internal
+   * Callback invoked by {@link Camera.stop} to halt any in-progress user gestures.
+   * The `Camera` does not own the gesture handlers (the `Map` does), so it is injected
+   * with a way to stop them rather than holding a reference to the `HandlerManager`.
+   */
+  stopHandlers?: () => void;
+};
+declare class Camera extends Evented<MapEventType> {
+  transform: ITransform;
+  /**
+   * @internal
+   * Copy of the map's `terrain` (which the `Map` owns).
+   * The camera reads terrain for elevation handling but does not own it.
+   */
+  terrain: Terrain;
+  cameraHelper: ICameraHelper;
+  /**
+   * @internal
+   * Stops any in-progress user gestures. Injected by the owner so the camera does not need
+   * a reference to the `HandlerManager`. See {@link CameraInitOptions.stopHandlers}.
+   */
+  _stopHandlers: () => void;
+  _moving: boolean;
+  _zooming: boolean;
+  _rotating: boolean;
+  _pitching: boolean;
+  _rolling: boolean;
+  _padding: boolean;
+  _bearingSnap: number;
+  _zoomSnap: number;
+  _easeStart: number;
+  _easeOptions: {
+    duration?: number;
+    easing?: (_: number) => number;
+  };
+  _easeId: string | void;
+  _onEaseFrame: (_: number) => void;
+  _onEaseEnd: (easeId?: string) => void;
+  _easeFrameId: TaskID;
+  /**
+   * @internal
+   * holds the geographical coordinate of the target
+   */
+  _elevationCenter: LngLat;
+  /**
+   * @internal
+   * holds the targ altitude value, = center elevation of the target.
+   * This value may changes during flight, because new terrain-tiles loads during flight.
+   */
+  _elevationTarget: number;
+  /**
+   * @internal
+   * holds the start altitude value, = center elevation before animation begins
+   * this value will recalculated during flight in respect of changing _elevationTarget values,
+   * so the linear interpolation between start and target keeps smooth and without jumps.
+   */
+  _elevationStart: number;
+  /**
+   * @internal
+   * Saves the current state of the elevation freeze - this is used during map movement to prevent "rocky" camera movement.
+   */
+  elevationFreeze: boolean;
+  /**
+   * @internal
+   * Used to track accumulated changes during continuous interaction
+   */
+  _requestedCameraState?: ITransform;
+  /**
+   * A callback used to defer camera updates or apply arbitrary constraints.
+   * If specified, this Camera instance can be used as a stateless component in React etc.
+   */
+  transformCameraUpdate: CameraUpdateTransformFunction | null;
+  /**
+   * @internal
+   * If true, the elevation of the center point will automatically be set to the terrain elevation
+   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
+   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
+   * keep the camera above ground when pitch \> 90 degrees.
+   */
+  _centerClampedToGround: boolean;
+  _requestRenderFrame: (a: () => void) => TaskID;
+  _cancelRenderFrame: (_: TaskID) => void;
+  constructor(options: CameraInitOptions);
+  migrateProjection(newTransform: ITransform, newCameraHelper: ICameraHelper): void;
+  getCenter(): LngLat;
+  setCenter(center: LngLatLike, eventData?: Record<string, unknown>): this;
+  getCenterElevation(): number;
+  setCenterElevation(elevation: number, eventData?: any): this;
+  getCenterClampedToGround(): boolean;
+  setCenterClampedToGround(centerClampedToGround: boolean): void;
+  panBy(offset: PointLike, options?: EaseToOptions, eventData?: any): this;
+  panTo(lnglat: LngLatLike, options?: EaseToOptions, eventData?: any): this;
+  getZoom(): number;
+  setZoom(zoom: number, eventData?: any): this;
+  zoomTo(zoom: number, options?: EaseToOptions | null, eventData?: any): this;
+  zoomIn(options?: AnimationOptions, eventData?: any): this;
+  zoomOut(options?: AnimationOptions, eventData?: any): this;
+  getVerticalFieldOfView(): number;
+  setVerticalFieldOfView(fov: number, eventData?: any): this;
+  getBearing(): number;
+  setZoomSnap(snap: number): this;
+  getZoomSnap(): number;
+  setBearing(bearing: number, eventData?: any): this;
+  getPadding(): PaddingOptions;
+  setPadding(padding: PaddingOptions, eventData?: any): this;
+  rotateTo(bearing: number, options?: EaseToOptions, eventData?: any): this;
+  resetNorth(options?: AnimationOptions, eventData?: any): this;
+  resetNorthPitch(options?: AnimationOptions, eventData?: any): this;
+  snapToNorth(options?: AnimationOptions, eventData?: any): this;
+  getPitch(): number;
+  setPitch(pitch: number, eventData?: any): this;
+  getRoll(): number;
+  setRoll(roll: number, eventData?: any): this;
+  cameraForBounds(bounds: LngLatBoundsLike, options?: CameraForBoundsOptions): CenterZoomBearing | undefined;
+  /**
+   * @internal
+   * Calculate the center of these two points in the viewport and use
+   * the highest zoom level up to and including {@link Map.getMaxZoom} that fits
+   * the AABB defined by these points in the viewport at the specified bearing.
+   * @param p0 - First point
+   * @param p1 - Second point
+   * @param bearing - Desired map bearing at end of animation, in degrees
+   * @param options - the camera options
+   * @returns If map is able to fit to provided bounds, returns `center`, `zoom`, and `bearing`.
+   *      If map is unable to fit, method will warn and return undefined.
+   * @example
+   * ```ts
+   * let p0 = [-79, 43];
+   * let p1 = [-73, 45];
+   * let bearing = 90;
+   * let newCameraTransform = map._cameraForBoxAndBearing(p0, p1, bearing, {
+   *   padding: {top: 10, bottom:25, left: 15, right: 5}
+   * });
+   * ```
+   */
+  _cameraForBoxAndBearing(p0: LngLatLike, p1: LngLatLike, bearing: number, options?: CameraForBoundsOptions): CenterZoomBearing | undefined;
+  fitBounds(bounds: LngLatBoundsLike, options?: FitBoundsOptions, eventData?: any): this;
+  fitScreenCoordinates(p0: PointLike, p1: PointLike, bearing: number, options?: FitBoundsOptions, eventData?: any): this;
+  _fitInternal(calculatedOptions?: CenterZoomBearing, options?: FitBoundsOptions, eventData?: any): this;
+  jumpTo(options: JumpToOptions, eventData?: any): this;
+  calculateCameraOptionsFromTo(from: LngLatLike, altitudeFrom: number, to: LngLatLike, altitudeTo?: number): CameraOptions;
+  calculateCameraOptionsFromCameraLngLatAltRotation(cameraLngLat: LngLatLike, cameraAlt: number, bearing: number, pitch: number, roll?: number): CameraOptions;
+  easeTo(options: EaseToOptions, eventData?: any): this;
+  _prepareEase(eventData: any, noMoveStart: boolean, currently?: {
+    moving?: boolean;
+    zooming?: boolean;
+    rotating?: boolean;
+    pitching?: boolean;
+    rolling?: boolean;
+  }): void;
+  _prepareElevation(center: LngLat): void;
+  _updateElevation(k: number): void;
+  _finalizeElevation(): void;
+  /**
+   * @internal
+   * Called when the camera is about to be manipulated.
+   * If `transformCameraUpdate` is specified or terrain is enabled, a copy of
+   * the current transform is created to track the accumulated changes.
+   * This underlying transform represents the "desired state" proposed by input handlers / animations / UI controls.
+   * It may differ from the state used for rendering (`this.transform`).
+   * @returns Transform to apply changes to
+   */
+  getTransformForUpdate(): ITransform;
+  /**
+   * @internal
+   * Checks the given transform for the camera being below terrain surface and
+   * returns new pitch and zoom to fix that.
+   *
+   * With the new pitch and zoom, the camera will be at the same ground
+   * position but at higher altitude. It will still point to the same spot on
+   * the map.
+   *
+   * @param tr - The transform to check.
+   */
+  _elevateCameraIfInsideTerrain(tr: ITransform): {
+    pitch?: number;
+    zoom?: number;
+  };
+  /**
+   * @internal
+   * Called after the camera is done being manipulated.
+   * @param tr - the requested camera end state
+   * If the camera is inside terrain, it gets elevated.
+   * Call `transformCameraUpdate` if present, and then apply the "approved" changes.
+   */
+  applyUpdatedTransform(tr: ITransform): void;
+  _fireMoveEvents(eventData?: Record<string, unknown>): void;
+  _afterEase(eventData?: Record<string, unknown>, easeId?: string): void;
+  flyTo(options: FlyToOptions, eventData?: any): this;
+  isEasing(): boolean;
+  stop(allowGestures?: boolean): this;
+  _stop(allowGestures?: boolean, easeId?: string): this;
+  _ease(frame: (_: number) => void, finish: () => void, options: {
+    animate?: boolean;
+    duration?: number;
+    easing?: (_: number) => number;
+  }): void;
+  _renderFrameCallback: () => void;
+  _normalizeBearing(bearing: number, currentBearing: number): number;
+  isMoving(): boolean;
+  isZooming(): boolean;
+  isRotating(): boolean;
+} //#endregion
+//#region src/ui/handler_inertia.d.ts
+declare class HandlerInertia {
+  _map: Map$1;
+  _inertiaBuffer: Array<{
+    time: number;
+    settings: any;
+  }>;
+  constructor(map: Map$1);
+  clear(): void;
+  record(settings: any): void;
+  _drainInertiaBuffer(): void;
+  _onMoveEnd(panInertiaOptions?: DragPanOptions | boolean): EaseToOptions;
+} //#endregion
+//#region src/ui/handler/transform-provider.d.ts
+/**
+ * @internal
+ * Shared utilities for the Handler classes to access the correct camera state.
+ * If Camera.transformCameraUpdate is specified or terrain is enabled, the
+ * "desired state" of camera may differ from the state used for rendering. The
+ * handlers need the "desired state" to track accumulated changes.
+ */
+declare class TransformProvider {
+  _camera: Camera;
+  constructor(camera: Camera);
+  get transform(): IReadonlyTransform;
+  get center(): {
+    lng: number;
+    lat: number;
+  };
+  get zoom(): number;
+  get pitch(): number;
+  get bearing(): number;
+  unproject(point: PointLike): LngLat;
+} //#endregion
+//#region src/ui/handler_manager.d.ts
+/**
+ * Handlers interpret dom events and return camera changes that should be
+ * applied to the map (`HandlerResult`s). The camera changes are all deltas.
+ * The handler itself should have no knowledge of the map's current state.
+ * This makes it easier to merge multiple results and keeps handlers simpler.
+ * For example, if there is a mousedown and mousemove, the mousePan handler
+ * would return a `panDelta` on the mousemove.
+ */
+interface Handler {
+  enable(): void;
+  disable(): void;
+  isEnabled(): boolean;
+  /**
+   * This is used to indicate if the handler is currently active or not.
+   * In case a handler is active, it will block other handlers from getting the relevant events.
+   * There is an allow list of handlers that can be active at the same time, which is configured when adding a handler.
+   */
+  isActive(): boolean;
+  /**
+   * `reset` can be called by the manager at any time and must reset everything to it's original state
+   */
+  reset(): void;
+  readonly touchstart?: (e: TouchEvent, points: Point[], mapTouches: Touch[]) => HandlerResult | void;
+  readonly touchmove?: (e: TouchEvent, points: Point[], mapTouches: Touch[]) => HandlerResult | void;
+  readonly touchmoveWindow?: (e: TouchEvent, points: Point[], mapTouches: Touch[]) => HandlerResult | void;
+  readonly touchend?: (e: TouchEvent, points: Point[], mapTouches: Touch[]) => HandlerResult | void;
+  readonly touchcancel?: (e: TouchEvent, points: Point[], mapTouches: Touch[]) => HandlerResult | void;
+  readonly mousedown?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly mousemove?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly mousemoveWindow?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly mouseup?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly mouseupWindow?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly dblclick?: (e: MouseEvent, point: Point) => HandlerResult | void;
+  readonly contextmenu?: (e: MouseEvent) => HandlerResult | void;
+  readonly wheel?: (e: WheelEvent, point: Point) => HandlerResult | void;
+  readonly keydown?: (e: KeyboardEvent) => HandlerResult | void;
+  readonly keyup?: (e: KeyboardEvent) => HandlerResult | void;
+  /**
+   * `renderFrame` is the only non-dom event. It is called during render
+   * frames and can be used to smooth camera changes (see scroll handler).
+   */
+  readonly renderFrame?: () => HandlerResult | void;
+}
+/**
+ * All handler methods that are called with events can optionally return a `HandlerResult`.
+ */
+type HandlerResult = {
+  panDelta?: Point;
+  zoomDelta?: number;
+  bearingDelta?: number;
+  pitchDelta?: number;
+  rollDelta?: number;
+  /**
+   * the point to not move when changing the camera
+   */
+  around?: Point | null;
+  /**
+   * same as above, except for pinch actions, which are given higher priority
+   */
+  pinchAround?: Point | null;
+  /**
+   * A method that can fire a one-off easing by directly changing the map's camera.
+   */
+  cameraAnimation?: (map: Map$1) => void;
+  /**
+   * The last three properties are needed by only one handler: scrollzoom.
+   * The DOM event to be used as the `originalEvent` on any camera change events.
+   */
+  originalEvent?: Event$1;
+  /**
+   * Makes the manager trigger a frame, allowing the handler to return multiple results over time (see scrollzoom).
+   */
+  needsRenderFrame?: boolean;
+  /**
+   * The camera changes won't get recorded for inertial zooming.
+   */
+  noInertia?: boolean;
+};
+type EventInProgress = {
+  handlerName: string;
+  originalEvent: Event$1;
+};
+type EventsInProgress = {
+  zoom?: EventInProgress;
+  roll?: EventInProgress;
+  pitch?: EventInProgress;
+  rotate?: EventInProgress;
+  drag?: EventInProgress;
+};
+type MapControlsScenarioOptions = {
+  terrain?: Terrain | null;
+  tr: ITransform;
+  deltasForHelper: MapControlsDeltas;
+  preZoomAroundLoc: LngLat;
+  combinedEventsInProgress: EventsInProgress;
+  panDelta?: Point;
+};
+declare class HandlerManager {
+  _map: Map$1;
+  _camera: Camera;
+  _transformProvider: TransformProvider;
+  _el: HTMLElement;
+  _handlers: Array<{
+    handlerName: string;
+    handler: Handler;
+    allowed: string[];
+  }>;
+  _eventsInProgress: EventsInProgress;
+  _frameId: number;
+  _inertia: HandlerInertia;
+  _bearingSnap: number;
+  _handlersById: {
+    [x: string]: Handler;
+  };
+  _updatingCamera: boolean;
+  _changes: Array<[HandlerResult, EventsInProgress, {
+    [handlerName: string]: Event$1;
+  }]>;
+  _terrainMovement: boolean;
+  _zoom: {
+    handlerName: string;
+  };
+  _previousActiveHandlers: {
+    [x: string]: Handler;
+  };
+  _listeners: Array<[Window | Document | HTMLElement, string, {
+    passive?: boolean;
+    capture?: boolean;
+  } | undefined]>;
+  /**
+   * @internal
+   * The document that contains the map container element, for cross-window support.
+   */
+  get _ownerDocument(): Document;
+  /**
+   * @internal
+   * The window that contains the map container element, for cross-window support.
+   */
+  get _ownerWindow(): Window;
+  constructor(map: Map$1, camera: Camera, options: CompleteMapOptions);
+  destroy(): void;
+  _addDefaultHandlers(options: CompleteMapOptions): void;
+  _add(handlerName: string, handler: Handler, allowed?: string[]): void;
+  stop(allowEndAnimation: boolean): void;
+  isActive(): boolean;
+  isZooming(): boolean;
+  isRotating(): boolean;
+  isMoving(): boolean;
+  _blockedByActive(activeHandlers: {
+    [x: string]: Handler;
+  }, allowed: string[], myName: string): boolean;
+  handleWindowEvent: (e: Event$1) => void;
+  _getMapTouches(touches: TouchList): TouchList;
+  handleEvent: (e: Event$1, eventName?: keyof Handler) => void;
+  mergeHandlerResult(mergedHandlerResult: HandlerResult, eventsInProgress: EventsInProgress, handlerResult: HandlerResult, name: string, e?: UIEvent): void;
+  _applyChanges(): void;
+  _updateMapTransform(combinedResult: HandlerResult, combinedEventsInProgress: EventsInProgress, deactivatedHandlers: {
+    [handlerName: string]: Event$1;
+  }): void;
+  _handleMapControls({
+    terrain,
+    tr,
+    deltasForHelper,
+    preZoomAroundLoc,
+    combinedEventsInProgress,
+    panDelta
+  }: MapControlsScenarioOptions): void;
+  _fireEvents(newEventsInProgress: EventsInProgress, deactivatedHandlers: {
+    [handlerName: string]: Event$1;
+  }, allowEndAnimation: boolean): void;
+  _fireEvent(type: string, e?: Event$1): void;
+  _requestFrame(): number;
+  _triggerRenderFrame(): void;
+} //#endregion
+//#region src/ui/control/control.d.ts
+/**
+ * A position definition for the control to be placed, can be in one of the corners of the map.
+ * When two or more controls are places in the same location they are stacked toward the center of the map.
+ */
+type ControlPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+/**
+ * Interface for interactive controls added to the map. This is a
+ * specification for implementers to model: it is not
+ * an exported method or class.
+ *
+ * Controls must implement `onAdd` and `onRemove`, and must own an
+ * element, which is often a `div` element. To use MapLibre GL JS's
+ * default control styling, add the `maplibregl-ctrl` class to your control's
+ * node.
+ *
+ * @example
+ * ```ts
+ * class HelloWorldControl: IControl {
+ *     onAdd(map) {
+ *         this._map = map;
+ *         this._container = document.createElement('div');
+ *         this._container.className = 'maplibregl-ctrl';
+ *         this._container.textContent = 'Hello, world';
+ *         return this._container;
+ *     }
+ *
+ *     onRemove() {
+ *         this._container.remove();
+ *         this._map = undefined;
+ *     }
+ * }
+ * ```
+ */
+interface IControl {
+  /**
+   * Register a control on the map and give it a chance to register event listeners
+   * and resources. This method is called by {@link Map.addControl}
+   * internally.
+   *
+   * @param map - the Map this control will be added to
+   * @returns The control's container element. This should
+   * be created by the control and returned by onAdd without being attached
+   * to the DOM: the map will insert the control's element into the DOM
+   * as necessary.
+   */
+  onAdd(map: Map$1): HTMLElement;
+  /**
+   * Unregister a control on the map and give it a chance to detach event listeners
+   * and resources. This method is called by {@link Map.removeControl}
+   * internally.
+   *
+   * @param map - the Map this control will be removed from
+   */
+  onRemove(map: Map$1): void;
+  /**
+   * Optionally provide a default position for this control. If this method
+   * is implemented and {@link Map.addControl} is called without the `position`
+   * parameter, the value returned by getDefaultPosition will be used as the
+   * control's position.
+   *
+   * @returns a control position, one of the values valid in addControl.
+   */
+  readonly getDefaultPosition?: () => ControlPosition;
+} //#endregion
+//#region src/ui/control/attribution_control.d.ts
 /**
  * The {@link AttributionControl} options object
  */
@@ -12582,8 +14783,22 @@ type AttributionControlOptions = {
   /**
    * Attributions to show in addition to any other attributions.
    */
-  customAttribution?: string | Array<string>;
+  customAttribution?: string | string[];
 };
+/**
+ * An `AttributionControl` control presents the map's attribution information. By default, the attribution control is expanded (regardless of map width).
+ * @group Markers and Controls
+ * @example
+ * ```ts
+ * let map = new Map({attributionControl: false})
+ *     .addControl(new AttributionControl({
+ *         compact: true
+ *     }));
+ * ```
+ * @see [Change the default position for attribution](https://maplibre.org/maplibre-gl-js/docs/examples/change-the-default-position-for-attribution/)
+ */
+//#endregion
+//#region src/ui/default_locale.d.ts
 declare const defaultLocale: {
   "AttributionControl.ToggleAttribution": string;
   "AttributionControl.MapFeedback": string;
@@ -12610,20 +14825,8 @@ declare const defaultLocale: {
   "CooperativeGesturesHandler.WindowsHelpText": string;
   "CooperativeGesturesHandler.MacHelpText": string;
   "CooperativeGesturesHandler.MobileHelpText": string;
-};
-declare class TransformProvider {
-  _map: Map$1;
-  constructor(map: Map$1);
-  get transform(): IReadonlyTransform;
-  get center(): {
-    lng: number;
-    lat: number;
-  };
-  get zoom(): number;
-  get pitch(): number;
-  get bearing(): number;
-  unproject(point: PointLike): LngLat;
-}
+}; //#endregion
+//#region src/ui/handler/two_fingers_touch.d.ts
 /**
  * An options object sent to the enable function of some of the handlers
  */
@@ -12633,6 +14836,10 @@ type AroundCenterOptions = {
    */
   around: "center";
 };
+/**
+ * The `TwoFingersTouchHandler`s allows the user to zoom, pitch and rotate the map using two fingers
+ *
+ */
 declare abstract class TwoFingersTouchHandler implements Handler {
   _enabled?: boolean;
   _active?: boolean;
@@ -12645,9 +14852,9 @@ declare abstract class TwoFingersTouchHandler implements Handler {
   reset(): void;
   abstract _start(points: [Point, Point]): void;
   abstract _move(points: [Point, Point], pinchAround: Point | null, e: TouchEvent): HandlerResult | void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): HandlerResult | void;
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): HandlerResult | void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
   touchcancel(): void;
   /**
    * Enables the "drag to pitch" interaction.
@@ -12688,6 +14895,29 @@ declare abstract class TwoFingersTouchHandler implements Handler {
 declare class TwoFingersTouchZoomHandler extends TwoFingersTouchHandler {
   _distance?: number;
   _startDistance?: number;
+  _zoomRate: number;
+  _zoomThreshold: number;
+  constructor();
+  /**
+   * Sets the zoom rate of touch gestures.
+   * @param zoomRate - 1 The rate used to scale touch movement to a zoom value. Set to `undefined` to restore the default.
+   * @example
+   * Slow down touch zoom
+   * ```ts
+   * map.touchZoomRotate.setZoomRate(0.5);
+   * ```
+   */
+  setZoomRate(zoomRate?: number): void;
+  /**
+   * Sets the threshold before a pinch gesture starts zooming.
+   * @param zoomThreshold - 0.1 The minimum zoom delta before the pinch gesture becomes active. Set to `undefined` to restore the default.
+   * @example
+   * Make pinch zoom less sensitive
+   * ```ts
+   * map.touchZoomRotate.setZoomThreshold(0.3);
+   * ```
+   */
+  setZoomThreshold(zoomThreshold?: number): void;
   reset(): void;
   _start(points: [Point, Point]): void;
   _move(points: [Point, Point], pinchAround: Point | null): HandlerResult | void;
@@ -12717,11 +14947,12 @@ declare class TwoFingersTouchPitchHandler extends TwoFingersTouchHandler {
   _currentTouchCount: number;
   constructor(map: Map$1);
   reset(): void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
   _start(points: [Point, Point]): void;
   _move(points: [Point, Point], center: Point | null, e: TouchEvent): HandlerResult | void;
   gestureBeginsVertically(vectorA: Point, vectorB: Point, timeStamp: number): boolean | undefined;
-}
+} //#endregion
+//#region src/ui/handler/scroll_zoom.d.ts
 /**
  * The `ScrollZoomHandler` allows the user to zoom the map by scrolling.
  *
@@ -12739,7 +14970,7 @@ declare class ScrollZoomHandler implements Handler {
   _lastValue: number;
   _timeout: ReturnType<typeof setTimeout>;
   _finishTimeout: ReturnType<typeof setTimeout>;
-  _lastWheelEvent: any;
+  _lastWheelEvent: WheelEvent;
   _lastWheelEventTime: number;
   _lastExpectedZoom: number;
   _startZoom: number;
@@ -12751,12 +14982,12 @@ declare class ScrollZoomHandler implements Handler {
     duration: number;
     easing: (_: number) => number;
   };
-  _frameId: boolean;
+  _needsRerender: boolean;
   _triggerRenderFrame: () => void;
   _defaultZoomRate: number;
   _wheelZoomRate: number;
   /** @internal */
-  constructor(map: Map$1, triggerRenderFrame: () => void);
+  constructor(map: Map$1, triggerRenderFrame: () => void, transformProvider: TransformProvider);
   /**
    * Set the zoom rate of a trackpad
    * @param zoomRate - 1/100 The rate used to scale trackpad movement to a zoom value.
@@ -12816,11 +15047,12 @@ declare class ScrollZoomHandler implements Handler {
     needsRenderFrame: boolean;
     zoomDelta: number;
     around: Point;
-    originalEvent: any;
-  };
+    originalEvent: WheelEvent;
+  } | void;
   _smoothOutEasing(duration: number): (t: number) => number;
   reset(): void;
-}
+} //#endregion
+//#region src/ui/handler/box_zoom.d.ts
 /**
  * Callback for customizing what happens when a box zoom gesture ends.
  */
@@ -12857,7 +15089,7 @@ declare class BoxZoomHandler implements Handler {
   constructor(map: Map$1, options: {
     clickTolerance: number;
     boxZoom?: boolean | BoxZoomHandlerOptions;
-  });
+  }, transformProvider: TransformProvider);
   /**
    * Returns a Boolean indicating whether the "box zoom" interaction is enabled.
    *
@@ -12891,12 +15123,16 @@ declare class BoxZoomHandler implements Handler {
   mousedown(e: MouseEvent, point: Point): void;
   mousemoveWindow(e: MouseEvent, point: Point): void;
   mouseupWindow(e: MouseEvent, point: Point): {
-    cameraAnimation: (map: any) => any;
-  };
+    cameraAnimation: (map: Map$1) => Map$1;
+  } | void;
   keydown(e: KeyboardEvent): void;
   reset(): void;
-  _fireEvent(type: string, e: any): Map$1;
-}
+  _fireEvent(type: string, e: MouseEvent | KeyboardEvent): Map$1;
+} //#endregion
+//#region src/ui/handler/shim/drag_rotate.d.ts
+/**
+ * Options object for `DragRotateHandler`.
+ */
 type DragRotateHandlerOptions = {
   /**
    * Control the map pitch in addition to the bearing
@@ -12953,7 +15189,8 @@ declare class DragRotateHandler {
    * @returns `true` if the "drag to rotate" interaction is active.
    */
   isActive(): boolean;
-}
+} //#endregion
+//#region src/ui/handler/cooperative_gestures.d.ts
 /**
  * The {@link CooperativeGesturesHandler} options object for the gesture settings
  */
@@ -12992,7 +15229,8 @@ declare class CooperativeGesturesHandler implements Handler {
   isEnabled(): boolean;
   isBypassed(event: MouseEvent | WheelEvent | PointerEvent): boolean;
   notifyGestureBlocked(gestureType: "wheel_zoom" | "touch_pan", originalEvent: Event$1): void;
-}
+} //#endregion
+//#region src/ui/handler/keyboard.d.ts
 /**
  * The `KeyboardHandler` allows the user to zoom, rotate, and pan the map using
  * the following keyboard shortcuts:
@@ -13018,11 +15256,11 @@ declare class KeyboardHandler implements Handler {
   _pitchStep: number;
   _rotationDisabled: boolean;
   /** @internal */
-  constructor(map: Map$1);
+  constructor(map: Map$1, transformProvider: TransformProvider);
   reset(): void;
   keydown(e: KeyboardEvent): {
     cameraAnimation: (map: Map$1) => void;
-  };
+  } | void;
   /**
    * Enables the "keyboard rotate and zoom" interaction.
    *
@@ -13077,13 +15315,18 @@ declare class KeyboardHandler implements Handler {
    * ```
    */
   enableRotation(): void;
-}
+} //#endregion
+//#region src/ui/handler/click_zoom.d.ts
+/**
+ * The `ClickZoomHandler` allows the user to zoom the map at a point by double clicking
+ * It is used by other handlers
+ */
 declare class ClickZoomHandler implements Handler {
   _tr: TransformProvider;
   _enabled: boolean;
   _active: boolean;
   /** @internal */
-  constructor(map: Map$1);
+  constructor(map: Map$1, transformProvider: TransformProvider);
   reset(): void;
   dblclick(e: MouseEvent, point: Point): {
     cameraAnimation: (map: Map$1) => void;
@@ -13092,7 +15335,8 @@ declare class ClickZoomHandler implements Handler {
   disable(): void;
   isEnabled(): boolean;
   isActive(): boolean;
-}
+} //#endregion
+//#region src/ui/handler/tap_recognizer.d.ts
 declare class SingleTapRecognizer {
   numTouches: number;
   centroid: Point;
@@ -13103,9 +15347,9 @@ declare class SingleTapRecognizer {
     numTouches: number;
   });
   reset(): void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): Point;
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): Point | void;
 }
 declare class TapRecognizer {
   singleTap: SingleTapRecognizer;
@@ -13118,29 +15362,34 @@ declare class TapRecognizer {
     numTouches: number;
   });
   reset(): void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): Point;
-}
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): Point | void;
+} //#endregion
+//#region src/ui/handler/tap_zoom.d.ts
+/**
+ * A `TapZoomHandler` allows the user to zoom the map at a point by double tapping
+ */
 declare class TapZoomHandler implements Handler {
   _tr: TransformProvider;
   _enabled: boolean;
   _active: boolean;
   _zoomIn: TapRecognizer;
   _zoomOut: TapRecognizer;
-  constructor(map: Map$1);
+  constructor(map: Map$1, transformProvider: TransformProvider);
   reset(): void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): {
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): {
     cameraAnimation: (map: Map$1) => Map$1;
-  };
+  } | void;
   touchcancel(): void;
   enable(): void;
   disable(): void;
   isEnabled(): boolean;
   isActive(): boolean;
-}
+} //#endregion
+//#region src/ui/handler/shim/dblclick_zoom.d.ts
 /**
  * The `DoubleClickZoomHandler` allows the user to zoom the map at a point by
  * double clicking or double tapping.
@@ -13182,7 +15431,11 @@ declare class DoubleClickZoomHandler {
    * @returns `true` if the "double click to zoom" interaction is active.
    */
   isActive(): boolean;
-}
+} //#endregion
+//#region src/ui/handler/tap_drag_zoom.d.ts
+/**
+ * A `TapDragZoomHandler` allows the user to zoom the map at a point by double tapping. It also allows the user pan the map by dragging.
+ */
 declare class TapDragZoomHandler implements Handler {
   _enabled: boolean;
   _active: boolean;
@@ -13191,19 +15444,22 @@ declare class TapDragZoomHandler implements Handler {
   _tapTime: number;
   _tapPoint: Point;
   _tap: TapRecognizer;
+  _zoomRate: number;
   constructor();
+  setZoomRate(zoomRate?: number): void;
   reset(): void;
-  touchstart(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
-  touchmove(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): {
+  touchstart(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
+  touchmove(e: TouchEvent, points: Point[], mapTouches: Touch[]): {
     zoomDelta: number;
-  };
-  touchend(e: TouchEvent, points: Array<Point>, mapTouches: Array<Touch>): void;
+  } | void;
+  touchend(e: TouchEvent, points: Point[], mapTouches: Touch[]): void;
   touchcancel(): void;
   enable(): void;
   disable(): void;
   isEnabled(): boolean;
   isActive(): boolean;
-}
+} //#endregion
+//#region src/ui/handler/shim/two_fingers_touch.d.ts
 /**
  * The `TwoFingersTouchZoomRotateHandler` allows the user to zoom and rotate the map by
  * pinching on a touchscreen.
@@ -13256,6 +15512,26 @@ declare class TwoFingersTouchZoomRotateHandler {
    */
   isActive(): boolean;
   /**
+   * Sets the zoom rate of touch gestures.
+   * @param zoomRate - 1 The rate used to scale touch movement to a zoom value. Set to `undefined` to restore the default.
+   * @example
+   * Slow down touch zoom
+   * ```ts
+   * map.touchZoomRotate.setZoomRate(0.5);
+   * ```
+   */
+  setZoomRate(zoomRate?: number): void;
+  /**
+   * Sets the threshold before a pinch gesture starts zooming.
+   * @param zoomThreshold - 0.1 The minimum zoom delta before the pinch gesture becomes active. Set to `undefined` to restore the default.
+   * @example
+   * Make pinch zoom less sensitive
+   * ```ts
+   * map.touchZoomRotate.setZoomThreshold(0.3);
+   * ```
+   */
+  setZoomThreshold(zoomThreshold?: number): void;
+  /**
    * Disables the "pinch to rotate" interaction, leaving the "pinch to zoom"
    * interaction enabled.
    *
@@ -13275,10 +15551,11 @@ declare class TwoFingersTouchZoomRotateHandler {
    * ```
    */
   enableRotation(): void;
-}
-type WebGLSupportedVersions = "webgl2" | "webgl" | undefined;
+} //#endregion
+//#region src/ui/map.d.ts
+type ContextType = "webgl2";
 type WebGLContextAttributesWithType = WebGLContextAttributes & {
-  contextType?: WebGLSupportedVersions;
+  contextType?: ContextType;
 };
 /**
  * The {@link Map} options object.
@@ -13286,10 +15563,11 @@ type WebGLContextAttributesWithType = WebGLContextAttributes & {
 type MapOptions = {
   /**
    * If `true`, the map's position (zoom, center latitude, center longitude, bearing, and pitch) will be synced with the hash fragment of the page's URL.
-   * For example, `http://path/to/my/page.html#2.59/39.26/53.07/-24.1/60`.
-   * An additional string may optionally be provided to indicate a parameter-styled hash,
-   * e.g. http://path/to/my/page.html#map=2.59/39.26/53.07/-24.1/60&foo=bar, where foo
-   * is a custom parameter and bar is an arbitrary hash distinct from the map hash.
+   * For example, `https://example.com#2.59/39.26/53.07/-24.1/60`.
+   *
+   * An additional string may optionally be provided as an alternative to indicate a parameter-styled hash.
+   * For example, passing `hash: "foo"` will produce a hash like `https://example.com#foo=2.59/39.26/53.07/-24.1/60`.
+   * This is usefull for allowing multiple maps or other state.
    * @defaultValue false
    */
   hash?: boolean | string;
@@ -13336,8 +15614,8 @@ type MapOptions = {
   /**
    * Set of WebGLContextAttributes that are applied to the WebGL context of the map.
    * See https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext for more details.
-   * `contextType` can be set to `webgl2` or `webgl` to force a WebGL version. Not setting it, Maplibre will do it's best to get a suitable context.
-   * @defaultValue antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false, desynchronized: false, contextType: 'webgl2withfallback'
+   * `contextType` is restricted to `'webgl2'`. This option is kept as a forward-looking API for future WebGPU support.
+   * @defaultValue antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false, desynchronized: false, contextType: 'webgl2'
    */
   canvasContextAttributes?: WebGLContextAttributesWithType;
   /**
@@ -13355,12 +15633,12 @@ type MapOptions = {
    */
   scrollZoom?: boolean | AroundCenterOptions;
   /**
-   * The minimum zoom level of the map (0-24).
+   * The minimum zoom level of the map. Users cannot zoom out beyond this level. (0–24)
    * @defaultValue 0
    */
   minZoom?: number | null;
   /**
-   * The maximum zoom level of the map (0-24).
+   * The maximum zoom level of the map. Users cannot zoom in beyond this level. (0–24)
    * @defaultValue 22
    */
   maxZoom?: number | null;
@@ -13597,17 +15875,31 @@ type MapOptions = {
    */
   centerClampedToGround?: boolean;
   /**
-   * Allows overzooming by splitting vector tiles after max zoom.
-   * Defines the number of zoom level that will overscale from map's max zoom and below.
-   * For example if the map's max zoom is 20 and this is set to 3, the zoom levels of 20, 19 and 18 will be overscaled
-   * and the rest will be split.
-   * When undefined, all zoom levels after source's max zoom will be overscaled.
+   * Controls the length of the vertical extensions which are added to the edges of terrain tiles.
+   *
+   * If the skirts are introducing visually unappealing vertical artifacts, consider avoiding transparent or semi-transparent backgrounds,
+   * for example, by having the first layer be a background layer with a [`background-color`](https://maplibre.org/maplibre-style-spec/layers/#background-color).
+   * If that is impossible or insufficient, you can entirely disable skirts,
+   * at the cost of potentially introducing some horizontal hairline gaps (stitches) on tile boundaries with different zoomlevels for some terrain datasets.
+   *
+   * - `"none"` disables skirts entirely.
+   * - `"auto"` renders skirts with an automatically chosen length.
+   * @defaultValue "auto"
+   */
+  terrainSkirtLength?: "none" | "auto";
+  /**
+   * Defines the number of zoom level that will overscale instead of split tiles below (inclusive) a map's `maxZoom`.
+   * When `undefined`, all zoom levels after source's max zoom will be overscaled.
+   *
    * This can help in reducing the size of the overscaling and improve performance in high zoom levels.
    * The drawback is that it changes rendering for polygon centered labels and changes the results of query rendered features.
-   * @defaultValue undefined
-   * @experimental
+   *
+   * For example if map's `maxZoom` is 20, the source's `maxzoom` is 10 (tiles are avaliable until zoom 10) and `zoomLevelsToOverscale` is set to 3:
+   * - The zoom levels of 20, 19, 18 will be overscaled.
+   * - The zoom levels 11 to 17 will be split.
+   * @defaultValue 4
    */
-  experimentalZoomLevelsToOverscale?: number;
+  zoomLevelsToOverscale?: number;
   /**
    * Determines the rotation interaction model:
    * - When true: Uses "Orbital" logic where rotation is relative to the pivot center.
@@ -13618,6 +15910,20 @@ type MapOptions = {
    */
   aroundCenter?: boolean;
 };
+/**
+ * Image data accepted by {@link Map.addImage}.
+ */
+type StyleImageSource = HTMLImageElement | ImageBitmap | ImageData | {
+  width: number;
+  height: number;
+  data: Uint8Array | Uint8ClampedArray;
+} | StyleImageInterface;
+/**
+ * Callback used by {@link Map.setMissingStyleImageResolver} to resolve missing style images,
+ * typically by calling {@link Map.addImage}. MapLibre awaits the returned promise before
+ * treating the image as missing.
+ */
+type MissingStyleImageResolver = (id: string) => void | Promise<void>;
 type CompleteMapOptions = Complete<MapOptions>;
 type DelegatedListener = {
   layers: string[];
@@ -13662,10 +15968,12 @@ type LostContextStyle = {
  * ```
  * @see [Display a map](https://maplibre.org/maplibre-gl-js/docs/examples/display-a-map/)
  */
-declare class Map$1 extends Camera {
+declare class Map$1 extends Evented<MapEventType> {
+  terrain: Terrain;
   style: Style;
   painter: Painter;
-  handlers: HandlerManager;
+  _camera: Camera;
+  _handlers: HandlerManager;
   _container: HTMLElement;
   _canvasContainer: HTMLElement;
   _controlContainer: HTMLElement;
@@ -13693,13 +16001,13 @@ declare class Map$1 extends Camera {
   _canvasContextAttributes: WebGLContextAttributesWithType;
   _refreshExpiredTiles: boolean;
   _hash: Hash;
-  _delegatedListeners: Record<string, DelegatedListener[]>;
+  _delegatedListeners: Record<keyof MapEventType, DelegatedListener[]>;
   _fadeDuration: number;
   _crossSourceCollisions: boolean;
   _crossFadingFactor: number;
   _collectResourceTiming: boolean;
   _renderTaskQueue: TaskQueue;
-  _controls: Array<IControl>;
+  _controls: IControl[];
   _mapId: number;
   _localIdeographFontFamily: string | false;
   _validateStyle: boolean;
@@ -13711,8 +16019,10 @@ declare class Map$1 extends Camera {
   _overridePixelRatio: number | null | undefined;
   _maxCanvasSize: [number, number];
   _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
+  _missingStyleImageResolver: MissingStyleImageResolver | null;
   /** @internal */
   _zoomLevelsToOverscale: number | undefined;
+  _terrainSkirtLength: "none" | "auto";
   /**
    * @internal
    * The window that owns the map container element, for cross-window support.
@@ -13782,11 +16092,6 @@ declare class Map$1 extends Camera {
    * @defaultValue true
    */
   cancelPendingTileRequestsWhileZooming: boolean;
-  /**
-   * The map transform's callback that overrides the default constrain function.
-   * @defaultValue null
-   */
-  transformConstrain: TransformConstrainFunction | null;
   constructor(options: MapOptions);
   /**
    * @internal
@@ -13807,12 +16112,12 @@ declare class Map$1 extends Camera {
    * Returns the global map state
    *
    * @returns The map state object.
-  */
+   */
   getGlobalState(): Record<string, any>;
   /**
    * Adds an {@link IControl} to the map, calling `control.onAdd(this)`.
    *
-   * An {@link ErrorEvent} will be fired if the image parameter is invalid.
+   * An {@link ErrorEvent} will be fired if the control is invalid.
    *
    * @param control - The {@link IControl} to add.
    * @param position - position on the map to which the control will be added.
@@ -13824,11 +16129,11 @@ declare class Map$1 extends Camera {
    * ```
    * @see [Display map navigation controls](https://maplibre.org/maplibre-gl-js/docs/examples/display-map-navigation-controls/)
    */
-  addControl(control: IControl, position?: ControlPosition): Map$1;
+  addControl(control: IControl, position?: ControlPosition): this;
   /**
    * Removes the control from the map.
    *
-   * An {@link ErrorEvent} will be fired if the image parameter is invalid.
+   * An {@link ErrorEvent} will be fired if the control is invalid.
    *
    * @param control - The {@link IControl} to remove.
    * @example
@@ -13841,7 +16146,7 @@ declare class Map$1 extends Camera {
    * map.removeControl(navigation);
    * ```
    */
-  removeControl(control: IControl): Map$1;
+  removeControl(control: IControl): this;
   /**
    * Checks if a control exists on the map.
    *
@@ -13859,18 +16164,533 @@ declare class Map$1 extends Camera {
    */
   hasControl(control: IControl): boolean;
   /**
-  * Returns an array of `OverscaledTileID` objects that cover the current viewport for a given tile size.
-  * This method is useful for determining which tiles are visible in the current viewport.
-  *
-  * @param options - Options for calculating the covering tiles.
-  * @returns An array of `OverscaledTileID` objects.
-  * @example
-  * ```ts
-  * // Get the tiles to cover the view for a 512x512px tile source
-  * const tiles = map.coveringTiles({tileSize: 512});
-  * ```
-  */
+   * Returns an array of `OverscaledTileID` objects that cover the current viewport for a given tile size.
+   * This method is useful for determining which tiles are visible in the current viewport.
+   *
+   * @param options - Options for calculating the covering tiles.
+   * @returns An array of `OverscaledTileID` objects.
+   * @example
+   * ```ts
+   * // Get the tiles to cover the view for a 512x512px tile source
+   * const tiles = map.coveringTiles({tileSize: 512});
+   * ```
+   */
   coveringTiles(options: CoveringTilesOptions): OverscaledTileID[];
+  /**
+   * Sets the callback used to defer camera updates or apply arbitrary constraints.
+   * If specified, this Camera instance can be used as a stateless component in React etc.
+   */
+  setTransformCameraUpdate(value: CameraUpdateTransformFunction | null): void;
+  /**
+   * Returns the map's geographical centerpoint.
+   *
+   * @returns The map's geographical centerpoint.
+   * @example
+   * Return a LngLat object such as `{lng: 0, lat: 0}`
+   * ```ts
+   * let center = map.getCenter();
+   * // access longitude and latitude values directly
+   * let {lng, lat} = map.getCenter();
+   * ```
+   */
+  getCenter(): LngLat;
+  /**
+   * Sets the map's geographical centerpoint. Equivalent to `jumpTo({center: center})`.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param center - The centerpoint to set.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * map.setCenter([-74, 38]);
+   * ```
+   */
+  setCenter(center: LngLatLike, eventData?: Record<string, unknown>): this;
+  /**
+   * Returns the elevation of the map's center point.
+   *
+   * @returns The elevation of the map's center point, in meters above sea level.
+   */
+  getCenterElevation(): number;
+  /**
+   * Sets the elevation of the map's center point, in meters above sea level. Equivalent to `jumpTo({elevation: elevation})`.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param elevation - The elevation to set, in meters above sea level.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  setCenterElevation(elevation: number, eventData?: any): this;
+  /**
+   * Sets the value of `centerClampedToGround`.
+   *
+   * If true, the elevation of the center point will automatically be set to the terrain elevation
+   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
+   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
+   * keep the camera above ground when pitch \> 90 degrees.
+   */
+  setCenterClampedToGround(centerClampedToGround: boolean): void;
+  /**
+   * Pans the map by the specified offset.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param offset - `x` and `y` coordinates by which to pan the map.
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
+   */
+  panBy(offset: PointLike, options?: EaseToOptions, eventData?: any): this;
+  /**
+   * Pans the map to the specified location with an animated transition.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param lnglat - The location to pan the map to.
+   * @param options - Options describing the destination and animation of the transition.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * map.panTo([-74, 38]);
+   * // Specify that the panTo animation should last 5000 milliseconds.
+   * map.panTo([-74, 38], {duration: 5000});
+   * ```
+   * @see [Update a feature in realtime](https://maplibre.org/maplibre-gl-js/docs/examples/update-a-feature-in-realtime/)
+   */
+  panTo(lnglat: LngLatLike, options?: EaseToOptions, eventData?: any): this;
+  /**
+   * Returns the map's current zoom level.
+   *
+   * @returns The map's current zoom level.
+   * @example
+   * ```ts
+   * map.getZoom();
+   * ```
+   */
+  getZoom(): number;
+  /**
+   * Sets the map's zoom level. Equivalent to `jumpTo({zoom: zoom})`.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
+   *
+   * @param zoom - The zoom level to set (0-20).
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * Zoom to the zoom level 5 without an animated transition
+   * ```ts
+   * map.setZoom(5);
+   * ```
+   */
+  setZoom(zoom: number, eventData?: any): this;
+  /**
+   * Zooms the map to the specified zoom level, with an animated transition.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
+   *
+   * @param zoom - The zoom level to transition to.
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * // Zoom to the zoom level 5 without an animated transition
+   * map.zoomTo(5);
+   * // Zoom to the zoom level 8 with an animated transition
+   * map.zoomTo(8, {
+   *   duration: 2000,
+   *   offset: [100, 50]
+   * });
+   * ```
+   */
+  zoomTo(zoom: number, options?: EaseToOptions | null, eventData?: any): this;
+  /**
+   * Incrementally increases the map's zoom level by 1, first snapping to the nearest `zoomSnap` increment.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * Zoom the map in one level with a custom animation duration
+   * ```ts
+   * map.zoomIn({duration: 1000});
+   * ```
+   */
+  zoomIn(options?: AnimationOptions, eventData?: any): this;
+  /**
+   * Decreases the map's zoom level by 1, first snapping to the nearest `zoomSnap` increment.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * Zoom the map out one level with a custom animation offset
+   * ```ts
+   * map.zoomOut({offset: [80, 60]});
+   * ```
+   */
+  zoomOut(options?: AnimationOptions, eventData?: any): this;
+  /**
+   * Returns the map's current vertical field of view, in degrees.
+   *
+   * @returns The map's current vertical field of view.
+   * @defaultValue 36.87
+   * @example
+   * ```ts
+   * const verticalFieldOfView = map.getVerticalFieldOfView();
+   * ```
+   */
+  getVerticalFieldOfView(): number;
+  /**
+   * Sets the map's vertical field of view, in degrees.
+   *
+   * Triggers the following events: `movestart`, `move`, and `moveend`.
+   *
+   * @param fov - The vertical field of view to set, in degrees (0-180).
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @defaultValue 36.87
+   * @example
+   * Change vertical field of view to 30 degrees
+   * ```ts
+   * map.setVerticalFieldOfView(30);
+   * ```
+   */
+  setVerticalFieldOfView(fov: number, eventData?: any): this;
+  /**
+   * Returns the map's current bearing. The bearing is the compass direction that is "up"; for example, a bearing
+   * of 90° orients the map so that east is up.
+   *
+   * @returns The map's current bearing.
+   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
+   */
+  getBearing(): number;
+  /**
+   * Sets the map's bearing (rotation). The bearing is the compass direction that is "up"; for example, a bearing
+   * of 90° orients the map so that east is up.
+   *
+   * Equivalent to `jumpTo({bearing: bearing})`.
+   *
+   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
+   *
+   * @param bearing - The desired bearing.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * Rotate the map to 90 degrees
+   * ```ts
+   * map.setBearing(90);
+   * ```
+   */
+  setBearing(bearing: number, eventData?: any): this;
+  /**
+   * Returns the map's current zoom snap level.
+   *
+   * @returns The map's current zoom snap level.
+   */
+  getZoomSnap(): number;
+  /**
+   * Sets the map's zoom snap level.
+   *
+   * @param snap - The zoom snap level to set.
+   */
+  setZoomSnap(snap: number): this;
+  /**
+   * Returns the current padding applied around the map viewport.
+   *
+   * @returns The current padding around the map viewport.
+   */
+  getPadding(): PaddingOptions;
+  /**
+   * Sets the padding in pixels around the viewport.
+   *
+   * Equivalent to `jumpTo({padding: padding})`.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param padding - The desired padding.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * Sets a left padding of 300px, and a top padding of 50px
+   * ```ts
+   * map.setPadding({ left: 300, top: 50 });
+   * ```
+   */
+  setPadding(padding: PaddingOptions, eventData?: any): this;
+  /**
+   * Rotates the map to the specified bearing, with an animated transition. The bearing is the compass direction
+   * that is "up"; for example, a bearing of 90° orients the map so that east is up.
+   *
+   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
+   *
+   * @param bearing - The desired bearing.
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  rotateTo(bearing: number, options?: EaseToOptions, eventData?: any): this;
+  /**
+   * Rotates the map so that north is up (0° bearing), with an animated transition.
+   *
+   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  resetNorth(options?: AnimationOptions, eventData?: any): this;
+  /**
+   * Rotates and pitches the map so that north is up (0° bearing) and pitch and roll are 0°, with an animated transition.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `pitchstart`, `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  resetNorthPitch(options?: AnimationOptions, eventData?: any): this;
+  /**
+   * Snaps the map so that north is up (0° bearing), if the current bearing is close enough to it (i.e. within the
+   * `bearingSnap` threshold).
+   *
+   * Triggers the following events: `movestart`, `moveend`, and `rotate`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  snapToNorth(options?: AnimationOptions, eventData?: any): this;
+  /**
+   * Returns the map's current pitch (tilt).
+   *
+   * @returns The map's current pitch, measured in degrees away from the plane of the screen.
+   */
+  getPitch(): number;
+  /**
+   * Sets the map's pitch (tilt). Equivalent to `jumpTo({pitch: pitch})`.
+   *
+   * Triggers the following events: `movestart`, `moveend`, `pitchstart`, and `pitchend`.
+   *
+   * @param pitch - The pitch to set, measured in degrees away from the plane of the screen (0-60).
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  setPitch(pitch: number, eventData?: any): this;
+  /**
+   * Returns the map's current roll angle.
+   *
+   * @returns The map's current roll, measured in degrees about the camera boresight.
+   */
+  getRoll(): number;
+  /**
+   * Sets the map's roll angle. Equivalent to `jumpTo({roll: roll})`.
+   *
+   * Triggers the following events: `movestart`, `moveend`, `rollstart`, and `rollend`.
+   *
+   * @param roll - The roll to set, measured in degrees about the camera boresight
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   */
+  setRoll(roll: number, eventData?: any): this;
+  /**
+   * @param bounds - Calculate the center for these bounds in the viewport and use
+   * the highest zoom level up to and including {@link Map.getMaxZoom} that fits
+   * in the viewport. LngLatBounds represent a box that is always axis-aligned with bearing 0.
+   * Bounds will be taken in `[sw, ne]` order. Southwest point will always be to the left of the northeast point.
+   * @param options - Options object
+   * @returns If map is able to fit to provided bounds, returns `center`, `zoom`, and `bearing`.
+   * If map is unable to fit, method will warn and return undefined.
+   * @example
+   * ```ts
+   * let bbox = [[-79, 43], [-73, 45]];
+   * let newCameraTransform = map.cameraForBounds(bbox, {
+   *   padding: {top: 10, bottom:25, left: 15, right: 5}
+   * });
+   * ```
+   */
+  cameraForBounds(bounds: LngLatBoundsLike, options?: CameraForBoundsOptions): CenterZoomBearing | undefined;
+  /**
+   * Pans and zooms the map to contain its visible area within the specified geographical bounds.
+   * This function will also reset the map's bearing to 0 if bearing is nonzero.
+   *
+   * Triggers the following events: `movestart` and `moveend`.
+   *
+   * @param bounds - Center these bounds in the viewport and use the highest
+   * zoom level up to and including {@link Map.getMaxZoom} that fits them in the viewport.
+   * Bounds will be taken in `[sw, ne]` order. Southwest point will always be to the left of the northeast point.
+   * @param options - Options supports all properties from {@link AnimationOptions} and {@link CameraOptions} in addition to the fields below.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * let bbox = [[-79, 43], [-73, 45]];
+   * map.fitBounds(bbox, {
+   *   padding: {top: 10, bottom:25, left: 15, right: 5}
+   * });
+   * ```
+   * @see [Fit a map to a bounding box](https://maplibre.org/maplibre-gl-js/docs/examples/fit-a-map-to-a-bounding-box/)
+   */
+  fitBounds(bounds: LngLatBoundsLike, options?: FitBoundsOptions, eventData?: any): this;
+  /**
+   * Pans, rotates and zooms the map to to fit the box made by points p0 and p1
+   * once the map is rotated to the specified bearing. To zoom without rotating,
+   * pass in the current map bearing.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend` and `rotate`.
+   *
+   * @param p0 - First point on screen, in pixel coordinates
+   * @param p1 - Second point on screen, in pixel coordinates
+   * @param bearing - Desired map bearing at end of animation, in degrees
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * let p0 = [220, 400];
+   * let p1 = [500, 900];
+   * map.fitScreenCoordinates(p0, p1, map.getBearing(), {
+   *   padding: {top: 10, bottom:25, left: 15, right: 5}
+   * });
+   * ```
+   * @see Used by {@link BoxZoomHandler}
+   */
+  fitScreenCoordinates(p0: PointLike, p1: PointLike, bearing: number, options?: FitBoundsOptions, eventData?: any): this;
+  /**
+   * Changes any combination of center, zoom, bearing, pitch, and roll, without
+   * an animated transition. The map will retain its current values for any
+   * details not specified in `options`.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
+   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend` and `rotate`.
+   *
+   * @param options - Options object
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * // jump to coordinates at current zoom
+   * map.jumpTo({center: [0, 0]});
+   * // jump with zoom, pitch, and bearing options
+   * map.jumpTo({
+   *   center: [0, 0],
+   *   zoom: 8,
+   *   pitch: 45,
+   *   bearing: 90
+   * });
+   * ```
+   * @see [Jump to a series of locations](https://maplibre.org/maplibre-gl-js/docs/examples/jump-to-a-series-of-locations/)
+   * @see [Update a feature in realtime](https://maplibre.org/maplibre-gl-js/docs/examples/update-a-feature-in-realtime/)
+   */
+  jumpTo(options: JumpToOptions, eventData?: any): this;
+  /**
+   * Given a camera position and rotation, calculates zoom and center point and returns them as {@link CameraOptions}.
+   * @param cameraLngLat - The lng, lat of the camera to look from
+   * @param cameraAlt - The altitude of the camera to look from, in meters above sea level
+   * @param bearing - Bearing of the camera, in degrees
+   * @param pitch - Pitch of the camera, in degrees
+   * @param roll - Roll of the camera, in degrees
+   * @returns the calculated camera options
+   * @example
+   * ```ts
+   * // Calculate options to look from camera position(1°, 0°, 1000m) with bearing = 90°, pitch = 30°, and roll = 45°
+   * const cameraLngLat = new LngLat(1, 0);
+   * const cameraAltitude = 1000;
+   * const bearing = 90;
+   * const pitch = 30;
+   * const roll = 45;
+   * const cameraOptions = map.calculateCameraOptionsFromCameraLngLatAltRotation(cameraLngLat, cameraAltitude, bearing, pitch, roll);
+   * // Apply calculated options
+   * map.jumpTo(cameraOptions);
+   * ```
+   */
+  calculateCameraOptionsFromCameraLngLatAltRotation(cameraLngLat: LngLatLike, cameraAlt: number, bearing: number, pitch: number, roll?: number): CameraOptions;
+  /**
+   * Changes any combination of `center`, `zoom`, `bearing`, `pitch`, `roll`, and `padding` with an animated transition
+   * between old and new values. The map will retain its current values for any
+   * details not specified in `options`.
+   *
+   * !!! note "Reduced Motion"
+   *     The transition will happen instantly if the user has enabled
+   *     the `reduced motion` accessibility feature enabled in their operating system,
+   *     unless `options` includes `essential: true`.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
+   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
+   *
+   * @param options - Options describing the destination and animation of the transition.
+   * Accepts {@link CameraOptions} and {@link AnimationOptions}.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @see [Navigate the map with game-like controls](https://maplibre.org/maplibre-gl-js/docs/examples/navigate-the-map-with-game-like-controls/)
+   */
+  easeTo(options: EaseToOptions, eventData?: any): this;
+  /**
+   * Changes any combination of center, zoom, bearing, pitch, and roll, animating the transition along a curve that
+   * evokes flight. The animation seamlessly incorporates zooming and panning to help
+   * the user maintain her bearings even after traversing a great distance.
+   *
+   * !!! note "Reduced Motion"
+   *     The animation will be skipped, and this will behave equivalently to `jumpTo`
+   *     if the user has the `reduced motion` accessibility feature enabled in their operating system,
+   *     unless 'options' includes `essential: true`.
+   *
+   * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, `zoomend`, `pitchstart`,
+   * `pitch`, `pitchend`, `rollstart`, `roll`, `rollend`, and `rotate`.
+   *
+   * @param options - Options describing the destination and animation of the transition.
+   * Accepts {@link CameraOptions}, {@link AnimationOptions},
+   * and the following additional options.
+   * @param eventData - Additional properties to be added to event objects of events triggered by this method.
+   * @example
+   * ```ts
+   * // fly with default options to null island
+   * map.flyTo({center: [0, 0], zoom: 9});
+   * // using flyTo options
+   * map.flyTo({
+   *   center: [0, 0],
+   *   zoom: 9,
+   *   speed: 0.2,
+   *   curve: 1,
+   *   easing(t) {
+   *     return t;
+   *   }
+   * });
+   * ```
+   * @see [Fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location/)
+   * @see [Slowly fly to a location](https://maplibre.org/maplibre-gl-js/docs/examples/slowly-fly-to-a-location/)
+   * @see [Fly to a location based on scroll position](https://maplibre.org/maplibre-gl-js/docs/examples/fly-to-a-location-based-on-scroll-position/)
+   */
+  flyTo(options: FlyToOptions, eventData?: any): this;
+  /**
+   * Stops any animated transition underway.
+   */
+  stop(): this;
+  /**
+   * Gets the elevation at a given location, in meters above sea level.
+   * Returns null if terrain is not enabled.
+   * If terrain is enabled with some exaggeration value, the value returned here will be reflective of (multiplied by) that exaggeration value.
+   * This method should be used for proper positioning of custom 3d objects, as explained [here](https://maplibre.org/maplibre-gl-js/docs/examples/adding-3d-models-using-threejs-on-terrain/)
+   * @param lngLatLike - `[x, y]` or LngLat coordinates of the location
+   * @returns elevation in meters
+   */
+  queryTerrainElevation(lngLatLike: LngLatLike): number | null;
+  /**
+   * Returns the value of `centerClampedToGround`.
+   *
+   * If true, the elevation of the center point will automatically be set to the terrain elevation
+   * (or zero if terrain is not enabled). If false, the elevation of the center point will default
+   * to sea level and will not automatically update. Defaults to true. Needs to be set to false to
+   * keep the camera above ground when pitch \> 90 degrees.
+   */
+  getCenterClampedToGround(): boolean;
+  /**
+   * Given a camera 'from' position and a position to look at (`to`), calculates zoom and camera rotation and returns them as {@link CameraOptions}.
+   * @param from - The camera to look from
+   * @param altitudeFrom - The altitude of the camera to look from
+   * @param to - The center to look at
+   * @param altitudeTo - Optional altitude of the center to look at. If none given the ground height will be used.
+   * @returns the calculated camera options
+   * @example
+   * ```ts
+   * // Calculate options to look from (1°, 0°, 1000m) to (1°, 1°, 0m)
+   * const cameraLngLat = new LngLat(1, 0);
+   * const cameraAltitude = 1000;
+   * const targetLngLat = new LngLat(1, 1);
+   * const targetAltitude = 0;
+   * const cameraOptions = map.calculateCameraOptionsFromTo(cameraLngLat, cameraAltitude, targetLngLat, targetAltitude);
+   * // Apply calculated options
+   * map.jumpTo(cameraOptions);
+   * ```
+   */
   calculateCameraOptionsFromTo(from: LngLat, altitudeFrom: number, to: LngLat, altitudeTo?: number): CameraOptions;
   /**
    * Resizes the map according to the dimensions of its
@@ -13892,7 +16712,7 @@ declare class Map$1 extends Camera {
    * if (mapDiv.style.visibility === true) map.resize();
    * ```
    */
-  resize(eventData?: any, constrainTransform?: boolean): Map$1;
+  resize(eventData?: any, constrainTransform?: boolean): this;
   /**
    * Resizes the map according to the dimensions of its
    * `container` element.
@@ -13968,7 +16788,7 @@ declare class Map$1 extends Camera {
    * map.setMaxBounds(bounds);
    * ```
    */
-  setMaxBounds(bounds?: LngLatBoundsLike | null): Map$1;
+  setMaxBounds(bounds?: LngLatBoundsLike | null): this;
   /**
    * Sets or clears the map's minimum zoom level.
    * If the map's current zoom level is lower than the new minimum,
@@ -13989,7 +16809,7 @@ declare class Map$1 extends Camera {
    * map.setMinZoom(12.25);
    * ```
    */
-  setMinZoom(minZoom?: number | null): Map$1;
+  setMinZoom(minZoom?: number | null): this;
   /**
    * Returns the map's minimum allowable zoom level.
    *
@@ -14015,7 +16835,7 @@ declare class Map$1 extends Camera {
    * map.setMaxZoom(18.75);
    * ```
    */
-  setMaxZoom(maxZoom?: number | null): Map$1;
+  setMaxZoom(maxZoom?: number | null): this;
   /**
    * Returns the map's maximum allowable zoom level.
    *
@@ -14037,7 +16857,7 @@ declare class Map$1 extends Camera {
    * @param minPitch - The minimum pitch to set (0-180). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
    * If `null` or `undefined` is provided, the function removes the current minimum pitch (i.e. sets it to 0).
    */
-  setMinPitch(minPitch?: number | null): Map$1;
+  setMinPitch(minPitch?: number | null): this;
   /**
    * Returns the map's minimum allowable pitch.
    *
@@ -14055,7 +16875,7 @@ declare class Map$1 extends Camera {
    * @param maxPitch - The maximum pitch to set (0-180). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
    * If `null` or `undefined` is provided, the function removes the current maximum pitch (sets it to 60).
    */
-  setMaxPitch(maxPitch?: number | null): Map$1;
+  setMaxPitch(maxPitch?: number | null): this;
   /**
    * Returns the map's maximum allowable pitch.
    *
@@ -14087,7 +16907,7 @@ declare class Map$1 extends Camera {
    * map.setAnisotropicFilterPitch(85);
    * ```
    */
-  setAnisotropicFilterPitch(anisotropicFilterPitch?: number | null): Map$1;
+  setAnisotropicFilterPitch(anisotropicFilterPitch?: number | null): this;
   /**
    * Returns the state of `renderWorldCopies`. If `true`, multiple copies of the world will be rendered side by side beyond -180 and 180 degrees longitude. If set to `false`:
    *
@@ -14120,7 +16940,7 @@ declare class Map$1 extends Camera {
    * ```
    * @see [Render world copies](https://maplibre.org/maplibre-gl-js/docs/examples/render-world-copies/)
    */
-  setRenderWorldCopies(renderWorldCopies?: boolean | null): Map$1;
+  setRenderWorldCopies(renderWorldCopies?: boolean | null): this;
   /** Sets or clears the callback overriding how the map constrains the viewport's lnglat and zoom to respect the longitude and latitude bounds.
    *
    * @param constrain - A {@link TransformConstrainFunction} callback defining how the viewport should respect the bounds.
@@ -14135,7 +16955,7 @@ declare class Map$1 extends Camera {
    * ```
    * @see [Customize the map transform constrain](https://maplibre.org/maplibre-gl-js/docs/examples/customize-the-map-transform-constrain/)
    */
-  setTransformConstrain(constrain?: TransformConstrainFunction | null): Map$1;
+  setTransformConstrain(constrain?: TransformConstrainFunction | null): this;
   /**
    * Returns a [Point](https://github.com/mapbox/point-geometry) representing pixel coordinates, relative to the map's `container`,
    * that correspond to the specified geographical location.
@@ -14321,7 +17141,7 @@ declare class Map$1 extends Camera {
    * @param type - The type of the event.
    * @param listener - The listener callback.
    */
-  on(type: keyof MapEventType | string, listener: Listener): Subscription;
+  on(type: keyof MapEventType, listener: Listener): Subscription;
   /**
    * Adds a listener that will be called only once to a specified event type, optionally limited to features in a specified style layer.
    *
@@ -14338,7 +17158,15 @@ declare class Map$1 extends Camera {
    * @param listener - The function to be called when the event is fired.
    * @returns `this` if listener is provided, promise otherwise to allow easier usage of async/await
    */
-  once<T extends keyof MapLayerEventType>(type: T, layer: string, listener?: (ev: MapLayerEventType[T] & Object) => void): this | Promise<MapLayerEventType[T] & Object>;
+  once<T extends keyof MapLayerEventType>(type: T, layer: string, listener: (ev: MapLayerEventType[T] & Object) => void): this;
+  /**
+   * Overload of the `once` method that, with a single layer and no listener, returns a promise
+   * resolving with the event for easier usage of async/await.
+   * @event
+   * @param type - The type of the event.
+   * @param layer - The ID of the style layer.
+   */
+  once<T extends keyof MapLayerEventType>(type: T, layer: string): Promise<MapLayerEventType[T] & Object>;
   /**
    * Overload of the `once` method that allows to listen to events specifying multiple layers.
    * @event
@@ -14346,21 +17174,36 @@ declare class Map$1 extends Camera {
    * @param layerIds - The array of style layer IDs.
    * @param listener - The listener callback.
    */
-  once<T extends keyof MapLayerEventType>(type: T, layerIds: string[], listener?: (ev: MapLayerEventType[T] & Object) => void): this | Promise<any>;
+  once<T extends keyof MapLayerEventType>(type: T, layerIds: string[], listener: (ev: MapLayerEventType[T] & Object) => void): this;
+  /**
+   * Overload of the `once` method that, with multiple layers and no listener, returns a promise
+   * resolving with the event for easier usage of async/await.
+   * @event
+   * @param type - The type of the event.
+   * @param layerIds - The array of style layer IDs.
+   */
+  once<T extends keyof MapLayerEventType>(type: T, layerIds: string[]): Promise<MapLayerEventType[T] & Object>;
   /**
    * Overload of the `once` method that allows to listen to events without specifying a layer.
    * @event
    * @param type - The type of the event.
    * @param listener - The listener callback.
    */
-  once<T extends keyof MapEventType>(type: T, listener?: (ev: MapEventType[T] & Object) => void): this | Promise<any>;
+  once<T extends keyof MapEventType>(type: T, listener: (ev: MapEventType[T] & Object) => void): this;
+  /**
+   * Overload of the `once` method that returns a promise resolving with the event,
+   * for easier usage of async/await, when no listener is provided.
+   * @event
+   * @param type - The type of the event.
+   */
+  once<T extends keyof MapEventType>(type: T): Promise<MapEventType[T] & Object>;
   /**
    * Overload of the `once` method that allows to listen to events without specifying a layer.
    * @event
    * @param type - The type of the event.
    * @param listener - The listener callback.
    */
-  once(type: keyof MapEventType | string, listener?: Listener): this | Promise<any>;
+  once(type: keyof MapEventType, listener?: Listener): this | Promise<any>;
   /**
    * Removes an event listener for events previously added with `{@link Map.on}`.
    *
@@ -14392,7 +17235,7 @@ declare class Map$1 extends Camera {
    * @param type - The type of the event.
    * @param listener - The function previously installed as a listener.
    */
-  off(type: keyof MapEventType | string, listener: Listener): this;
+  off(type: keyof MapEventType, listener: Listener): this;
   /**
    * Returns an array of MapGeoJSONFeature objects
    * representing visible features that satisfy the query parameters.
@@ -14625,10 +17468,10 @@ declare class Map$1 extends Camera {
    *     "type": "Feature",
    *     "geometry": {
    *       "type": "Point",
-   *       "coordinates": [-77.0323, 38.9131]
+   *       "coordinates": [-77.0396, 38.8891]
    *     },
    *     "properties": {
-   *       "title": "Mapbox DC",
+   *       "title": "Washington DC",
    *       "marker-symbol": "monument"
    *     }
    *   }
@@ -14662,7 +17505,7 @@ declare class Map$1 extends Camera {
    * map.setTerrain({ source: 'terrain' });
    * ```
    */
-  setTerrain(options: TerrainSpecification | null): this;
+  setTerrain(options: TerrainSpecification | null, styleOptions?: StyleSetterOptions): this;
   /**
    * Get the terrain-options if terrain is loaded
    * @returns the TerrainSpecification passed to setTerrain
@@ -14692,7 +17535,7 @@ declare class Map$1 extends Camera {
    * map.removeSource('bathymetry-data');
    * ```
    */
-  removeSource(id: string): Map$1;
+  removeSource(id: string): this;
   /**
    * Returns the source with the specified ID in the map's style.
    *
@@ -14734,7 +17577,7 @@ declare class Map$1 extends Camera {
    * map.setSourceTileLodParams(4.0, 3.0, 'terrain');
    * ```
    * @see [Modify Level of Detail behavior](https://maplibre.org/maplibre-gl-js/docs/examples/level-of-detail-control/)
-  	 */
+   */
   setSourceTileLodParams(maxZoomLevelsOnScreen: number, tileCountMaxMinRatio: number, sourceId?: string): this;
   /**
    * Triggers a reload of the selected tiles
@@ -14785,11 +17628,26 @@ declare class Map$1 extends Camera {
    * @see Use `HTMLImageElement`: [Add an icon to the map](https://maplibre.org/maplibre-gl-js/docs/examples/add-an-icon-to-the-map/)
    * @see Use `ImageData`: [Add a generated icon to the map](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-generated-icon-to-the-map/)
    */
-  addImage(id: string, image: HTMLImageElement | ImageBitmap | ImageData | {
-    width: number;
-    height: number;
-    data: Uint8Array | Uint8ClampedArray;
-  } | StyleImageInterface, options?: Partial<StyleImageMetadata>): this;
+  addImage(id: string, image: StyleImageSource, options?: Partial<StyleImageMetadata>): this;
+  /**
+   * Sets a callback that is invoked when an icon or pattern needed by the style is missing.
+   *
+   * The resolver typically loads or generates the image and registers it with {@link Map.addImage}.
+   * MapLibre awaits the returned promise before treating the image as missing, so async work is
+   * supported. If the image is still missing afterwards, the `styleimagemissing` event is fired.
+   *
+   * @param resolver - Callback used to resolve missing images, or `null` to remove the resolver.
+   * @example
+   * ```ts
+   * map.setMissingStyleImageResolver(async (id) => {
+   *     const response = await fetch(`/icons/${id}.png`);
+   *     const image = await createImageBitmap(await response.blob());
+   *     map.addImage(id, image, {pixelRatio: 2});
+   * });
+   * ```
+   */
+  setMissingStyleImageResolver(resolver: MissingStyleImageResolver | null): this;
+  _createStyleImage(image: StyleImageSource, options?: Partial<StyleImageMetadata>): StyleImage | null;
   /**
    * Update an existing image in a style. This image can be displayed on the map like any other icon in the style's
    * sprite using the image's ID with
@@ -14810,11 +17668,7 @@ declare class Map$1 extends Camera {
    * if (map.hasImage('cat')) map.updateImage('cat', './other-cat-icon.png');
    * ```
    */
-  updateImage(id: string, image: HTMLImageElement | ImageBitmap | ImageData | {
-    width: number;
-    height: number;
-    data: Uint8Array | Uint8ClampedArray;
-  } | StyleImageInterface): this;
+  updateImage(id: string, image: StyleImageSource): this;
   /**
    * Returns an image, specified by ID, currently available in the map.
    * This includes both images from the style's original sprite
@@ -14834,7 +17688,7 @@ declare class Map$1 extends Camera {
    * in the style's original sprite and any images
    * that have been added at runtime using {@link Map.addImage}.
    *
-   * An {@link ErrorEvent} will be fired if the image parameter is invalid.
+   * An {@link ErrorEvent} will be fired if the image ID is missing.
    *
    * @param id - The ID of the image.
    *
@@ -14890,7 +17744,7 @@ declare class Map$1 extends Camera {
    * let allImages = map.listImages();
    * ```
    */
-  listImages(): Array<string>;
+  listImages(): string[];
   /**
    * Adds a [MapLibre style layer](https://maplibre.org/maplibre-style-spec/layers)
    * to the map's style.
@@ -14987,7 +17841,7 @@ declare class Map$1 extends Camera {
   /**
    * Removes the layer with the given ID from the map's style.
    *
-   * An {@link ErrorEvent} will be fired if the image parameter is invalid.
+   * An {@link ErrorEvent} will be fired if no such layer exists.
    *
    * @param id - The ID of the layer to remove
    *
@@ -15103,7 +17957,7 @@ declare class Map$1 extends Camera {
    * @see [Change a layer's color with buttons](https://maplibre.org/maplibre-gl-js/docs/examples/change-a-layers-color-with-buttons/)
    * @see [Create a draggable point](https://maplibre.org/maplibre-gl-js/docs/examples/create-a-draggable-point/)
    */
-  setPaintProperty(layerId: string, name: string, value: any, options?: StyleSetterOptions): this;
+  setPaintProperty<K extends keyof AllPaintProperties>(layerId: string, name: K, value: AllPaintProperties[K], options?: StyleSetterOptions): this;
   /**
    * Returns the value of a paint property in the specified style layer.
    *
@@ -15111,7 +17965,7 @@ declare class Map$1 extends Camera {
    * @param name - The name of a paint property to get.
    * @returns The value of the specified paint property.
    */
-  getPaintProperty(layerId: string, name: string): unknown;
+  getPaintProperty<K extends keyof AllPaintProperties>(layerId: string, name: K): AllPaintProperties[K];
   /**
    * Sets the value of a layout property in the specified style layer.
    *
@@ -15124,7 +17978,7 @@ declare class Map$1 extends Camera {
    * map.setLayoutProperty('my-layer', 'visibility', 'none');
    * ```
    */
-  setLayoutProperty(layerId: string, name: string, value: any, options?: StyleSetterOptions): this;
+  setLayoutProperty<K extends keyof AllLayoutProperties>(layerId: string, name: K, value: AllLayoutProperties[K], options?: StyleSetterOptions): this;
   /**
    * Returns the value of a layout property in the specified style layer.
    *
@@ -15132,10 +17986,10 @@ declare class Map$1 extends Camera {
    * @param name - The name of the layout property to get.
    * @returns The value of the specified layout property.
    */
-  getLayoutProperty(layerId: string, name: string): any;
+  getLayoutProperty<K extends keyof AllLayoutProperties>(layerId: string, name: K): AllLayoutProperties[K] | undefined;
   /**
-  * Sets the value of the style's glyphs property. Pass a falsy value (null or undefined)
-  * to unset glyphs.
+   * Sets the value of the style's glyphs property. Pass a falsy value (null or undefined)
+   * to unset glyphs.
    *
    * @param glyphsUrl - Glyph URL to set. Must conform to the [MapLibre Style Specification](https://maplibre.org/maplibre-style-spec/glyphs/).
    * @param options - Options object.
@@ -15179,10 +18033,10 @@ declare class Map$1 extends Camera {
    *
    * @returns style's sprite list of id-url pairs
    */
-  getSprite(): {
+  getSprite(): Array<{
     id: string;
     url: string;
-  }[];
+  }>;
   /**
    * Sets the value of the style's sprite property.
    *
@@ -15391,10 +18245,16 @@ declare class Map$1 extends Camera {
   _setupContainer(): void;
   _resizeCanvas(width: number, height: number, pixelRatio: number): void;
   _setupPainter(): void;
+  /**
+   * @internal
+   * Creates a new specialized transform instance from a projection instance and migrates
+   * to this new transform, carrying over all the properties of the old transform (center, pitch, etc.).
+   * When the style's projection is changed (or first set), this function should be called.
+   */
   migrateProjection(newTransform: ITransform, newCameraHelper: ICameraHelper): void;
-  _contextLost: (event: any) => void;
-  _contextRestored: (event: any) => void;
-  _onMapScroll: (event: any) => boolean;
+  _contextLost: (event: WebGLContextEvent) => void;
+  _contextRestored: (event: WebGLContextEvent) => void;
+  _onMapScroll: (event: UIEvent) => boolean;
   /**
    * Returns a Boolean indicating whether the map is fully loaded.
    *
@@ -15538,7 +18398,8 @@ declare class Map$1 extends Camera {
    * @returns
    */
   setProjection(projection: ProjectionSpecification): this;
-}
+} //#endregion
+//#region src/ui/control/navigation_control.d.ts
 /**
  * The {@link NavigationControl} options object
  */
@@ -15798,7 +18659,7 @@ declare class MaplibreAreaTransform implements IControl {
   private onMouseUp;
   private onClick;
   private onClickWhenInPolygonMode;
-  private onStyleImageMissing;
+  private resolveMissingStyleImage;
   private addColoredImages;
   private prepareColoredImages;
   private getBaseHandleImages;

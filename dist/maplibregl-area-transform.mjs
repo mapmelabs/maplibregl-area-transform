@@ -931,8 +931,10 @@ var MaplibreAreaTransform = class {
 	};
 	addMapListeners(map) {
 		for (const [event, listener] of this.getMapListeners()) map.on(event, listener);
+		map.setMissingStyleImageResolver(this.resolveMissingStyleImage);
 	}
 	removeMapListeners(map) {
+		map.setMissingStyleImageResolver(null);
 		for (const [event, listener] of this.getMapListeners()) map.off(event, listener);
 	}
 	getMapListeners() {
@@ -946,7 +948,6 @@ var MaplibreAreaTransform = class {
 			["mousemove", this.onMouseMove],
 			["mouseup", this.onMouseUp],
 			["click", this.onClick],
-			["styleimagemissing", this.onStyleImageMissing],
 			["styledataloading", this.onStyleDataLoading],
 			["style.load", this.onStyleLoad]
 		];
@@ -1075,7 +1076,7 @@ var MaplibreAreaTransform = class {
 	}
 	async renderFeatures() {
 		const source = this._map?.getSource(GEOJSON_SOURCE);
-		if (source) await source.setData(this.transformState.features, true);
+		if (source) await source.setData(this.transformState.features);
 	}
 	addTrackedLayer(layer, beforeId) {
 		if (!this._map?.getLayer(layer.id)) this._map?.addLayer(layer, beforeId);
@@ -1265,7 +1266,7 @@ var MaplibreAreaTransform = class {
 		const pixelThreshold = 10;
 		if (this._polygonPoints.length > 0 && Math.abs(this._polygonPoints[0][0] - e.point.x) < pixelThreshold && Math.abs(this._polygonPoints[0][1] - e.point.y) < pixelThreshold) {
 			const ids = this._polygonPoints.map((_, i) => "temp-point-" + (i + 1));
-			await source.updateData({ remove: [...ids, "temp-area"] }, true);
+			await source.updateData({ remove: [...ids, "temp-area"] });
 			const points = sortPoints(this._polygonPoints);
 			this.addPolygon(this.unprojectAll(points), false);
 			this.cancelPolygonDraft();
@@ -1285,7 +1286,7 @@ var MaplibreAreaTransform = class {
 			}
 		};
 		if (this._polygonPoints.length < 3) {
-			await source.updateData({ add: [point] }, true);
+			await source.updateData({ add: [point] });
 			return;
 		}
 		const areaGeometry = {
@@ -1302,7 +1303,7 @@ var MaplibreAreaTransform = class {
 					isSelected: false
 				}
 			};
-			await source.updateData({ add: [point, area] }, true);
+			await source.updateData({ add: [point, area] });
 			return;
 		}
 		await source.updateData({
@@ -1311,13 +1312,13 @@ var MaplibreAreaTransform = class {
 				id: "temp-area",
 				newGeometry: areaGeometry
 			}]
-		}, true);
+		});
 	}
-	onStyleImageMissing = (event) => {
-		const image = this._coloredImageCache.get(event.id);
-		if (image && this._map && !this._map.hasImage(event.id)) {
-			this._map.addImage(event.id, image);
-			this._addedImageIds.add(event.id);
+	resolveMissingStyleImage = (id) => {
+		const image = this._coloredImageCache.get(id);
+		if (image && this._map && !this._map.hasImage(id)) {
+			this._map.addImage(id, image);
+			this._addedImageIds.add(id);
 		}
 	};
 	async addColoredImages(color) {
