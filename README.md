@@ -31,7 +31,7 @@ npm install maplibregl-area-transform
 ## Basic Usage
 
 ```js
-import maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
 import AreaTransform from 'maplibregl-area-transform'
 
 const map = new maplibregl.Map({

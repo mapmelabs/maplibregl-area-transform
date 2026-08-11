@@ -1,9 +1,12 @@
 import {describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi} from 'vitest'
 import * as maplibregl from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import {MaplibreAreaTransform, type MaplibreAreaTransformOptions} from './index'
 import {pxCentroid, pxRotatePoint, type PxPoint} from './pixel-utils'
 import rotateUrl from '../assets/rotate.png'
 import scaleUrl from '../assets/scale.png'
+
+maplibregl.setWorkerUrl(workerUrl)
 
 type SetupResponse = {
     container: HTMLElement
@@ -683,15 +686,16 @@ describe('MaplibreAreaTransform style replacement', () => {
         expect(map.hasImage('scale-blue')).toBe(true)
     })
 
-    it('synchronously restores a cached handle icon when MapLibre reports it missing', async () => {
+    it('synchronously restores a cached handle icon via setMissingStyleImageResolver', async () => {
         const {map, control} = ctx
         await control.addRectangle()
         map.removeImage('scale-orange')
         expect(map.hasImage('scale-orange')).toBe(false)
 
-        map.fire('styleimagemissing', {id: 'scale-orange'})
-
-        expect(map.hasImage('scale-orange')).toBe(true)
+        map.triggerRepaint()
+        await vi.waitFor(() => {
+            expect(map.hasImage('scale-orange')).toBe(true)
+        })
     })
 
     it('rejects a queued image cleanly if the control is removed during style loading', async () => {

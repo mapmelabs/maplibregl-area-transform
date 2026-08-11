@@ -28,7 +28,6 @@ import type {
     Coordinates,
     ErrorEvent,
     Style,
-    MapStyleImageMissingEvent,
     MapEventType,
     Listener,
 } from 'maplibre-gl'
@@ -731,9 +730,11 @@ export class MaplibreAreaTransform implements IControl {
 
     private addMapListeners(map: Map): void {
         for (const [event, listener] of this.getMapListeners()) map.on(event, listener)
+        map.setMissingStyleImageResolver(this.resolveMissingStyleImage)
     }
 
     private removeMapListeners(map: Map): void {
+        map.setMissingStyleImageResolver(null)
         for (const [event, listener] of this.getMapListeners()) map.off(event, listener)
     }
 
@@ -748,7 +749,6 @@ export class MaplibreAreaTransform implements IControl {
             ['mousemove', this.onMouseMove],
             ['mouseup', this.onMouseUp],
             ['click', this.onClick],
-            ['styleimagemissing', this.onStyleImageMissing],
             ['styledataloading', this.onStyleDataLoading],
             ['style.load', this.onStyleLoad],
         ]
@@ -904,7 +904,7 @@ export class MaplibreAreaTransform implements IControl {
 
     private async renderFeatures(): Promise<void> {
         const source = this._map?.getSource<GeoJSONSource>(GEOJSON_SOURCE)
-        if (source) await source.setData(this.transformState.features, true)
+        if (source) await source.setData(this.transformState.features)
     }
 
     private addTrackedLayer(layer: LayerSpecification, beforeId?: string): void {
@@ -1188,7 +1188,7 @@ export class MaplibreAreaTransform implements IControl {
         ) {
             // last point is near the first one
             const ids = this._polygonPoints.map((_, i) => 'temp-point-' + (i + 1))
-            await source.updateData({remove: [...ids, 'temp-area']}, true)
+            await source.updateData({remove: [...ids, 'temp-area']})
             const points = sortPoints(this._polygonPoints)
             this.addPolygon(this.unprojectAll(points), false)
             this.cancelPolygonDraft()
@@ -1210,12 +1210,9 @@ export class MaplibreAreaTransform implements IControl {
             },
         }
         if (this._polygonPoints.length < 3) {
-            await source.updateData(
-                {
-                    add: [point],
-                },
-                true,
-            )
+            await source.updateData({
+                add: [point],
+            })
             return
         }
         const areaGeometry: GeoJSON.Polygon = {
@@ -1232,28 +1229,22 @@ export class MaplibreAreaTransform implements IControl {
                     isSelected: false,
                 },
             }
-            await source.updateData(
-                {
-                    add: [point, area],
-                },
-                true,
-            )
+            await source.updateData({
+                add: [point, area],
+            })
             return
         }
-        await source.updateData(
-            {
-                add: [point],
-                update: [{id: 'temp-area', newGeometry: areaGeometry}],
-            },
-            true,
-        )
+        await source.updateData({
+            add: [point],
+            update: [{id: 'temp-area', newGeometry: areaGeometry}],
+        })
     }
 
-    private onStyleImageMissing = (event: MapStyleImageMissingEvent) => {
-        const image = this._coloredImageCache.get(event.id)
-        if (image && this._map && !this._map.hasImage(event.id)) {
-            this._map.addImage(event.id, image)
-            this._addedImageIds.add(event.id)
+    private resolveMissingStyleImage = (id: string): void => {
+        const image = this._coloredImageCache.get(id)
+        if (image && this._map && !this._map.hasImage(id)) {
+            this._map.addImage(id, image)
+            this._addedImageIds.add(id)
         }
     }
 
