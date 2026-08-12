@@ -172,8 +172,12 @@ export class MaplibreImageMeshLayer implements CustomLayerInterface {
         this.imageUrl = options.imageUrl
         this.coordinates = options.coordinates
         this.opacity = options.opacity ?? 1
-        this.minzoom = options.minzoom
-        this.maxzoom = options.maxzoom
+        if (options.minzoom !== undefined) {
+            this.minzoom = options.minzoom
+        }
+        if (options.maxzoom !== undefined) {
+            this.maxzoom = options.maxzoom
+        }
     }
 
     onAdd(map: Map, gl: WebGL2RenderingContext): void {
