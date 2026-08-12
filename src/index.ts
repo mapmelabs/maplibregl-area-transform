@@ -14,18 +14,17 @@ import {
     pxIsRectangle,
 } from './pixel-utils'
 import {recolor} from './image-recolor'
+import {MaplibreImageMeshLayer, type ImageMeshCoordinates} from './image-mesh-layer'
 import rotateImageUrl from '../assets/rotate.png'
 import scaleImageUrl from '../assets/scale.png'
 
 import type {
     Map,
     IControl,
-    ImageSource,
     GeoJSONSource,
     LayerSpecification,
     MapMouseEvent,
     MapGeoJSONFeature,
-    Coordinates,
     ErrorEvent,
     Style,
     MapEventType,
@@ -156,6 +155,7 @@ type ManagedImage = {
     imageUrl: string
     coordinates: GeoJSON.Position[]
     opacity: number
+    layer?: MaplibreImageMeshLayer
 }
 
 type BaseHandleImages = {
@@ -204,7 +204,6 @@ const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border'
 const HANDLE_CIRCLE_LAYER = HANDLE_LAYER + '-circle'
 const ID_PREFIX = 'area-transform-feature-'
 const RESIZEABLE_POLYGON_FEATURE_ID = `${ID_PREFIX}resizable-`
-const IMAGE_SOURCE_PREFIX = 'area-transform-raster-'
 const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-'
 const GEOJSON_SOURCE = 'area-transform-geojson-source'
 const IMAGE_BUTTON_ID = 'area-transfrom-image'
@@ -561,9 +560,10 @@ export class MaplibreAreaTransform implements IControl {
 
     public async setImageOpacity(imageId: string, opacity: number): Promise<void> {
         const image = this.transformState.managedImages.get(imageId)
-        if (image) image.opacity = opacity
-        const {layerId} = this.getImageResourceIds(imageId)
-        if (this._map?.getLayer(layerId)) this._map.setPaintProperty(layerId, 'raster-opacity', opacity)
+        if (image) {
+            image.opacity = opacity
+            image.layer?.setOpacity(opacity)
+        }
     }
 
     /**
@@ -861,45 +861,21 @@ export class MaplibreAreaTransform implements IControl {
     private addImageResources(image: ManagedImage): void {
         const map = this._map
         if (!map) return
-        const {sourceId, layerId} = this.getImageResourceIds(image.id)
-        if (!map.getSource(sourceId)) {
-            map.addSource(sourceId, {
-                type: 'image',
-                url: image.imageUrl,
-                coordinates: image.coordinates as [
-                    [number, number],
-                    [number, number],
-                    [number, number],
-                    [number, number],
-                ],
-            })
-        }
-        this._addedSourceIds.add(sourceId)
+        const layerId = `${IMAGE_LAYER_PREFIX}${image.id}`
         if (!map.getLayer(layerId)) {
-            map.addLayer(
-                {
-                    id: layerId,
-                    type: 'raster',
-                    source: sourceId,
-                    paint: {'raster-opacity': image.opacity, 'raster-fade-duration': 0},
-                },
-                map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : undefined,
-            )
+            image.layer = new MaplibreImageMeshLayer({
+                id: layerId,
+                imageUrl: image.imageUrl,
+                coordinates: image.coordinates as ImageMeshCoordinates,
+                opacity: image.opacity,
+            })
+            map.addLayer(image.layer, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : undefined)
         }
         this._addedLayerIds.add(layerId)
     }
 
-    private getImageResourceIds(imageId: string) {
-        return {
-            sourceId: `${IMAGE_SOURCE_PREFIX}${imageId}`,
-            layerId: `${IMAGE_LAYER_PREFIX}${imageId}`,
-        }
-    }
-
     private removeImageResources(imageId: string): void {
-        const {sourceId, layerId} = this.getImageResourceIds(imageId)
-        this.removeLayer(layerId)
-        this.removeSource(sourceId)
+        this.removeLayer(`${IMAGE_LAYER_PREFIX}${imageId}`)
     }
 
     private async renderFeatures(): Promise<void> {
@@ -1380,8 +1356,7 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private setImageCoordinates(featureId: string, coordinates: GeoJSON.Position[]): void {
-        const {sourceId} = this.getImageResourceIds(featureId)
-        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(coordinates as Coordinates)
+        this.transformState.managedImages.get(featureId)?.layer?.setCoordinates(coordinates as ImageMeshCoordinates)
     }
 
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
@@ -1428,3 +1403,5 @@ export class MaplibreAreaTransform implements IControl {
         document.getElementById(DELETE_BUTTON_ID)?.classList.toggle('active', this._state === 'deleting')
     }
 }
+
+export {MaplibreImageMeshLayer}

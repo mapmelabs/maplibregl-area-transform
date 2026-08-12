@@ -1,7 +1,7 @@
 import {describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi} from 'vitest'
 import * as maplibregl from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import {MaplibreAreaTransform, type MaplibreAreaTransformOptions} from './index'
+import {MaplibreAreaTransform, MaplibreImageMeshLayer, type MaplibreAreaTransformOptions} from './index'
 import {pxCentroid, pxRotatePoint, type PxPoint} from './pixel-utils'
 import rotateUrl from '../assets/rotate.png'
 import scaleUrl from '../assets/scale.png'
@@ -19,7 +19,6 @@ const AREA_BORDER_LAYER = 'area-transform-layer-polygon-border'
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle'
 const HANDLE_CIRCLE_LAYER = HANDLE_LAYER + '-circle'
 const GEOJSON_SOURCE = 'area-transform-geojson-source'
-const IMAGE_SOURCE_PREFIX = 'area-transform-raster-'
 const IMAGE_LAYER_PREFIX = 'area-transform-raster-layer-'
 const BUTTON_IDS = {
     image: 'area-transfrom-image',
@@ -61,13 +60,12 @@ function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouse
     } as unknown as maplibregl.MapMouseEvent)
 }
 
-/** The raster layers currently on the map, one per added image. */
-function rasterLayers(map: maplibregl.Map) {
-    return map.getStyle().layers.filter(l => l.id.startsWith(IMAGE_LAYER_PREFIX))
-}
-
+/** The custom image layers currently on the map, one per added image. */
+const imageLayers = (map: maplibregl.Map) => map.getLayersOrder().filter(id => id.startsWith(IMAGE_LAYER_PREFIX))
+const imageLayerGet = (map: maplibregl.Map, imageId: string) =>
+    (map.getLayer(IMAGE_LAYER_PREFIX + imageId) as unknown as {implementation: MaplibreImageMeshLayer})?.implementation
 const imageOpacity = (map: maplibregl.Map, imageId: string) =>
-    map.getPaintProperty(IMAGE_LAYER_PREFIX + imageId, 'raster-opacity')
+    (imageLayerGet(map, imageId) as unknown as {opacity: number}).opacity
 
 /** Shifts coordinates east, so the same image can be requested for a different place. */
 function shifted(coordinates: GeoJSON.Position[]) {
@@ -268,7 +266,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         expect(firstPromise).toBe(secondPromise)
         expect(second).toBe(first)
         expect(created).toEqual([first])
-        expect(rasterLayers(map).length).toBe(1)
+        expect(imageLayers(map).length).toBe(1)
     })
 
     it('does not dedupe the same URL requested at different coordinates', async () => {
@@ -282,7 +280,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ])
 
         expect(there).not.toBe(here)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
     })
 
     it('adds a second copy when the same request is repeated after the first settles', async () => {
@@ -294,7 +292,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const second = await control.addImage({imageUrl: rotateUrl, coordinates})
 
         expect(second).not.toBe(first)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
     })
 
     it('queues concurrent requests for different URLs instead of interleaving them', async () => {
@@ -310,7 +308,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ])
 
         expect(scaleId).not.toBe(rotateId)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
         expect(selected).toEqual([rotateId, null, scaleId])
     })
 
@@ -337,7 +335,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         await expect(control.addImage({imageUrl: rotateUrl, coordinates})).rejects.toBeTruthy()
         await drawPolygon(map, control)
         await expect(control.addImage({imageUrl: rotateUrl, coordinates})).resolves.toBeTruthy()
-        expect(rasterLayers(map).length).toBe(1)
+        expect(imageLayers(map).length).toBe(1)
     })
 })
 
@@ -506,13 +504,12 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         expect(await control.isSelectedFeatureRectangle()).toBe(false)
     })
 
-    it('resets a warped native image source to its initial placement', async () => {
+    it('resets a warped image mesh to its initial placement', async () => {
         const {map, control} = ctx
         const img = await loadImage(rotateUrl)
         const initialCoordinates = control.createCoordinatesForLoadedImage(img)
         const imageId = await control.addImage({imageUrl: rotateUrl, coordinates: initialCoordinates})
-        const source = map.getSource(IMAGE_SOURCE_PREFIX + imageId) as maplibregl.ImageSource
-        const setCoordinates = vi.spyOn(source, 'setCoordinates')
+        const setCoordinates = vi.spyOn(imageLayerGet(map, imageId), 'setCoordinates')
         let changed = false
         control.on('change', () => (changed = true))
 
@@ -585,13 +582,7 @@ describe('MaplibreAreaTransform style replacement', () => {
         const loaded = map.once('style.load')
         map.setStyle({version: 8, sources: {}, layers: []}, {diff: false})
         await loaded
-        await waitUntil(() =>
-            Boolean(
-                map.getSource(IMAGE_SOURCE_PREFIX + imageId) &&
-                map.getLayer(IMAGE_LAYER_PREFIX + imageId) &&
-                map.getLayer(HANDLE_LAYER),
-            ),
-        )
+        await waitUntil(() => Boolean(map.getLayer(IMAGE_LAYER_PREFIX + imageId) && map.getLayer(HANDLE_LAYER)))
         await map.once('idle')
 
         expect(events).toEqual([])
@@ -642,7 +633,6 @@ describe('MaplibreAreaTransform style replacement', () => {
         const imagePromise = control.addImage({imageUrl: rotateUrl, coordinates})
         const [, imageId] = await Promise.all([loaded, imagePromise])
 
-        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
         const data = (await (
             map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
@@ -663,7 +653,6 @@ describe('MaplibreAreaTransform style replacement', () => {
         await finalLoaded
 
         expect(map.getLayer('background')).toBeDefined()
-        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
     })
 
@@ -710,7 +699,7 @@ describe('MaplibreAreaTransform style replacement', () => {
 
         await expect(imagePromise).rejects.toThrow('not attached')
         await loaded
-        expect(rasterLayers(map)).toEqual([])
+        expect(imageLayers(map)).toEqual([])
     })
 
     it('cleanly cancels an unfinished polygon draft during style replacement', async () => {

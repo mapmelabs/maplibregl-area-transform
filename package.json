@@ -27,6 +27,10 @@
       "import": "./dist/maplibregl-area-transform.mjs",
       "require": "./dist/maplibregl-area-transform.js",
       "types": "./dist/maplibregl-area-transform.d.ts"
+    },
+    "./image-mesh-layer": {
+      "import": "./dist/image-mesh-layer.mjs",
+      "types": "./dist/maplibregl-area-transform.d.ts"
     }
   },
   "files": [

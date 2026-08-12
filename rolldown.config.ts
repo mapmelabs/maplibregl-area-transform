@@ -31,4 +31,12 @@ export default defineConfig([
             format: 'es',
         },
     },
+    {
+        input: 'src/image-mesh-layer.ts',
+        output: {
+            file: 'dist/image-mesh-layer.mjs',
+            format: 'es',
+            sourcemap: true,
+        },
+    },
 ])
