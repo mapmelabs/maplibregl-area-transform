@@ -531,7 +531,7 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         })
         fireMouse(map, 'mouseup', startPx)
 
-        await control.resetSelectedFeaturePlacement(rotateUrl)
+        await control.resetSelectedFeaturePlacement()
 
         expect(await control.isSelectedFeatureRectangle()).toBe(true)
         expect(setCoordinates).toHaveBeenLastCalledWith(initialCoordinates)

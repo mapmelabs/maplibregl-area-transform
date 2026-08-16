@@ -677,7 +677,7 @@ export class MaplibreAreaTransform implements IControl {
     /**
      * Resets the selected image to its initial centered placement and aspect ratio.
      */
-    public async resetSelectedFeaturePlacement(imageUrl: string): Promise<void> {
+    public async resetSelectedFeaturePlacement(): Promise<void> {
         const featureId = this.transformState.selectedFeatureId
         if (!featureId) return
         const managedImage = this.transformState.managedImages.get(featureId)
