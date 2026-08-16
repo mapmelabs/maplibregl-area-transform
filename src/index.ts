@@ -685,7 +685,11 @@ export class MaplibreAreaTransform implements IControl {
 
         const image = new Image()
         image.src = managedImage.imageUrl
-        await image.decode()
+        try {
+            await image.decode()
+        } catch {
+            return
+        }
         if (this.transformState.selectedFeatureId !== featureId) return
         const coordinates = this.createCoordinatesForLoadedImage(image)
         this.setImageCoordinates(featureId, coordinates)

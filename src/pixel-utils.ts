@@ -160,8 +160,12 @@ export function pxMoveCorner(
         [cornersPx[oppositeIndex]!, cornersPx[previousIndex]!],
         [cornersPx[previousIndex]!, cornersPx[nextIndex]!],
     ]
-    for (const [edgeStart, edgeEnd] of edges) {
-        nextPoint = pxKeepPointOnSameSide(edgeStart, edgeEnd, original, nextPoint, minimumDistance)
+    for (let pass = 0; pass < 3; pass++) {
+        const passStart = nextPoint
+        for (const [edgeStart, edgeEnd] of edges) {
+            nextPoint = pxKeepPointOnSameSide(edgeStart, edgeEnd, original, nextPoint, minimumDistance)
+        }
+        if (nextPoint[0] === passStart[0] && nextPoint[1] === passStart[1]) break
     }
 
     const moved = [...cornersPx]
