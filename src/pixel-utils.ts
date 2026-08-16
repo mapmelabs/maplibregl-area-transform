@@ -187,7 +187,7 @@ function pxKeepPointOnSameSide(
     if (referenceSide === 0) return point
 
     const lineLength = pxDistance(lineStart, lineEnd)
-    if (lineLength === 0) return referencePoint
+    if (lineLength === 0) return point
 
     const pointSide = pxCrossProduct(lineStart, lineEnd, point)
     const signedMinimumDistance = Math.sign(referenceSide) * minimumDistance

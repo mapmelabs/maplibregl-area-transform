@@ -680,10 +680,13 @@ export class MaplibreAreaTransform implements IControl {
     public async resetSelectedFeaturePlacement(imageUrl: string): Promise<void> {
         const featureId = this.transformState.selectedFeatureId
         if (!featureId) return
+        const managedImage = this.transformState.managedImages.get(featureId)
+        if (!managedImage) return
 
         const image = new Image()
-        image.src = imageUrl
+        image.src = managedImage.imageUrl
         await image.decode()
+        if (this.transformState.selectedFeatureId !== featureId) return
         const coordinates = this.createCoordinatesForLoadedImage(image)
         this.setImageCoordinates(featureId, coordinates)
         await this.updateCoordinates(featureId, coordinates)
@@ -1075,7 +1078,7 @@ export class MaplibreAreaTransform implements IControl {
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates)
         if (closestFeature.properties?.['type'] === 'scale-handle') {
-            if (this.options.quadrilateralMode) {
+            if (this.options.quadrilateralMode && this._startCornersPx!.length === 4) {
                 this._dragCornerIndex = this._startCornersPx.reduce(
                     (closestIndex, point, index, points) =>
                         pxDistance(point, this._startPx!) < pxDistance(points[closestIndex]!, this._startPx!)

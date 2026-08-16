@@ -42,6 +42,9 @@ const coordinatesUnwrap = (coordinates: ImageMeshCoordinates): ImageMeshCoordina
 
 export const imageMeshDataGet = (coordinates: ImageMeshCoordinates, gridSize = gridSizeDefault) => {
     const size = Math.max(1, Math.floor(gridSize))
+    if (!Number.isFinite(size) || size > 255) {
+        throw new RangeError('gridSize must be between 1 and 255')
+    }
     const corners = coordinatesUnwrap(coordinates).map(([longitude, latitude]) => [
         mercatorXGet(longitude),
         mercatorYGet(latitude),
