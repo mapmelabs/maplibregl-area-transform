@@ -81,6 +81,14 @@ export type MaplibreAreaTransformOptions = {
      * @default false
      */
     quadrilateralMode?: boolean
+    /**
+     * How managed image sources warp onto their corners while
+     * {@link MaplibreAreaTransformOptions.quadrilateralMode} is enabled.
+     * `flat` is bilinear (mesh); `perspective` is projective.
+     * Requires MapLibre with ImageSource.setWarp.
+     * @default 'flat'
+     */
+    imageWarp?: 'flat' | 'perspective'
 }
 
 export type AddImageOptions = {
@@ -196,6 +204,7 @@ const defaultOptions: MaplibreAreaTransformOptions = {
     areaOpacity: 0.1,
     borderWidth: 2,
     quadrilateralMode: false,
+    imageWarp: 'flat',
 }
 
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle'
@@ -661,9 +670,22 @@ export class MaplibreAreaTransform implements IControl {
     /**
      * Enables or disables independent corner placement without changing the
      * selected feature's current coordinates.
+     *
+     * When enabled, managed image sources use {@link MaplibreAreaTransformOptions.imageWarp}
+     * (default `flat`). Requires MapLibre with ImageSource.setWarp.
      */
     public setQuadrilateralMode(enabled: boolean): void {
         this.options.quadrilateralMode = enabled
+        this.applyManagedImagesWarp()
+    }
+
+    /**
+     * Sets the MapLibre image warp used while quadrilateralMode is enabled.
+     * `flat` = bilinear mesh; `perspective` = projective. No-op without setWarp.
+     */
+    public setImageWarp(warp: 'flat' | 'perspective'): void {
+        this.options.imageWarp = warp
+        this.applyManagedImagesWarp()
     }
 
     /** Whether the selected feature currently forms a rectangle on screen. */
@@ -881,6 +903,7 @@ export class MaplibreAreaTransform implements IControl {
                 ],
             })
         }
+        this.applyImageSourceWarp(sourceId)
         this._addedSourceIds.add(sourceId)
         if (!map.getLayer(layerId)) {
             map.addLayer(
@@ -894,6 +917,23 @@ export class MaplibreAreaTransform implements IControl {
             )
         }
         this._addedLayerIds.add(layerId)
+    }
+
+    /**
+     * When quadrilateralMode is enabled, uses the configured imageWarp (`flat` or `perspective`);
+     * otherwise keeps MapLibre's default (`auto`). No-ops without setWarp.
+     */
+    private applyImageSourceWarp(sourceId: string): void {
+        const source = this._map?.getSource(sourceId) as
+            (ImageSource & {setWarp?: (warp: 'auto' | 'flat' | 'perspective') => void}) | undefined
+        const warp = this.options.quadrilateralMode ? (this.options.imageWarp ?? 'flat') : 'auto'
+        source?.setWarp?.(warp)
+    }
+
+    private applyManagedImagesWarp(): void {
+        for (const image of this.transformState.managedImages.values()) {
+            this.applyImageSourceWarp(this.getImageResourceIds(image.id).sourceId)
+        }
     }
 
     private getImageResourceIds(imageId: string) {

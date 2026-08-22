@@ -503,6 +503,37 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         expect(await control.isSelectedFeatureRectangle()).toBe(false)
     })
 
+    it('sets ImageSource warp to flat while quadrilateral mode is enabled', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const imageId = await control.addImage({
+            imageUrl: rotateUrl,
+            coordinates: control.createCoordinatesForLoadedImage(img),
+        })
+        const source = map.getSource(IMAGE_SOURCE_PREFIX + imageId) as maplibregl.ImageSource & {
+            setWarp?: (warp: string) => void
+            getWarp?: () => string
+        }
+        if (typeof source.setWarp !== 'function') {
+            // Older MapLibre without #8172 — plugin must no-op safely.
+            expect(() => control.setQuadrilateralMode(true)).not.toThrow()
+            return
+        }
+        const setWarp = vi.spyOn(source, 'setWarp')
+
+        control.setQuadrilateralMode(true)
+        expect(setWarp).toHaveBeenCalledWith('flat')
+        if (typeof source.getWarp === 'function') {
+            expect(source.getWarp()).toBe('flat')
+        }
+
+        control.setImageWarp('perspective')
+        expect(setWarp).toHaveBeenCalledWith('perspective')
+
+        control.setQuadrilateralMode(false)
+        expect(setWarp).toHaveBeenCalledWith('auto')
+    })
+
     it('resets a warped native image source to its initial placement', async () => {
         const {map, control} = ctx
         const img = await loadImage(rotateUrl)
