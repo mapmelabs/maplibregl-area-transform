@@ -921,12 +921,12 @@ export class MaplibreAreaTransform implements IControl {
 
     /**
      * When quadrilateralMode is enabled, uses the configured imageWarp (`flat` or `perspective`);
-     * otherwise keeps MapLibre's default (`auto`). No-ops without setWarp.
+     * otherwise uses `flat`. Always sets warp explicitly — never MapLibre's `auto`. No-ops without setWarp.
      */
     private applyImageSourceWarp(sourceId: string): void {
         const source = this._map?.getSource(sourceId) as
-            (ImageSource & {setWarp?: (warp: 'auto' | 'flat' | 'perspective') => void}) | undefined
-        const warp = this.options.quadrilateralMode ? (this.options.imageWarp ?? 'flat') : 'auto'
+            (ImageSource & {setWarp?: (warp: 'flat' | 'perspective') => void}) | undefined
+        const warp = this.options.quadrilateralMode ? (this.options.imageWarp ?? 'flat') : 'flat'
         source?.setWarp?.(warp)
     }
 

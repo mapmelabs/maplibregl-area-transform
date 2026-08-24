@@ -531,7 +531,7 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         expect(setWarp).toHaveBeenCalledWith('perspective')
 
         control.setQuadrilateralMode(false)
-        expect(setWarp).toHaveBeenCalledWith('auto')
+        expect(setWarp).toHaveBeenCalledWith('flat')
     })
 
     it('resets a warped native image source to its initial placement', async () => {
