@@ -24,12 +24,12 @@ import type {
     GeoJSONSource,
     LayerSpecification,
     MapMouseEvent,
+    MapTouchEvent,
     MapGeoJSONFeature,
     Coordinates,
     ErrorEvent,
     Style,
     MapEventType,
-    Listener,
 } from 'maplibre-gl'
 
 /**
@@ -178,14 +178,18 @@ type TransformState = {
     nextFeatureId: number
 }
 
+type MapPointerEvent = MapMouseEvent | MapTouchEvent
+
+type MapListenerEntry = {
+    [T in keyof MapEventType]: readonly [T, (ev: MapEventType[T]) => void]
+}[keyof MapEventType]
+
 type ControlButtonOptions = {
     id: string
     label: string
     iconClass: string
     onClick: () => void
 }
-
-type MapListenerEntry = readonly [event: keyof MapEventType | 'style.load', listener: Listener]
 
 const createTransformState = (): TransformState => ({
     features: {type: 'FeatureCollection', features: []},
@@ -758,13 +762,17 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private addMapListeners(map: Map): void {
-        for (const [event, listener] of this.getMapListeners()) map.on(event, listener)
+        for (const [event, listener] of this.getMapListeners()) {
+            map.on(event, listener as (ev: MapEventType[typeof event]) => void)
+        }
         map.setMissingStyleImageResolver(this.resolveMissingStyleImage)
     }
 
     private removeMapListeners(map: Map): void {
         map.setMissingStyleImageResolver(null)
-        for (const [event, listener] of this.getMapListeners()) map.off(event, listener)
+        for (const [event, listener] of this.getMapListeners()) {
+            map.off(event, listener as (ev: MapEventType[typeof event]) => void)
+        }
     }
 
     private getMapListeners(): readonly MapListenerEntry[] {
@@ -1048,7 +1056,7 @@ export class MaplibreAreaTransform implements IControl {
         return currentPointIndex % 2 === 0 ? 45 : 135
     }
 
-    private onMouseMoveForCursor = (e: MapMouseEvent) => {
+    private onMouseMoveForCursor = (e: MapPointerEvent) => {
         if (this.transformState.selectedFeatureId == null || this._startPx != null) {
             this._map!.getCanvas().style.cursor = ''
             return
@@ -1094,7 +1102,7 @@ export class MaplibreAreaTransform implements IControl {
         }
     }
 
-    private onMouseDown = (e: MapMouseEvent) => {
+    private onMouseDown = (e: MapPointerEvent) => {
         if (this.transformState.selectedFeatureId == null) {
             return
         }
@@ -1163,7 +1171,7 @@ export class MaplibreAreaTransform implements IControl {
         }
     }
 
-    private onMouseMove = (e: MapMouseEvent) => {
+    private onMouseMove = (e: MapPointerEvent) => {
         if (!this.transformState.selectedFeatureId || this._startPx == null) return
         const currentPx: PxPoint = [e.point.x, e.point.y]
 
