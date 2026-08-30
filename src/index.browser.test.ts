@@ -474,6 +474,7 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         let changed: GeoJSON.Position[] | undefined
         control.on('change', event => (changed = event.coordinates))
 
+        expect(await control.isFeatureRectangle(imageId)).toBe(true)
         expect(await control.isSelectedFeatureRectangle()).toBe(true)
         control.setQuadrilateralMode(true)
         await waitUntil(() =>
@@ -518,7 +519,7 @@ describe('MaplibreAreaTransform quadrilateral mode', () => {
         expect(setWarp).toHaveBeenCalledWith('flat')
         expect(source.getWarp()).toBe('flat')
 
-        control.setImageWarp('perspective')
+        control.setImageWarp(imageId, 'perspective')
         expect(setWarp).toHaveBeenCalledWith('perspective')
         expect(source.getWarp()).toBe('perspective')
 
