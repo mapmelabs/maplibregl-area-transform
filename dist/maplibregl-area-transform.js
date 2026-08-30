@@ -360,6 +360,57 @@
 		const dy = currentPx[1] - startPx[1];
 		return cornersPx.map((p) => [p[0] + dx, p[1] + dy]);
 	}
+	/** Move one corner while keeping the quadrilateral convex and non-degenerate. */
+	function pxMoveCorner(cornersPx, cornerIndex, currentPx, minimumDistance = 2) {
+		const original = cornersPx[cornerIndex];
+		const nextIndex = (cornerIndex + 1) % 4;
+		const oppositeIndex = (cornerIndex + 2) % 4;
+		const previousIndex = (cornerIndex + 3) % 4;
+		let nextPoint = currentPx;
+		const edges = [
+			[cornersPx[nextIndex], cornersPx[oppositeIndex]],
+			[cornersPx[oppositeIndex], cornersPx[previousIndex]],
+			[cornersPx[previousIndex], cornersPx[nextIndex]]
+		];
+		for (let pass = 0; pass < 3; pass++) {
+			const passStart = nextPoint;
+			for (const [edgeStart, edgeEnd] of edges) nextPoint = pxKeepPointOnSameSide(edgeStart, edgeEnd, original, nextPoint, minimumDistance);
+			if (nextPoint[0] === passStart[0] && nextPoint[1] === passStart[1]) break;
+		}
+		const moved = [...cornersPx];
+		moved[cornerIndex] = nextPoint;
+		return moved;
+	}
+	function pxCrossProduct(lineStart, lineEnd, point) {
+		return (lineEnd[0] - lineStart[0]) * (point[1] - lineStart[1]) - (lineEnd[1] - lineStart[1]) * (point[0] - lineStart[0]);
+	}
+	function pxKeepPointOnSameSide(lineStart, lineEnd, referencePoint, point, minimumDistance) {
+		const referenceSide = pxCrossProduct(lineStart, lineEnd, referencePoint);
+		if (referenceSide === 0) return point;
+		const lineLength = pxDistance(lineStart, lineEnd);
+		if (lineLength === 0) return point;
+		const pointSide = pxCrossProduct(lineStart, lineEnd, point);
+		const signedMinimumDistance = Math.sign(referenceSide) * minimumDistance;
+		if (referenceSide * pointSide > 0 && Math.abs(pointSide) / lineLength >= minimumDistance) return point;
+		const lineX = (lineEnd[0] - lineStart[0]) / lineLength;
+		const lineY = (lineEnd[1] - lineStart[1]) / lineLength;
+		const projection = Math.max(0, Math.min(1, ((point[0] - lineStart[0]) * (lineEnd[0] - lineStart[0]) + (point[1] - lineStart[1]) * (lineEnd[1] - lineStart[1])) / lineLength ** 2));
+		return [lineStart[0] + projection * (lineEnd[0] - lineStart[0]) - lineY * signedMinimumDistance, lineStart[1] + projection * (lineEnd[1] - lineStart[1]) + lineX * signedMinimumDistance];
+	}
+	/** Whether four ordered corners form a rectangle, allowing minor projection error. */
+	function pxIsRectangle(cornersPx, tolerance = .02) {
+		if (cornersPx.length !== 4) return false;
+		for (let i = 0; i < 4; i++) {
+			const corner = cornersPx[i];
+			const previous = cornersPx[(i + 3) % 4];
+			const next = cornersPx[(i + 1) % 4];
+			const previousEdge = [previous[0] - corner[0], previous[1] - corner[1]];
+			const nextEdge = [next[0] - corner[0], next[1] - corner[1]];
+			const lengths = Math.hypot(...previousEdge) * Math.hypot(...nextEdge);
+			if (lengths === 0 || Math.abs((previousEdge[0] * nextEdge[0] + previousEdge[1] * nextEdge[1]) / lengths) > tolerance) return false;
+		}
+		return true;
+	}
 	/**
 	* Sort points in clockwise order starting from the top-left corner.
 	* @param corners The corners of the rectangle.
@@ -458,6 +509,7 @@
 	//#region src/index.ts
 	const TRANSFORMING_STATES = new Set([
 		"moving",
+		"moving-corner",
 		"resizing",
 		"rotating",
 		"scaling"
@@ -479,7 +531,8 @@
 		rectangleSizeFactor: .5,
 		areaBackgroundColor: "orange",
 		areaOpacity: .1,
-		borderWidth: 2
+		borderWidth: 2,
+		quadrilateralMode: false
 	};
 	const HANDLE_LAYER = "area-transform-layer-polygon-handle";
 	const AREA_LAYER = "area-transform-layer-polygon-area";
@@ -524,6 +577,7 @@
 		_polygonPoints = [];
 		_startPx = null;
 		_startCornersPx = void 0;
+		_dragCornerIndex = void 0;
 		_baseHandleImagesPromise = null;
 		_coloredImageCache = new globalThis.Map();
 		_coloredImagePromises = new globalThis.Map();
@@ -715,6 +769,7 @@
 			this._polygonPoints = [];
 			this._startPx = null;
 			this._startCornersPx = void 0;
+			this._dragCornerIndex = void 0;
 			this._baseHandleImagesPromise = null;
 			this._coloredImageCache.clear();
 			this._coloredImagePromises.clear();
@@ -795,7 +850,8 @@
 				id: imageId,
 				imageUrl: options.imageUrl,
 				coordinates: options.coordinates,
-				opacity: options.opacity ?? .9
+				opacity: options.opacity ?? .9,
+				imageWarp: options.imageWarp ?? "flat"
 			};
 			try {
 				this.addImageResources(managedImage);
@@ -900,6 +956,58 @@
 		async setAreaColor(color) {
 			this.options.areaBackgroundColor = color;
 			await this.addColoredImages(color);
+		}
+		/**
+		* Enables or disables independent corner placement without changing the
+		* selected feature's current coordinates.
+		*
+		* When enabled, each managed image source uses its own imageWarp (default `flat`).
+		* Requires MapLibre with ImageSource.setWarp.
+		*/
+		setQuadrilateralMode(enabled) {
+			this.options.quadrilateralMode = enabled;
+			this.applyManagedImagesWarp();
+		}
+		/**
+		* Sets the MapLibre image warp for a managed image while quadrilateralMode is enabled.
+		* `flat` = bilinear mesh; `perspective` = projective. No-op without setWarp.
+		*/
+		setImageWarp(imageId, warp) {
+			const image = this.transformState.managedImages.get(imageId);
+			if (!image) return;
+			image.imageWarp = warp;
+			this.applyImageSourceWarp(image);
+		}
+		/** Whether the feature with the given id currently forms a rectangle on screen. */
+		async isFeatureRectangle(featureId) {
+			const corners = this.getFeatureCornerCoordinates(featureId);
+			return corners.length === 4 && pxIsRectangle(this.projectAll(corners));
+		}
+		/** Whether the selected feature currently forms a rectangle on screen. */
+		async isSelectedFeatureRectangle() {
+			const featureId = this.transformState.selectedFeatureId;
+			return featureId ? this.isFeatureRectangle(featureId) : false;
+		}
+		/**
+		* Resets the selected image to its initial centered placement and aspect ratio.
+		*/
+		async resetSelectedFeaturePlacement() {
+			const featureId = this.transformState.selectedFeatureId;
+			if (!featureId) return;
+			const managedImage = this.transformState.managedImages.get(featureId);
+			if (!managedImage) return;
+			const image = new Image();
+			image.src = managedImage.imageUrl;
+			try {
+				await image.decode();
+			} catch (error) {
+				console.error("maplibregl-area-transform: failed to decode image for resetSelectedFeaturePlacement", error);
+				return;
+			}
+			if (this.transformState.selectedFeatureId !== featureId) return;
+			const coordinates = this.createCoordinatesForLoadedImage(image);
+			this.setImageCoordinates(featureId, coordinates);
+			await this.updateCoordinates(featureId, coordinates);
 		}
 		/**
 		* Subscribes to a control event.
@@ -1055,6 +1163,7 @@
 				url: image.imageUrl,
 				coordinates: image.coordinates
 			});
+			this.applyImageSourceWarp(image);
 			this._addedSourceIds.add(sourceId);
 			if (!map.getLayer(layerId)) map.addLayer({
 				id: layerId,
@@ -1066,6 +1175,19 @@
 				}
 			}, map.getLayer(HANDLE_LAYER) ? HANDLE_LAYER : void 0);
 			this._addedLayerIds.add(layerId);
+		}
+		/**
+		* When quadrilateralMode is enabled, uses the image's imageWarp (`flat` or `perspective`);
+		* otherwise uses `flat`. Always sets warp explicitly — never MapLibre's `auto`. No-ops without setWarp.
+		*/
+		applyImageSourceWarp(image) {
+			const { sourceId } = this.getImageResourceIds(image.id);
+			const source = this._map?.getSource(sourceId);
+			const warp = this.options.quadrilateralMode ? image.imageWarp : "flat";
+			source?.setWarp?.(warp);
+		}
+		applyManagedImagesWarp() {
+			for (const image of this.transformState.managedImages.values()) this.applyImageSourceWarp(image);
 		}
 		getImageResourceIds(imageId) {
 			return {
@@ -1217,7 +1339,10 @@
 				if (pxDistance(fPx, currentPx) < pxDistance(bestPx, currentPx)) closestFeature = feature;
 			}
 			this._startPx = this.project(closestFeature.geometry.coordinates);
-			if (closestFeature.properties?.["type"] === "scale-handle" && this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) this.setState("resizing");
+			if (closestFeature.properties?.["type"] === "scale-handle") if (this.options.quadrilateralMode && this._startCornersPx.length === 4) {
+				this._dragCornerIndex = this._startCornersPx.reduce((closestIndex, point, index, points) => pxDistance(point, this._startPx) < pxDistance(points[closestIndex], this._startPx) ? index : closestIndex, 0);
+				this.setState("moving-corner");
+			} else if (this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) this.setState("resizing");
 			else this.setState("scaling");
 		}
 		onMouseMove = (e) => {
@@ -1234,19 +1359,23 @@
 				case "resizing":
 					newCornersPx = pxResizePolygon(this._startCornersPx, this._startPx, currentPx);
 					break;
+				case "moving-corner":
+					if (this._dragCornerIndex == null) return;
+					newCornersPx = pxMoveCorner(this._startCornersPx, this._dragCornerIndex, currentPx);
+					break;
 				default:
 				case "moving":
 					newCornersPx = pxMovePoints(this._startCornersPx, this._startPx, currentPx);
 					break;
 			}
 			const newCoordinates = this.unprojectAll(newCornersPx);
-			const { sourceId } = this.getImageResourceIds(this.transformState.selectedFeatureId);
-			this._map?.getSource(sourceId)?.setCoordinates(newCoordinates);
+			this.setImageCoordinates(this.transformState.selectedFeatureId, newCoordinates);
 			this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates);
 		};
 		onMouseUp = () => {
 			this._startPx = null;
 			this._startCornersPx = void 0;
+			this._dragCornerIndex = void 0;
 			if (TRANSFORMING_STATES.has(this._state)) this.setState("");
 		};
 		onClick = (e) => {
@@ -1402,16 +1531,17 @@
 		async setSelection(featureId) {
 			this.setSelectedFeatureId(featureId);
 			const data = this.transformState.features;
-			const corners = [];
-			for (const feature of data.features) if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId && feature.properties?.["type"] === "scale-handle") {
-				feature.properties["isSelected"] = true;
-				corners.push(feature);
-			}
-			corners.sort((a, b) => a.properties?.["id"] < b.properties?.["id"] ? -1 : 1);
+			for (const feature of data.features) if (feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId && feature.properties?.["type"] === "scale-handle") feature.properties["isSelected"] = true;
 			const color = data.features.find((f) => f.properties?.["featureId"] === featureId && f.geometry?.type === "Polygon")?.properties?.["color"];
-			const coords = corners.map((f) => f.geometry.coordinates);
-			data.features.push(this.getRotateHandlePoint(coords, featureId, color));
+			data.features.push(this.getRotateHandlePoint(this.getFeatureCornerCoordinates(featureId), featureId, color));
 			await this.renderFeatures();
+		}
+		getFeatureCornerCoordinates(featureId) {
+			return this.transformState.features.features.filter((feature) => feature.geometry.type === "Point" && feature.properties?.["featureId"] === featureId && feature.properties?.["type"] === "scale-handle").map((feature) => feature.geometry.coordinates);
+		}
+		setImageCoordinates(featureId, coordinates) {
+			const { sourceId } = this.getImageResourceIds(featureId);
+			this._map?.getSource(sourceId)?.setCoordinates(coordinates);
 		}
 		async updateCoordinates(featureId, newCoordinates) {
 			const data = this.transformState.features;
