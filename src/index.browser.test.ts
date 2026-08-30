@@ -62,10 +62,7 @@ function fireMouse(map: maplibregl.Map, type: 'mousedown' | 'mousemove' | 'mouse
 }
 
 /** The raster layers currently on the map, one per added image. */
-function rasterLayers(map: maplibregl.Map) {
-    return map.getStyle().layers.filter(l => l.id.startsWith(IMAGE_LAYER_PREFIX))
-}
-
+const imageLayers = (map: maplibregl.Map) => map.getLayersOrder().filter(id => id.startsWith(IMAGE_LAYER_PREFIX))
 const imageOpacity = (map: maplibregl.Map, imageId: string) =>
     map.getPaintProperty(IMAGE_LAYER_PREFIX + imageId, 'raster-opacity')
 
@@ -268,7 +265,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         expect(firstPromise).toBe(secondPromise)
         expect(second).toBe(first)
         expect(created).toEqual([first])
-        expect(rasterLayers(map).length).toBe(1)
+        expect(imageLayers(map).length).toBe(1)
     })
 
     it('does not dedupe the same URL requested at different coordinates', async () => {
@@ -282,7 +279,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ])
 
         expect(there).not.toBe(here)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
     })
 
     it('adds a second copy when the same request is repeated after the first settles', async () => {
@@ -294,7 +291,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         const second = await control.addImage({imageUrl: rotateUrl, coordinates})
 
         expect(second).not.toBe(first)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
     })
 
     it('queues concurrent requests for different URLs instead of interleaving them', async () => {
@@ -310,7 +307,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         ])
 
         expect(scaleId).not.toBe(rotateId)
-        expect(rasterLayers(map).length).toBe(2)
+        expect(imageLayers(map).length).toBe(2)
         expect(selected).toEqual([rotateId, null, scaleId])
     })
 
@@ -337,7 +334,7 @@ describe('MaplibreAreaTransform image URL queue', () => {
         await expect(control.addImage({imageUrl: rotateUrl, coordinates})).rejects.toBeTruthy()
         await drawPolygon(map, control)
         await expect(control.addImage({imageUrl: rotateUrl, coordinates})).resolves.toBeTruthy()
-        expect(rasterLayers(map).length).toBe(1)
+        expect(imageLayers(map).length).toBe(1)
     })
 })
 
@@ -442,6 +439,130 @@ describe('MaplibreAreaTransform image opacity', () => {
     })
 })
 
+describe('MaplibreAreaTransform quadrilateral mode', () => {
+    let ctx: SetupResponse
+
+    beforeEach(async () => {
+        ctx = await setup()
+    })
+    afterEach(() => {
+        ctx.map.remove()
+        ctx.container.remove()
+    })
+
+    it('moves one corner independently after being enabled at runtime', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const imageId = await control.addImage({
+            imageUrl: rotateUrl,
+            coordinates: control.createCoordinatesForLoadedImage(img),
+        })
+        const source = map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+        const data = (await source.getData()) as GeoJSON.FeatureCollection
+        const corners = data.features
+            .filter(
+                f =>
+                    f.geometry.type === 'Point' &&
+                    f.properties?.['featureId'] === imageId &&
+                    f.properties?.['type'] === 'scale-handle',
+            )
+            .sort((a, b) => (a.properties?.['id'] < b.properties?.['id'] ? -1 : 1))
+            .map(f => (f.geometry as GeoJSON.Point).coordinates)
+        const originalPx = corners.map(c => projectPx(map, c))
+        const startPx = originalPx[0]!
+        const targetPx: PxPoint = [startPx[0] - 20, startPx[1] - 10]
+        let changed: GeoJSON.Position[] | undefined
+        control.on('change', event => (changed = event.coordinates))
+
+        expect(await control.isFeatureRectangle(imageId)).toBe(true)
+        expect(await control.isSelectedFeatureRectangle()).toBe(true)
+        control.setQuadrilateralMode(true)
+        await waitUntil(() =>
+            map
+                .queryRenderedFeatures(startPx)
+                .some(f => f.properties?.['type'] === 'scale-handle' && f.properties?.['featureId'] === imageId),
+        )
+        fireMouse(map, 'mousedown', startPx)
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', targetPx)
+            return changed !== undefined
+        })
+        fireMouse(map, 'mouseup', targetPx)
+
+        const changedPx = changed!.map(c => projectPx(map, c))
+        expect(changedPx[0]![0]).toBeCloseTo(targetPx[0], 1)
+        expect(changedPx[0]![1]).toBeCloseTo(targetPx[1], 1)
+        changedPx.slice(1).forEach((corner, index) => {
+            expect(corner[0]).toBeCloseTo(originalPx[index + 1]![0], 1)
+            expect(corner[1]).toBeCloseTo(originalPx[index + 1]![1], 1)
+        })
+        expect(await control.isSelectedFeatureRectangle()).toBe(false)
+
+        const beforeToggle = changed
+        control.setQuadrilateralMode(false)
+        expect(changed).toBe(beforeToggle)
+        expect(await control.isSelectedFeatureRectangle()).toBe(false)
+    })
+
+    it('sets ImageSource warp to flat while quadrilateral mode is enabled', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const imageId = await control.addImage({
+            imageUrl: rotateUrl,
+            coordinates: control.createCoordinatesForLoadedImage(img),
+        })
+        const source = map.getSource(IMAGE_SOURCE_PREFIX + imageId) as maplibregl.ImageSource
+        expect(typeof source.setWarp).toBe('function')
+        const setWarp = vi.spyOn(source, 'setWarp')
+
+        control.setQuadrilateralMode(true)
+        expect(setWarp).toHaveBeenCalledWith('flat')
+        expect(source.getWarp()).toBe('flat')
+
+        control.setImageWarp(imageId, 'perspective')
+        expect(setWarp).toHaveBeenCalledWith('perspective')
+        expect(source.getWarp()).toBe('perspective')
+
+        control.setQuadrilateralMode(false)
+        expect(setWarp).toHaveBeenCalledWith('flat')
+        expect(source.getWarp()).toBe('flat')
+    })
+
+    it('resets a warped native image source to its initial placement', async () => {
+        const {map, control} = ctx
+        const img = await loadImage(rotateUrl)
+        const initialCoordinates = control.createCoordinatesForLoadedImage(img)
+        const imageId = await control.addImage({imageUrl: rotateUrl, coordinates: initialCoordinates})
+        const source = map.getSource(IMAGE_SOURCE_PREFIX + imageId) as maplibregl.ImageSource
+        const setCoordinates = vi.spyOn(source, 'setCoordinates')
+        let changed = false
+        control.on('change', () => (changed = true))
+
+        control.setQuadrilateralMode(true)
+        const data = (await (
+            map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
+        ).getData()) as GeoJSON.FeatureCollection
+        const firstCorner = data.features.find(
+            f =>
+                f.geometry.type === 'Point' &&
+                f.properties?.['featureId'] === imageId &&
+                f.properties?.['id'] === `scale-0-${imageId}`,
+        ) as GeoJSON.Feature<GeoJSON.Point>
+        const startPx = projectPx(map, firstCorner.geometry.coordinates)
+        fireMouse(map, 'mousedown', startPx)
+        await waitUntil(() => {
+            fireMouse(map, 'mousemove', [startPx[0] - 20, startPx[1] - 10])
+            return changed
+        })
+        fireMouse(map, 'mouseup', startPx)
+
+        await control.resetSelectedFeaturePlacement()
+
+        expect(await control.isSelectedFeatureRectangle()).toBe(true)
+        expect(setCoordinates).toHaveBeenLastCalledWith(initialCoordinates)
+    })
+})
+
 describe('MaplibreAreaTransform icon preparation', () => {
     it('loads the base assets once across concurrent colors', async () => {
         const loadImage = vi.spyOn(maplibregl.Map.prototype, 'loadImage')
@@ -486,13 +607,7 @@ describe('MaplibreAreaTransform style replacement', () => {
         const loaded = map.once('style.load')
         map.setStyle({version: 8, sources: {}, layers: []}, {diff: false})
         await loaded
-        await waitUntil(() =>
-            Boolean(
-                map.getSource(IMAGE_SOURCE_PREFIX + imageId) &&
-                map.getLayer(IMAGE_LAYER_PREFIX + imageId) &&
-                map.getLayer(HANDLE_LAYER),
-            ),
-        )
+        await waitUntil(() => Boolean(map.getLayer(IMAGE_LAYER_PREFIX + imageId) && map.getLayer(HANDLE_LAYER)))
         await map.once('idle')
 
         expect(events).toEqual([])
@@ -543,7 +658,6 @@ describe('MaplibreAreaTransform style replacement', () => {
         const imagePromise = control.addImage({imageUrl: rotateUrl, coordinates})
         const [, imageId] = await Promise.all([loaded, imagePromise])
 
-        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
         const data = (await (
             map.getSource(GEOJSON_SOURCE) as maplibregl.GeoJSONSource
@@ -564,7 +678,6 @@ describe('MaplibreAreaTransform style replacement', () => {
         await finalLoaded
 
         expect(map.getLayer('background')).toBeDefined()
-        expect(map.getSource(IMAGE_SOURCE_PREFIX + imageId)).toBeDefined()
         expect(map.getLayer(IMAGE_LAYER_PREFIX + imageId)).toBeDefined()
     })
 
@@ -611,7 +724,7 @@ describe('MaplibreAreaTransform style replacement', () => {
 
         await expect(imagePromise).rejects.toThrow('not attached')
         await loaded
-        expect(rasterLayers(map)).toEqual([])
+        expect(imageLayers(map)).toEqual([])
     })
 
     it('cleanly cancels an unfinished polygon draft during style replacement', async () => {

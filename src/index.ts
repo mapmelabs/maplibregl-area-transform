@@ -10,6 +10,8 @@ import {
     type PxPoint,
     pxResizePolygon,
     pxAngle,
+    pxMoveCorner,
+    pxIsRectangle,
 } from './pixel-utils'
 import {recolor} from './image-recolor'
 import rotateImageUrl from '../assets/rotate.png'
@@ -22,12 +24,12 @@ import type {
     GeoJSONSource,
     LayerSpecification,
     MapMouseEvent,
+    MapTouchEvent,
     MapGeoJSONFeature,
     Coordinates,
     ErrorEvent,
     Style,
     MapEventType,
-    Listener,
 } from 'maplibre-gl'
 
 /**
@@ -74,6 +76,11 @@ export type MaplibreAreaTransformOptions = {
      * @default 0.1
      */
     areaOpacity?: number
+    /**
+     * Allow each corner to be moved independently.
+     * @default false
+     */
+    quadrilateralMode?: boolean
 }
 
 export type AddImageOptions = {
@@ -90,6 +97,14 @@ export type AddImageOptions = {
      * @default 0.9
      */
     opacity?: number
+    /**
+     * How this image warps onto its corners while quadrilateralMode is enabled.
+     * `flat` is bilinear (mesh); `perspective` is projective.
+     * Override later with {@link MaplibreAreaTransform.setImageWarp}.
+     * Requires MapLibre with ImageSource.setWarp.
+     * @default 'flat'
+     */
+    imageWarp?: 'flat' | 'perspective'
 }
 
 /**
@@ -126,9 +141,16 @@ export type MaplibreAreaTransformEventMap = {
     selected: [featureId: string | null]
 }
 
-type MaplibreAreaTransformState = 'rotating' | 'scaling' | 'resizing' | 'adding-polygon' | 'moving' | 'deleting' | ''
+type MaplibreAreaTransformState =
+    'rotating' | 'scaling' | 'resizing' | 'moving-corner' | 'adding-polygon' | 'moving' | 'deleting' | ''
 
-const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>(['moving', 'resizing', 'rotating', 'scaling'])
+const TRANSFORMING_STATES = new Set<MaplibreAreaTransformState>([
+    'moving',
+    'moving-corner',
+    'resizing',
+    'rotating',
+    'scaling',
+])
 
 type BuildPolygonOptions = {
     coordinates: GeoJSON.Position[]
@@ -142,6 +164,7 @@ type ManagedImage = {
     imageUrl: string
     coordinates: GeoJSON.Position[]
     opacity: number
+    imageWarp: 'flat' | 'perspective'
 }
 
 type BaseHandleImages = {
@@ -156,14 +179,18 @@ type TransformState = {
     nextFeatureId: number
 }
 
+type MapPointerEvent = MapMouseEvent | MapTouchEvent
+
+type MapListenerEntry = {
+    [T in keyof MapEventType]: readonly [T, (ev: MapEventType[T]) => void]
+}[keyof MapEventType]
+
 type ControlButtonOptions = {
     id: string
     label: string
     iconClass: string
     onClick: () => void
 }
-
-type MapListenerEntry = readonly [event: keyof MapEventType | 'style.load', listener: Listener]
 
 const createTransformState = (): TransformState => ({
     features: {type: 'FeatureCollection', features: []},
@@ -181,6 +208,7 @@ const defaultOptions: MaplibreAreaTransformOptions = {
     areaBackgroundColor: 'orange',
     areaOpacity: 0.1,
     borderWidth: 2,
+    quadrilateralMode: false,
 }
 
 const HANDLE_LAYER = 'area-transform-layer-polygon-handle'
@@ -227,6 +255,7 @@ export class MaplibreAreaTransform implements IControl {
     private _polygonPoints: PxPoint[] = []
     private _startPx: PxPoint | null = null
     private _startCornersPx: PxPoint[] | undefined = undefined // corners at drag start
+    private _dragCornerIndex: number | undefined = undefined
     private _baseHandleImagesPromise: Promise<BaseHandleImages> | null = null
     private _coloredImageCache = new globalThis.Map<string, ImageData>()
     private _coloredImagePromises = new globalThis.Map<string, Promise<void>>()
@@ -421,6 +450,7 @@ export class MaplibreAreaTransform implements IControl {
         this._polygonPoints = []
         this._startPx = null
         this._startCornersPx = undefined
+        this._dragCornerIndex = undefined
         this._baseHandleImagesPromise = null
         this._coloredImageCache.clear()
         this._coloredImagePromises.clear()
@@ -516,11 +546,12 @@ export class MaplibreAreaTransform implements IControl {
             return Promise.reject('Cannot add image while adding polygon')
         }
         const imageId = `${ID_PREFIX}${this.transformState.nextFeatureId++}`
-        const managedImage = {
+        const managedImage: ManagedImage = {
             id: imageId,
             imageUrl: options.imageUrl,
             coordinates: options.coordinates,
             opacity: options.opacity ?? 0.9,
+            imageWarp: options.imageWarp ?? 'flat',
         }
         try {
             this.addImageResources(managedImage)
@@ -642,6 +673,64 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     /**
+     * Enables or disables independent corner placement without changing the
+     * selected feature's current coordinates.
+     *
+     * When enabled, each managed image source uses its own imageWarp (default `flat`).
+     * Requires MapLibre with ImageSource.setWarp.
+     */
+    public setQuadrilateralMode(enabled: boolean): void {
+        this.options.quadrilateralMode = enabled
+        this.applyManagedImagesWarp()
+    }
+
+    /**
+     * Sets the MapLibre image warp for a managed image while quadrilateralMode is enabled.
+     * `flat` = bilinear mesh; `perspective` = projective. No-op without setWarp.
+     */
+    public setImageWarp(imageId: string, warp: 'flat' | 'perspective'): void {
+        const image = this.transformState.managedImages.get(imageId)
+        if (!image) return
+        image.imageWarp = warp
+        this.applyImageSourceWarp(image)
+    }
+
+    /** Whether the feature with the given id currently forms a rectangle on screen. */
+    public async isFeatureRectangle(featureId: string): Promise<boolean> {
+        const corners = this.getFeatureCornerCoordinates(featureId)
+        return corners.length === 4 && pxIsRectangle(this.projectAll(corners))
+    }
+
+    /** Whether the selected feature currently forms a rectangle on screen. */
+    public async isSelectedFeatureRectangle(): Promise<boolean> {
+        const featureId = this.transformState.selectedFeatureId
+        return featureId ? this.isFeatureRectangle(featureId) : false
+    }
+
+    /**
+     * Resets the selected image to its initial centered placement and aspect ratio.
+     */
+    public async resetSelectedFeaturePlacement(): Promise<void> {
+        const featureId = this.transformState.selectedFeatureId
+        if (!featureId) return
+        const managedImage = this.transformState.managedImages.get(featureId)
+        if (!managedImage) return
+
+        const image = new Image()
+        image.src = managedImage.imageUrl
+        try {
+            await image.decode()
+        } catch (error) {
+            console.error('maplibregl-area-transform: failed to decode image for resetSelectedFeaturePlacement', error)
+            return
+        }
+        if (this.transformState.selectedFeatureId !== featureId) return
+        const coordinates = this.createCoordinatesForLoadedImage(image)
+        this.setImageCoordinates(featureId, coordinates)
+        await this.updateCoordinates(featureId, coordinates)
+    }
+
+    /**
      * Subscribes to a control event.
      * @param event - the event name, see {@link MaplibreAreaTransformEventMap}
      * @param listener - callback invoked with the event's payload
@@ -681,13 +770,17 @@ export class MaplibreAreaTransform implements IControl {
     }
 
     private addMapListeners(map: Map): void {
-        for (const [event, listener] of this.getMapListeners()) map.on(event, listener)
+        for (const [event, listener] of this.getMapListeners()) {
+            map.on(event, listener as (ev: MapEventType[typeof event]) => void)
+        }
         map.setMissingStyleImageResolver(this.resolveMissingStyleImage)
     }
 
     private removeMapListeners(map: Map): void {
         map.setMissingStyleImageResolver(null)
-        for (const [event, listener] of this.getMapListeners()) map.off(event, listener)
+        for (const [event, listener] of this.getMapListeners()) {
+            map.off(event, listener as (ev: MapEventType[typeof event]) => void)
+        }
     }
 
     private getMapListeners(): readonly MapListenerEntry[] {
@@ -826,6 +919,7 @@ export class MaplibreAreaTransform implements IControl {
                 ],
             })
         }
+        this.applyImageSourceWarp(image)
         this._addedSourceIds.add(sourceId)
         if (!map.getLayer(layerId)) {
             map.addLayer(
@@ -839,6 +933,24 @@ export class MaplibreAreaTransform implements IControl {
             )
         }
         this._addedLayerIds.add(layerId)
+    }
+
+    /**
+     * When quadrilateralMode is enabled, uses the image's imageWarp (`flat` or `perspective`);
+     * otherwise uses `flat`. Always sets warp explicitly — never MapLibre's `auto`. No-ops without setWarp.
+     */
+    private applyImageSourceWarp(image: ManagedImage): void {
+        const {sourceId} = this.getImageResourceIds(image.id)
+        const source = this._map?.getSource(sourceId) as
+            (ImageSource & {setWarp?: (warp: 'flat' | 'perspective') => void}) | undefined
+        const warp = this.options.quadrilateralMode ? image.imageWarp : 'flat'
+        source?.setWarp?.(warp)
+    }
+
+    private applyManagedImagesWarp(): void {
+        for (const image of this.transformState.managedImages.values()) {
+            this.applyImageSourceWarp(image)
+        }
     }
 
     private getImageResourceIds(imageId: string) {
@@ -953,7 +1065,7 @@ export class MaplibreAreaTransform implements IControl {
         return currentPointIndex % 2 === 0 ? 45 : 135
     }
 
-    private onMouseMoveForCursor = (e: MapMouseEvent) => {
+    private onMouseMoveForCursor = (e: MapPointerEvent) => {
         if (this.transformState.selectedFeatureId == null || this._startPx != null) {
             this._map!.getCanvas().style.cursor = ''
             return
@@ -999,7 +1111,7 @@ export class MaplibreAreaTransform implements IControl {
         }
     }
 
-    private onMouseDown = (e: MapMouseEvent) => {
+    private onMouseDown = (e: MapPointerEvent) => {
         if (this.transformState.selectedFeatureId == null) {
             return
         }
@@ -1050,17 +1162,25 @@ export class MaplibreAreaTransform implements IControl {
         }
 
         this._startPx = this.project((closestFeature.geometry as GeoJSON.Point).coordinates)
-        if (
-            closestFeature.properties?.['type'] === 'scale-handle' &&
-            this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)
-        ) {
-            this.setState('resizing')
-        } else {
-            this.setState('scaling')
+        if (closestFeature.properties?.['type'] === 'scale-handle') {
+            if (this.options.quadrilateralMode && this._startCornersPx!.length === 4) {
+                this._dragCornerIndex = this._startCornersPx.reduce(
+                    (closestIndex, point, index, points) =>
+                        pxDistance(point, this._startPx!) < pxDistance(points[closestIndex]!, this._startPx!)
+                            ? index
+                            : closestIndex,
+                    0,
+                )
+                this.setState('moving-corner')
+            } else if (this.transformState.selectedFeatureId?.startsWith(RESIZEABLE_POLYGON_FEATURE_ID)) {
+                this.setState('resizing')
+            } else {
+                this.setState('scaling')
+            }
         }
     }
 
-    private onMouseMove = (e: MapMouseEvent) => {
+    private onMouseMove = (e: MapPointerEvent) => {
         if (!this.transformState.selectedFeatureId || this._startPx == null) return
         const currentPx: PxPoint = [e.point.x, e.point.y]
 
@@ -1075,6 +1195,10 @@ export class MaplibreAreaTransform implements IControl {
             case 'resizing':
                 newCornersPx = pxResizePolygon(this._startCornersPx!, this._startPx, currentPx)
                 break
+            case 'moving-corner':
+                if (this._dragCornerIndex == null) return
+                newCornersPx = pxMoveCorner(this._startCornersPx!, this._dragCornerIndex, currentPx)
+                break
             default:
             case 'moving': {
                 newCornersPx = pxMovePoints(this._startCornersPx!, this._startPx, currentPx)
@@ -1083,14 +1207,14 @@ export class MaplibreAreaTransform implements IControl {
         }
         const newCoordinates = this.unprojectAll(newCornersPx)
 
-        const {sourceId} = this.getImageResourceIds(this.transformState.selectedFeatureId)
-        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(newCoordinates as Coordinates)
+        this.setImageCoordinates(this.transformState.selectedFeatureId, newCoordinates)
         this.updateCoordinates(this.transformState.selectedFeatureId, newCoordinates)
     }
 
     private onMouseUp = () => {
         this._startPx = null
         this._startCornersPx = undefined
+        this._dragCornerIndex = undefined
         if (TRANSFORMING_STATES.has(this._state)) this.setState('')
     }
 
@@ -1287,7 +1411,6 @@ export class MaplibreAreaTransform implements IControl {
     private async setSelection(featureId: string) {
         this.setSelectedFeatureId(featureId)
         const data = this.transformState.features
-        const corners: GeoJSON.Feature<GeoJSON.Point>[] = []
         for (const feature of data.features) {
             if (
                 feature.geometry.type === 'Point' &&
@@ -1295,16 +1418,29 @@ export class MaplibreAreaTransform implements IControl {
                 feature.properties?.['type'] === 'scale-handle'
             ) {
                 feature.properties!['isSelected'] = true
-                corners.push(feature as GeoJSON.Feature<GeoJSON.Point>)
             }
         }
-        corners.sort((a, b) => (a.properties?.['id'] < b.properties?.['id'] ? -1 : 1))
         const color = data.features.find(
             f => f.properties?.['featureId'] === featureId && f.geometry?.type === 'Polygon',
         )?.properties?.['color']
-        const coords = corners.map(f => f.geometry.coordinates)
-        data.features.push(this.getRotateHandlePoint(coords, featureId, color))
+        data.features.push(this.getRotateHandlePoint(this.getFeatureCornerCoordinates(featureId), featureId, color))
         await this.renderFeatures()
+    }
+
+    private getFeatureCornerCoordinates(featureId: string): GeoJSON.Position[] {
+        return this.transformState.features.features
+            .filter(
+                feature =>
+                    feature.geometry.type === 'Point' &&
+                    feature.properties?.['featureId'] === featureId &&
+                    feature.properties?.['type'] === 'scale-handle',
+            )
+            .map(feature => (feature.geometry as GeoJSON.Point).coordinates)
+    }
+
+    private setImageCoordinates(featureId: string, coordinates: GeoJSON.Position[]): void {
+        const {sourceId} = this.getImageResourceIds(featureId)
+        this._map?.getSource<ImageSource>(sourceId)?.setCoordinates(coordinates as Coordinates)
     }
 
     private async updateCoordinates(featureId: string, newCoordinates: GeoJSON.Position[]) {
